@@ -41,9 +41,9 @@ Todos los tokens viven como custom properties CSS en `:root` (`public/assets/css
 
 **Regla de color:** el 90% de la interfaz es blanco / gris muy claro / navy / azul. Verde, ámbar y rojo se reservan para comunicar *estado* (badges de factura, alertas), nunca como decoración. Ningún color se usa "porque sí".
 
-### Color — modo oscuro (preparado, no activado)
+### Color — modo oscuro (activado — 2026-08-19)
 
-Definido bajo `@media (prefers-color-scheme: dark)` más una clase `.theme-dark` opcional para activación manual futura. **No es una inversión automática** — la jerarquía se redefine a propósito (superficies elevadas más claras que el fondo, no al revés):
+Definido bajo `@media (prefers-color-scheme: dark)` (respeta el SO cuando el usuario no ha elegido explícitamente) **y** bajo `:root[data-theme="dark"]` (elección explícita vía el botón de tema en el topbar, persistida en `localStorage` como `cc_theme`). **No es una inversión automática** — la jerarquía se redefine a propósito (superficies elevadas más claras que el fondo, no al revés):
 
 | Token | Valor |
 |---|---|
@@ -54,7 +54,7 @@ Definido bajo `@media (prefers-color-scheme: dark)` más una clase `.theme-dark`
 | `--color-text` | `#F8FAFC` |
 | `--color-text-secondary` | `#94A3B8` |
 
-La primera versión del sistema usa **Light Mode por defecto**; el dark mode queda preparado en tokens pero sin selector visible en la UI todavía (se activa fácilmente en el futuro agregando el toggle, sin tocar componentes).
+Sin preferencia explícita, la app respeta `prefers-color-scheme` del sistema operativo. Detalle completo del mecanismo (script sin FOUC, bug de fondo blanco en `:focus` heredado de Bootstrap encontrado y corregido) en la sección 11.
 
 ### Tipografía
 
@@ -152,3 +152,28 @@ Mecanismo (sin duplicar lógica de validación en JS):
 ### 10.3 Verificación
 
 Suite completa (71/71) sin cambios; verificado con Playwright en 1440px y 375px en las 15 pantallas principales — cero errores de consola, cero overflow horizontal tras corregir el alineamiento de los popups cerca del borde derecho en filtros angostos (cartera de pagos en mobile).
+
+## 11. Adenda — 2026-08-19: toggle de tema y colapso de sidebar más suave
+
+A pedido del usuario: (1) botón para alternar tema oscuro/claro, y (2) corregir el movimiento brusco de los íconos del sidebar al colapsar/expandir, incluyendo que el propio botón de colapsar desaparecía.
+
+### 11.1 Toggle de tema
+
+Botón en el topbar (`#themeToggle`, ícono sol/luna según el tema activo) que alterna `data-theme="dark"|"light"` en `<html>` y lo persiste en `localStorage` (`cc_theme`). Para evitar un parpadeo del tema equivocado en la primera pintura, cada layout (`layouts/app.blade.php` y `layouts/guest.blade.php`, para que el login también respete la preferencia) incluye un script inline **antes** de las hojas de estilo que aplica el atributo de forma síncrona, leyendo `localStorage` antes de que el navegador pinte nada. Sin preferencia explícita, `@media (prefers-color-scheme: dark)` decide (ver sección 1).
+
+Dos bugs reales encontrados y corregidos durante la verificación visual (ninguno de los dos era visible en modo claro, por eso pasaron inadvertidos en el rediseño original — sección 10.10 de `PROJECT_ANALYSIS.md`):
+
+- **`.form-control:focus` con fondo blanco fijo:** Bootstrap define `background-color` en su propio `.form-control:focus` con una especificidad (`0,2,0`) mayor que la regla base de `app.css` (`0,1,0`), y nuestra regla de `:focus` en `app.css` no redeclaraba `background` — así que al enfocar cualquier input, Bootstrap ganaba y el campo se volvía blanco sin importar el tema. Invisible en claro (blanco sobre blanco), muy visible en oscuro. Corregido declarando `background`/`color` explícitamente en el `:focus` de `app.css`.
+- **`.dropdown-menu` sin fondo propio:** dependía por completo del `#fff` por defecto de Bootstrap. Corregido con `background: var(--color-surface)` explícito.
+
+### 11.2 Sidebar: colapso/expansión sin saltos
+
+Causa raíz de ambos síntomas reportados: `justify-content` no es interpolable por CSS — un cambio de `flex-start` a `center` (o viceversa) simplemente salta de un frame a otro, no se anima. La regla `.app-shell.is-collapsed .sidebar-nav .nav-link { justify-content: center; padding: var(--space-3) 0; }` causaba exactamente eso en cada ícono. Se eliminó esa regla (y su equivalente en `.sidebar-collapse-toggle`): `justify-content`/`padding` del nav-link ahora son **constantes** entre expandido/colapsado — con el `padding` fijo de `--space-3` y el ancho colapsado (72px) ya calzan casi exactamente con el tamaño del ícono, así que el resultado visual sigue leyéndose centrado sin necesitar el flip. Verificado con Playwright muestreando la posición del ícono en cada frame de la transición: el borde izquierdo del ícono permanece en el mismo píxel durante los ~15 frames que dura la animación (200ms), mientras el ancho del sidebar interpola suavemente de 260px a 72px.
+
+El texto de las etiquetas (`.sidebar-nav .nav-link span`, `.sidebar-brand-text`) pasó de un `width: 0` sin transición a `opacity`+`max-width` con `transition`, para que se desvanezcan en vez de desaparecer de golpe.
+
+El botón de colapsar/expandir desaparecía por un bug de copiar-pegar: la regla que oculta las etiquetas de texto al colapsar (`opacity: 0; width: 0;`) incluía por error el selector `.sidebar-collapse-toggle button .icon` — el mismo ícono (única chevron) que el botón usa como su único contenido visual, dejándolo vacío e invisible. Se quitó ese selector de la regla; el botón ahora solo rota su ícono 180° (ya estaba implementado, solo no se veía).
+
+### 11.3 Verificación
+
+Suite completa (71/71) sin cambios (nada de esto toca PHP). Playwright: tema oscuro revisado visualmente en 8 pantallas + modal + selector personalizado + selector de fecha, sin fugas de fondo blanco; persistencia confirmada tras recargar y tras cerrar sesión (la pantalla de login respeta el tema elegido). Colapso de sidebar confirmado sin salto de posición mediante muestreo de `getBoundingClientRect()` por frame; botón de colapsar confirmado visible y funcional en ambos estados.

@@ -38,6 +38,38 @@
     }
 
     /* ---------------------------------------------------------------
+     * Theme toggle (dark/light) — the actual switch happened before
+     * first paint via the inline script in <head> (reads localStorage,
+     * sets [data-theme] on <html>); this just handles the click and
+     * keeps the button's aria-label honest about what it does next.
+     * --------------------------------------------------------------- */
+    var themeToggle = document.getElementById('themeToggle');
+    var THEME_KEY = 'cc_theme';
+
+    function isDarkActive() {
+        var explicit = document.documentElement.getAttribute('data-theme');
+        if (explicit === 'dark') { return true; }
+        if (explicit === 'light') { return false; }
+        return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+
+    function updateThemeToggleLabel() {
+        if (themeToggle) {
+            themeToggle.setAttribute('aria-label', isDarkActive() ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro');
+        }
+    }
+
+    if (themeToggle) {
+        updateThemeToggleLabel();
+        themeToggle.addEventListener('click', function () {
+            var next = isDarkActive() ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            try { localStorage.setItem(THEME_KEY, next); } catch (e) {}
+            updateThemeToggleLabel();
+        });
+    }
+
+    /* ---------------------------------------------------------------
      * Confirmation modal — replaces window.confirm() for data-confirm
      * forms (native browser alerts are explicitly out per the design
      * brief). Falls back to submitting immediately if the modal

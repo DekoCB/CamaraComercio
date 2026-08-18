@@ -50,6 +50,14 @@ Mejora de UX sobre EP-08, sin historias de usuario nuevas — ver `docs/PROJECT_
 - Crear/editar asociado, usuario, rol (datos básicos) y módulo se abren como modal sobre la lista en vez de navegar a una pantalla propia; la matriz de permisos de un rol se dejó como pantalla completa a propósito (no es un "formulario pequeño"). Los errores de validación se muestran inline sin recargar; un envío exitoso muestra el mismo toast de siempre.
 - 71/71 tests sin cambios; verificado con Playwright en 1440px y 375px en las 15 pantallas del sistema.
 
+## Criterios de aceptación — Toggle de tema y colapso de sidebar (2026-08-19)
+
+Mejora de UX sobre EP-08, sin historias de usuario nuevas — ver `docs/PROJECT_ANALYSIS.md` sección 10.12 y `docs/DESIGN_SYSTEM.md` sección 11:
+
+- El botón de tema en el topbar alterna claro/oscuro, persiste entre sesiones y se aplica sin parpadeo (incluida la pantalla de login).
+- Los íconos del sidebar ya no saltan de posición al colapsar/expandir (verificado con Playwright: el ícono no se mueve ni un píxel durante la animación), y el botón de colapsar/expandir ya no desaparece al colapsar.
+- 71/71 tests sin cambios; verificado visualmente con Playwright en modo oscuro en 8+ pantallas, incluidos el modal de formulario, el selector personalizado y el selector de fecha.
+
 ## Ejemplo de criterio de aceptación (HU-09)
 
 ```

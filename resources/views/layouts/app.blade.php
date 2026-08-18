@@ -4,6 +4,19 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Sistema de Facturación') · Cámara de Comercio</title>
+    <script>
+        // Applies the saved theme choice before first paint so there's no
+        // flash of the wrong theme. Absent an explicit choice, the OS
+        // preference (prefers-color-scheme, handled in tokens.css) decides.
+        (function () {
+            try {
+                var theme = localStorage.getItem('cc_theme');
+                if (theme === 'dark' || theme === 'light') {
+                    document.documentElement.setAttribute('data-theme', theme);
+                }
+            } catch (e) {}
+        })();
+    </script>
     <link rel="stylesheet" href="{{ asset('assets/vendor/bootstrap/css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/tokens.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/app.css') }}">
@@ -80,6 +93,10 @@
             <div class="topbar-breadcrumb">
                 <strong>@yield('title', '')</strong>
             </div>
+            <button class="icon-btn theme-toggle" id="themeToggle" type="button" aria-label="Cambiar a tema oscuro">
+                <span class="icon-sun">{{ icon('sun', 'icon', 18) }}</span>
+                <span class="icon-moon">{{ icon('moon', 'icon', 18) }}</span>
+            </button>
             <div class="dropdown">
                 <button class="topbar-user" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <span class="avatar">{{ Illuminate\Support\Str::of(auth()->user()->name)->explode(' ')->map(fn ($p) => mb_substr($p, 0, 1))->take(2)->implode('') }}</span>

@@ -109,6 +109,7 @@ Ver el plan de sprints completo en [`docs/PROJECT_ANALYSIS.md`](docs/PROJECT_ANA
 - **Sprint 3 (31 ago–6 sep 2026):** ✅ Completado (17 ago, adelantado) — cartera, a quién falta cobrar, estado de cuenta, reportes de cobranza/deuda y exportación a Excel/PDF.
 - **Sprint 4 (7–13 sep 2026):** ✅ Completado (17 ago, adelantado) — importación de asociados desde Excel, límite de intentos de login, filtros de búsqueda en cartera, verificación responsiva en navegador real, y este checklist de producción.
 - **Rediseño UI/UX (18 ago 2026):** ✅ Completado — identidad visual "Corporate Modern / Financial SaaS" propia de una Cámara de Comercio: tokens de diseño, iconografía Lucide, componentes Blade reutilizables, modal de confirmación y toasts propios (sin `window.confirm()` ni alertas nativas), dashboard con datos y gráficos reales, wizard de generación de facturación. Detalle en `docs/DESIGN_SYSTEM.md` y `docs/PROJECT_ANALYSIS.md` sección 10.10.
+- **Calendarios/listas personalizados, formularios en modal y tema oscuro (18–19 ago 2026):** ✅ Completado — selectores de fecha/mes y listas desplegables con la identidad visual del sistema (reemplazan los popups nativos del navegador), crear/editar registros pequeños como overlay en vez de pantalla propia, toggle de tema oscuro/claro persistente, y colapso de sidebar sin saltos de posición. Detalle en `docs/DESIGN_SYSTEM.md` secciones 10–11 y `docs/PROJECT_ANALYSIS.md` secciones 10.11–10.12.
 
 ## Antes de desplegar a producción
 

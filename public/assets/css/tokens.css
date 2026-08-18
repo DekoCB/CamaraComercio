@@ -115,11 +115,15 @@
     --topbar-height: 64px;
 }
 
-/* Dark mode tokens — prepared, not activated by default (see DESIGN_SYSTEM.md §1).
-   Deliberately NOT a naive inversion: elevated surfaces are lighter than the
-   base background, matching how depth reads in a dark UI. */
+/* Dark mode tokens — activated either by the topbar toggle (explicit
+   [data-theme="dark"|"light"] on <html>, persisted in localStorage as
+   "cc_theme", applied pre-paint by the inline script in <head> to avoid a
+   flash of the wrong theme — see layouts/app.blade.php and guest.blade.php)
+   or, absent an explicit choice, by the OS preference. Deliberately NOT a
+   naive inversion: elevated surfaces are lighter than the base background,
+   matching how depth reads in a dark UI. Keep both blocks below in sync. */
 @media (prefers-color-scheme: dark) {
-    :root.theme-auto-dark-ready {
+    :root:not([data-theme="light"]) {
         --color-navy: #16375F;
         --color-navy-hover: #1E4A7A;
         --color-blue: #3B82F6;
@@ -145,6 +149,33 @@
         --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
         --shadow-md: 0 16px 32px -12px rgba(0, 0, 0, 0.55);
     }
+}
+
+:root[data-theme="dark"] {
+    --color-navy: #16375F;
+    --color-navy-hover: #1E4A7A;
+    --color-blue: #3B82F6;
+    --color-blue-subtle: rgba(37, 99, 235, 0.16);
+    --color-teal: #2DD4BF;
+    --color-teal-subtle: rgba(20, 184, 166, 0.14);
+
+    --color-success-subtle: rgba(22, 163, 74, 0.16);
+    --color-warning-subtle: rgba(245, 158, 11, 0.16);
+    --color-danger-subtle: rgba(220, 38, 38, 0.18);
+    --color-info-subtle: rgba(2, 132, 199, 0.18);
+
+    --color-bg: #0B1120;
+    --color-surface: #111827;
+    --color-surface-elevated: #1E293B;
+    --color-border: #334155;
+    --color-border-strong: #475569;
+
+    --color-text: #F8FAFC;
+    --color-text-secondary: #94A3B8;
+    --color-text-tertiary: #64748B;
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 16px 32px -12px rgba(0, 0, 0, 0.55);
 }
 
 @media (prefers-reduced-motion: reduce) {

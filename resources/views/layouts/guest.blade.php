@@ -4,6 +4,19 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Sistema de Facturación') · Cámara de Comercio</title>
+    <script>
+        // Keeps the guest screens (login, etc.) in whatever theme the user
+        // last chose inside the app — applied before first paint, same as
+        // layouts/app.blade.php.
+        (function () {
+            try {
+                var theme = localStorage.getItem('cc_theme');
+                if (theme === 'dark' || theme === 'light') {
+                    document.documentElement.setAttribute('data-theme', theme);
+                }
+            } catch (e) {}
+        })();
+    </script>
     <link rel="stylesheet" href="{{ asset('assets/vendor/bootstrap/css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/tokens.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/app.css') }}">
