@@ -210,3 +210,36 @@ Dos mecanismos, ambos derivados de los mismos tokens (nada hardcodeado aparte, a
 - **`scrollbar-color` (Firefox) y `::-webkit-scrollbar-*` (Chromium/WebKit)** en `app.css`, aplicados con el selector universal `*` para cubrir tanto el scroll de la página como el de cualquier contenedor con overflow propio (`.table-wrap`, `.sidebar`, `.modal-form-body`, popups de select/fecha) con una sola regla, usando `var(--color-border-strong)`/`var(--color-bg)` — se re-teman solos. El sidebar, que es navy sin importar el tema, tiene su propio override con blanco translúcido en vez de los tokens de superficie clara, para que combine con los demás bordes/fondos translúcidos que ya usa esa columna.
 
 Suite completa (71/71) sin cambios. Verificado con Playwright leyendo `getComputedStyle(html).colorScheme` y `.scrollbarColor` antes/después de alternar el tema — ambos cambian de valores claros a oscuros correctamente.
+
+## 14. Adenda — 2026-08-19 (4): calendarios recortados en modal, botón "Ver reporte" atascado, sidebar centrado
+
+Cuatro pedidos del usuario, el primero de los cuatro con una causa bastante más profunda de lo que parecía a simple vista.
+
+### 14.1 Calendarios/listas recortados dentro del modal de formulario
+
+En el paso 3 del wizard de facturación (dentro del modal), el calendario de "Fecha de emisión" se veía cortado a la mitad. Causa raíz, en dos capas:
+
+1. `.select-popup`/`.datepicker-popup` se posicionaban con `position: absolute` respecto a su propio `.select-field`/`.datepicker-field`, que vive dentro de `.modal-form-body` — un contenedor con `overflow-y: auto` para que formularios largos puedan hacer scroll. Cualquier descendiente que intente pintar más allá del área visible de un `overflow: auto` se recorta, calendario incluido.
+2. El arreglo obvio — cambiar a `position: fixed` calculado por JS para "escapar" del contenedor — **no alcanza por sí solo**: `.modal-panel` usa `transform` para animar la apertura/cierre del modal, y un ancestro con `transform` se convierte en el *containing block* de sus descendientes `position: fixed` (no solo de los `position: absolute`, un detalle poco conocido de la especificación). O sea que un popup `fixed` seguía quedando atrapado dentro del modal.
+
+La solución real: los popups ahora se "portean" (portal) — se mueven a ser hijos directos de `<body>` en el momento en que se construyen (`portalPopup()` en `app.js`), y se posicionan con `top`/`left`/`right`/`bottom` en línea calculados desde `getBoundingClientRect()` del trigger (`positionFixedPopup()`). El campo nativo (`<select>`/`<input type="date">`) que de verdad viaja en el formulario **no se mueve** — solo el popup visual. Como el popup deja de ser descendiente del `.select-field`/`.datepicker-field` en el DOM, el estado abierto/cerrado también se mueve del contenedor al propio popup (`.select-popup.is-open` en vez de `.select-field.is-open .select-popup`).
+
+Efectos secundarios que hubo que manejar:
+- **Fugas de DOM:** como el modal reemplaza `formModalBody.innerHTML` en cada apertura, un popup ya porteado a `<body>` no se destruye solo — quedaría huérfano. `cleanupOrphanedPopups()` barre cualquier popup porteado cuyo campo dueño (`popup.__ownerField`) ya no esté en el documento, llamada justo después de reemplazar el contenido del modal.
+- **Clic afuera para cerrar:** `onDocClick` comprobaba `field.contains(event.target)`; como el popup ya no es descendiente del campo, un clic dentro del propio popup se interpretaba como "clic afuera" y lo cerraba de inmediato. Se agregó `|| popup.contains(event.target)`.
+- **Cierre al hacer scroll:** un popup `position: fixed` ya no se mueve junto con su trigger si un ancestro con scroll propio se desplaza (p. ej. el propio `.modal-form-body`). En vez de reposicionar en cada evento de scroll, se cierra el popup — patrón común en la mayoría de selects/date pickers de producción.
+- **El grid de días cambia de alto entre meses** (4 a 6 semanas visibles): se volvió a calcular la posición tras cada clic en "mes anterior/siguiente", no solo al abrir.
+
+### 14.2 Botón "Ver reporte" atascado tras volver con el botón Atrás del navegador
+
+El de "Lo cobrado en el mes" es un `<form method="GET">`; nuestro manejador genérico de estado de carga marca el botón `disabled` + `.is-loading` en cada submit. El navegador puede capturar el DOM exactamente en ese instante — botón recién deshabilitado — dentro de su *back-forward cache* (bfcache) al navegar hacia el reporte; volver con el botón Atrás restaura esa foto congelada tal cual, botón incluido, en vez de re-ejecutar el JavaScript de la página desde cero (que es por qué entrar de nuevo al módulo normalmente sí funciona). Corregido con el patrón estándar para esto: un listener de `pageshow` que revisa `event.persisted` (la señal de que la página vino del bfcache, no de una carga real) y limpia el estado `is-loading`/`disabled` de cualquier botón que lo tenga. Es un fix genérico — cubre "Ver reporte" de cobranza y, de paso, cualquier otro formulario GET/POST del sistema que pudiera quedar en el mismo estado, no solo Reportes.
+
+El botón de "Deuda pendiente" es un `<a>` simple (no un formulario), así que nunca pasa por este mecanismo de deshabilitado en primer lugar — se verificó por separado con Playwright que no queda en ningún estado distinto tras volver atrás.
+
+### 14.3 Módulos del sidebar centrados verticalmente
+
+`.sidebar-nav` ya tenía `flex: 1` (ocupa todo el espacio vertical disponible entre la marca y el botón de colapsar), pero sin `justify-content` los enlaces quedaban apilados arriba, dejando un vacío grande abajo — más notorio con el sidebar colapsado, donde solo hay 7 íconos angostos. Un `justify-content: center` en `.sidebar-nav` los centra dentro de ese espacio, en expandido y en colapsado por igual.
+
+### 14.4 Verificación
+
+Suite completa (71/71) sin cambios. Playwright: calendario dentro del modal confirmado con las 42 celdas del grid renderizadas y la caja completa dentro del viewport (antes se cortaba); popup de select también porteado y funcional, valor sincronizado al `<select>` nativo; sin acumulación de popups huérfanos tras varios ciclos de abrir/cerrar el modal; estado `disabled` de un botón simulando una restauración de bfcache (`pageshow` con `persisted: true`) confirmado que se limpia correctamente; captura de pantalla del sidebar centrado en ambos estados (expandido/colapsado).

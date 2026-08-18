@@ -190,6 +190,26 @@
         }, 0);
     });
 
+    // A GET-form submit (e.g. "Ver reporte") navigates away right as this
+    // page's submit handler is mid-flight setting the button to its
+    // loading/disabled state — the browser can capture that exact frozen
+    // DOM into its back-forward cache. Navigating back with the browser's
+    // own back button then restores that cached snapshot as-is, button
+    // still stuck disabled, instead of re-running this script fresh (which
+    // is why a normal reload/re-navigation into the page looks fine).
+    // `pageshow` with `event.persisted` is the standard signal that a page
+    // came from bfcache rather than a real load, so this clears every
+    // button's loading state whenever that happens.
+    window.addEventListener('pageshow', function (event) {
+        if (!event.persisted) {
+            return;
+        }
+        Array.prototype.forEach.call(document.querySelectorAll('.btn.is-loading'), function (button) {
+            button.classList.remove('is-loading');
+            button.disabled = false;
+        });
+    });
+
     /* ---------------------------------------------------------------
      * Toasts — reads the flash payload the layout embeds as JSON and
      * renders auto-dismissing notifications instead of a static banner.
@@ -316,15 +336,73 @@
         }
     }
 
-    // A popup positioned left:0 of a narrow trigger sitting near the right
-    // edge of the viewport (e.g. the second date filter in a toolbar) would
-    // render past the edge. That still happens while the popup is closed —
-    // position:absolute geometry counts toward the page's scrollable width
-    // even at opacity:0 — so this must run at build time too, not only when
-    // the popup is actually opened.
-    function updateHorizontalFlip(field, popupWidth) {
-        var rect = field.getBoundingClientRect();
-        field.classList.toggle('opens-left', rect.left + popupWidth > window.innerWidth);
+    // Select/date popups are "portaled" — moved to a direct child of
+    // <body> instead of staying nested inside their trigger's own
+    // .select-field/.datepicker-field — and positioned with inline
+    // top/left/right/bottom computed from the trigger's real viewport
+    // position (positionFixedPopup below). Two reasons plain CSS
+    // (position:absolute relative to the field, or even position:fixed
+    // left nested in place) isn't enough:
+    //   1. A scrolling ancestor (e.g. the form modal's .modal-form-body)
+    //      clips any descendant that renders outside its visible area,
+    //      popup included — this is what cut the datepicker off inside
+    //      the invoice wizard modal.
+    //   2. The modal's own open/close animation puts `transform` on
+    //      .modal-panel, and a transformed ancestor becomes the
+    //      containing block for position:fixed descendants too (not just
+    //      position:absolute) — so even switching to position:fixed
+    //      without actually moving the DOM node would still leave it
+    //      constrained to the modal's box instead of the real viewport.
+    function portalPopup(popup, ownerField) {
+        popup.__ownerField = ownerField;
+        document.body.appendChild(popup);
+    }
+
+    // Because the form modal's body gets replaced wholesale on every open
+    // (openFormModal reassigns formModalBody.innerHTML), a portaled popup
+    // from a previous open — no longer a DOM descendant of formModalBody,
+    // so that reassignment doesn't clean it up — would otherwise leak one
+    // detached element per select/date field on every open/close cycle.
+    function cleanupOrphanedPopups() {
+        Array.prototype.forEach.call(document.querySelectorAll('body > .select-popup, body > .datepicker-popup'), function (popup) {
+            if (!popup.__ownerField || !document.contains(popup.__ownerField)) {
+                popup.remove();
+            }
+        });
+    }
+
+    function positionFixedPopup(trigger, popup, matchTriggerMinWidth) {
+        var rect = trigger.getBoundingClientRect();
+        if (matchTriggerMinWidth) {
+            popup.style.minWidth = rect.width + 'px';
+        }
+        var popupBox = popup.getBoundingClientRect();
+        var popupWidth = Math.max(popupBox.width, rect.width);
+        var popupHeight = Math.min(popup.scrollHeight || popupBox.height || 260, 320);
+
+        if (rect.bottom + popupHeight > window.innerHeight && rect.top > popupHeight) {
+            popup.style.top = 'auto';
+            popup.style.bottom = Math.max(4, window.innerHeight - rect.top + 4) + 'px';
+        } else {
+            popup.style.top = (rect.bottom + 4) + 'px';
+            popup.style.bottom = 'auto';
+        }
+
+        if (rect.left + popupWidth > window.innerWidth) {
+            popup.style.left = 'auto';
+            popup.style.right = Math.max(4, window.innerWidth - rect.right) + 'px';
+        } else {
+            popup.style.left = rect.left + 'px';
+            popup.style.right = 'auto';
+        }
+    }
+
+    function resetPopupPosition(popup) {
+        popup.style.top = '';
+        popup.style.left = '';
+        popup.style.right = '';
+        popup.style.bottom = '';
+        popup.style.minWidth = '';
     }
 
     /* ---------------------------------------------------------------
@@ -393,10 +471,9 @@
         });
 
         field.appendChild(trigger);
-        field.appendChild(popup);
+        portalPopup(popup, field);
         select.parentNode.insertBefore(field, select);
         field.insertBefore(select, trigger);
-        updateHorizontalFlip(field, Math.max(popup.scrollWidth, field.offsetWidth));
 
         var activeIndex = select.selectedIndex >= 0 ? select.selectedIndex : 0;
         var typeaheadBuffer = '';
@@ -428,7 +505,7 @@
         }
 
         function onDocClick(event) {
-            if (!field.contains(event.target)) {
+            if (!field.contains(event.target) && !popup.contains(event.target)) {
                 closePopup();
             }
         }
@@ -465,27 +542,34 @@
             }
         }
 
+        function onAncestorScroll() {
+            closePopup();
+        }
+
         function closePopup() {
-            field.classList.remove('is-open', 'opens-up');
+            field.classList.remove('is-open');
+            popup.classList.remove('is-open');
             trigger.setAttribute('aria-expanded', 'false');
+            resetPopupPosition(popup);
             document.removeEventListener('click', onDocClick);
             document.removeEventListener('keydown', onKeydown);
+            document.removeEventListener('scroll', onAncestorScroll, true);
+            window.removeEventListener('resize', onAncestorScroll);
             unregisterPopup(closePopup);
         }
 
         function openPopup() {
             closeOtherPopups(closePopup);
             field.classList.add('is-open');
+            popup.classList.add('is-open');
             trigger.setAttribute('aria-expanded', 'true');
-
-            var rect = trigger.getBoundingClientRect();
-            var popupHeight = Math.min(popup.scrollHeight || 260, 260);
-            field.classList.toggle('opens-up', rect.bottom + popupHeight > window.innerHeight && rect.top > popupHeight);
-            updateHorizontalFlip(field, Math.max(popup.scrollWidth, field.offsetWidth));
+            positionFixedPopup(trigger, popup, true);
 
             setActive(select.selectedIndex >= 0 ? select.selectedIndex : 0);
             document.addEventListener('click', onDocClick);
             document.addEventListener('keydown', onKeydown);
+            document.addEventListener('scroll', onAncestorScroll, true);
+            window.addEventListener('resize', onAncestorScroll);
             registerPopup(closePopup);
         }
 
@@ -608,10 +692,9 @@
         popup.appendChild(bodyContainer);
 
         field.appendChild(trigger);
-        field.appendChild(popup);
+        portalPopup(popup, field);
         input.parentNode.insertBefore(field, input);
         field.insertBefore(input, trigger);
-        updateHorizontalFlip(field, 272);
 
         var seed = (kind === 'date' ? parseISODate(input.value) : parseISOMonth(input.value)) || new Date();
         var viewDate = new Date(seed.getFullYear(), seed.getMonth(), 1);
@@ -690,14 +773,16 @@
         prevBtn.addEventListener('click', function () {
             viewDate = kind === 'date' ? new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1) : new Date(viewDate.getFullYear() - 1, 0, 1);
             render();
+            positionFixedPopup(trigger, popup, false); // the grid can grow/shrink a row between months
         });
         nextBtn.addEventListener('click', function () {
             viewDate = kind === 'date' ? new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1) : new Date(viewDate.getFullYear() + 1, 0, 1);
             render();
+            positionFixedPopup(trigger, popup, false);
         });
 
         function onDocClick(event) {
-            if (!field.contains(event.target)) {
+            if (!field.contains(event.target) && !popup.contains(event.target)) {
                 closePopup();
             }
         }
@@ -709,11 +794,19 @@
             }
         }
 
+        function onAncestorScroll() {
+            closePopup();
+        }
+
         function closePopup() {
-            field.classList.remove('is-open', 'opens-up');
+            field.classList.remove('is-open');
+            popup.classList.remove('is-open');
             trigger.setAttribute('aria-expanded', 'false');
+            resetPopupPosition(popup);
             document.removeEventListener('click', onDocClick);
             document.removeEventListener('keydown', onKeydown);
+            document.removeEventListener('scroll', onAncestorScroll, true);
+            window.removeEventListener('resize', onAncestorScroll);
             unregisterPopup(closePopup);
         }
 
@@ -723,12 +816,13 @@
             viewDate = current ? new Date(current.getFullYear(), current.getMonth(), 1) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
             render();
             field.classList.add('is-open');
+            popup.classList.add('is-open');
             trigger.setAttribute('aria-expanded', 'true');
-            var rect = trigger.getBoundingClientRect();
-            field.classList.toggle('opens-up', rect.bottom + 300 > window.innerHeight && rect.top > 300);
-            updateHorizontalFlip(field, 272);
+            positionFixedPopup(trigger, popup, false);
             document.addEventListener('click', onDocClick);
             document.addEventListener('keydown', onKeydown);
+            document.addEventListener('scroll', onAncestorScroll, true);
+            window.addEventListener('resize', onAncestorScroll);
             registerPopup(closePopup);
         }
 
@@ -986,6 +1080,7 @@
         formModalLastFocused = document.activeElement;
         formModalTitle.textContent = title || '';
         formModalBody.innerHTML = '<div class="modal-form-loading"><span class="spinner spinner-lg"></span></div>';
+        cleanupOrphanedPopups(); // now that the previous content is actually detached, sweep up its portaled popups
         formModalBackdrop.classList.add('is-open');
         formModalDialog.classList.add('is-open');
         document.body.style.overflow = 'hidden';

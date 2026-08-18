@@ -71,6 +71,15 @@ Mejora de UX sobre EP-08, sin historias de usuario nuevas — ver `docs/PROJECT_
 
 Mejora de UX sobre EP-08 — ver `docs/PROJECT_ANALYSIS.md` sección 10.16 y `docs/DESIGN_SYSTEM.md` sección 13. La barra de scroll del navegador (de la página y de cualquier contenedor con scroll propio) ahora usa colores oscuros en tema oscuro y claros en tema claro, en vez de quedarse siempre con la paleta clara por defecto del sistema operativo. 71/71 tests sin cambios.
 
+## Criterios de aceptación — Calendarios en modal, botón de reporte, sidebar centrado (2026-08-19)
+
+Mejora de UX sobre EP-08 — ver `docs/PROJECT_ANALYSIS.md` sección 10.18 y `docs/DESIGN_SYSTEM.md` sección 14:
+
+- El calendario de fecha en el wizard de facturación (dentro del modal) ya no se muestra recortado; se ve completo sin importar el paso.
+- El botón "Ver reporte" de "Lo cobrado en el mes" ya no queda deshabilitado al volver con el botón Atrás del navegador después de ver un reporte.
+- Los íconos del menú lateral se ven centrados verticalmente en vez de apilados arriba con espacio vacío debajo.
+- 71/71 tests sin cambios; verificado con Playwright.
+
 ## Ejemplo de criterio de aceptación (HU-09)
 
 ```

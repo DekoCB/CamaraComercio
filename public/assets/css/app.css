@@ -205,6 +205,7 @@ textarea:focus-visible,
 .sidebar-nav {
     display: flex;
     flex-direction: column;
+    justify-content: center;
     padding: var(--space-4) var(--space-3);
     gap: var(--space-1);
     flex: 1;
@@ -795,10 +796,18 @@ html.sidebar-collapsed .app-shell .sidebar-nav .nav-link {
 }
 
 .select-popup {
-    position: absolute;
-    top: calc(100% + var(--space-1));
-    left: 0;
-    min-width: 100%;
+    /* position: fixed, positioned via JS (positionFixedPopup() in app.js)
+       rather than CSS top/left relative to .select-field — this is what
+       lets the popup escape a scrolling ancestor (e.g. the form modal's
+       .modal-form-body) instead of being clipped by its overflow. top/
+       left/right/bottom below are placeholder-only; JS always overrides
+       them at open time. Kept off-screen by default so a closed popup
+       (still opacity:0, not display:none, so its own open/close
+       transition can animate) never has stray fixed-position geometry
+       that could contribute to the viewport's own scrollable area. */
+    position: fixed;
+    top: -9999px;
+    left: -9999px;
     max-height: 260px;
     overflow-y: auto;
     background: var(--color-surface);
@@ -808,25 +817,14 @@ html.sidebar-collapsed .app-shell .sidebar-nav .nav-link {
     padding: var(--space-1);
     margin: 0;
     list-style: none;
-    z-index: 1500;
+    z-index: 1950;
     opacity: 0;
     transform: translateY(-4px);
     pointer-events: none;
     transition: opacity var(--transition-fast), transform var(--transition-fast);
 }
 
-.select-field.opens-up .select-popup {
-    top: auto;
-    bottom: calc(100% + var(--space-1));
-    transform: translateY(4px);
-}
-
-.select-field.opens-left .select-popup {
-    left: auto;
-    right: 0;
-}
-
-.select-field.is-open .select-popup {
+.select-popup.is-open {
     opacity: 1;
     transform: translateY(0);
     pointer-events: auto;
@@ -918,34 +916,27 @@ html.sidebar-collapsed .app-shell .sidebar-nav .nav-link {
 }
 
 .datepicker-popup {
-    position: absolute;
-    top: calc(100% + var(--space-1));
-    left: 0;
+    /* position: fixed, positioned via JS — see the comment on .select-popup
+       above, same reasoning (and the same portal-to-<body> handling in
+       app.js, since a transformed ancestor like .modal-panel would
+       otherwise still hijack position:fixed's containing block). */
+    position: fixed;
+    top: -9999px;
+    left: -9999px;
     width: 272px;
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-md);
     padding: var(--space-3);
-    z-index: 1500;
+    z-index: 1950;
     opacity: 0;
     transform: translateY(-4px);
     pointer-events: none;
     transition: opacity var(--transition-fast), transform var(--transition-fast);
 }
 
-.datepicker-field.opens-up .datepicker-popup {
-    top: auto;
-    bottom: calc(100% + var(--space-1));
-    transform: translateY(4px);
-}
-
-.datepicker-field.opens-left .datepicker-popup {
-    left: auto;
-    right: 0;
-}
-
-.datepicker-field.is-open .datepicker-popup {
+.datepicker-popup.is-open {
     opacity: 1;
     transform: translateY(0);
     pointer-events: auto;
