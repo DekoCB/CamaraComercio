@@ -67,6 +67,10 @@ Mejora de UX sobre EP-08, sin historias de usuario nuevas — ver `docs/PROJECT_
 - El gráfico de cobranza mensual del dashboard ya no muestra líneas de cuadrícula blancas en modo oscuro.
 - 71/71 tests sin cambios; verificado con Playwright (muestreo de frames para el sidebar, flujo completo del wizard en el modal, formularios de confirmación nativos sin regresión).
 
+## Criterio de aceptación — Barra de scroll según el tema (2026-08-19)
+
+Mejora de UX sobre EP-08 — ver `docs/PROJECT_ANALYSIS.md` sección 10.16 y `docs/DESIGN_SYSTEM.md` sección 13. La barra de scroll del navegador (de la página y de cualquier contenedor con scroll propio) ahora usa colores oscuros en tema oscuro y claros en tema claro, en vez de quedarse siempre con la paleta clara por defecto del sistema operativo. 71/71 tests sin cambios.
+
 ## Ejemplo de criterio de aceptación (HU-09)
 
 ```

@@ -231,6 +231,10 @@ A pedido del usuario. Detalle completo en `docs/DESIGN_SYSTEM.md` sección 12:
 - **Gráfico sin líneas blancas:** la cuadrícula del eje Y del gráfico de cobranza mensual usaba un gris casi blanco fijo, pensado solo para modo claro. Se quitó la cuadrícula por completo (igual que ya tenía el eje X) en vez de detectar el tema en JS — más simple y funciona en ambos modos.
 - **Verificación:** 71/71 tests sin cambios; Playwright confirmó cero parpadeo del sidebar (muestreo de ancho por frame), el flujo completo del wizard dentro del modal (los 4 pasos + confirmación + envío + toast), el diálogo de confirmación correctamente por encima del modal tras el fix de z-index, y que los formularios de confirmación nativos preexistentes (desactivar módulo) no sufrieron regresión.
 
-### 10.15 Próximo paso
+### 10.16 Barra de scroll también sigue el tema — 2026-08-19
+
+A pedido del usuario. Detalle completo en `docs/DESIGN_SYSTEM.md` sección 13. La barra de scroll del navegador se quedaba con los colores por defecto del sistema, sin importar el tema activo en la app. Corregido con `color-scheme: light|dark` en los mismos tres bloques de `tokens.css` que ya definen los tokens de color (señal estándar para que el navegador tematice su propia UI nativa), más `scrollbar-color`/`::-webkit-scrollbar-*` en `app.css` usando `var(--color-*)` — se re-teman solos, sin bloque de modo oscuro aparte. Aplicado con el selector universal para cubrir tanto el scroll de la página como el de cualquier contenedor con overflow propio en una sola regla; el sidebar (navy sin importar el tema) tiene su propio override translúcido. 71/71 tests sin cambios.
+
+### 10.17 Próximo paso
 
 Con los cuatro sprints funcionales, el rediseño UI/UX y las mejoras de UX de formularios/calendarios/tema/sidebar completos, lo pendiente es: (1) definir el proveedor SMTP real para producción (`MAIL_MAILER=log` hoy), (2) reemplazar `x-brand-mark` por el logo oficial cuando exista, y (3) cualquier extensión fuera del alcance original del MVP (integración contable, comprobantes electrónicos, pasarelas de pago, portal de asociados), que requeriría una decisión de negocio explícita antes de comenzar.

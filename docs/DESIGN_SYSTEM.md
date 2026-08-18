@@ -199,3 +199,14 @@ Las líneas horizontales del eje Y (`grid: { color: '#F1F5F9' }`, un gris casi b
 ### 12.4 Verificación
 
 Suite completa (71/71) sin cambios. Playwright: cero parpadeo del sidebar confirmado por muestreo de frames; wizard completo (los 4 pasos, confirmación, envío, toast) verificado dentro del modal; diálogo de confirmación verificado visualmente por encima del modal de formulario tras el fix de z-index; formularios de confirmación nativos preexistentes (desactivar módulo) verificados sin regresión; gráfico sin líneas blancas confirmado en captura de pantalla en modo oscuro.
+
+## 13. Adenda — 2026-08-19 (3): el scroll de la página también seguía el tema
+
+A pedido del usuario: la barra de scroll (del navegador, no del contenedor) se quedaba con los colores por defecto del sistema operativo/navegador — normalmente clara — sin importar el tema activo en la app.
+
+Dos mecanismos, ambos derivados de los mismos tokens (nada hardcodeado aparte, así que se re-tematizan automáticamente junto con el resto de la UI, sin bloque `[data-theme="dark"]` propio):
+
+- **`color-scheme: light` / `dark`** en `tokens.css`, en los mismos tres bloques que ya definen los tokens de color (`:root`, `@media (prefers-color-scheme: dark) :root:not([data-theme="light"])`, `:root[data-theme="dark"]`). Es la señal estándar del navegador para que su UI nativa (barras de scroll, partes no estilizadas de controles de formulario) elija una paleta clara u oscura apropiada — el único mecanismo que afecta la barra de scroll en Firefox sin `scrollbar-color`.
+- **`scrollbar-color` (Firefox) y `::-webkit-scrollbar-*` (Chromium/WebKit)** en `app.css`, aplicados con el selector universal `*` para cubrir tanto el scroll de la página como el de cualquier contenedor con overflow propio (`.table-wrap`, `.sidebar`, `.modal-form-body`, popups de select/fecha) con una sola regla, usando `var(--color-border-strong)`/`var(--color-bg)` — se re-teman solos. El sidebar, que es navy sin importar el tema, tiene su propio override con blanco translúcido en vez de los tokens de superficie clara, para que combine con los demás bordes/fondos translúcidos que ya usa esa columna.
+
+Suite completa (71/71) sin cambios. Verificado con Playwright leyendo `getComputedStyle(html).colorScheme` y `.scrollbarColor` antes/después de alternar el tema — ambos cambian de valores claros a oscuros correctamente.

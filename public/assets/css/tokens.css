@@ -41,6 +41,13 @@
 }
 
 :root {
+    /* Tells the browser to render its own native chrome (scrollbars, form
+       control internals not otherwise styled, spell-check UI) using a
+       light-appropriate palette — the other half of "matches the theme"
+       beyond just our own custom scrollbar rules in app.css, and the only
+       thing that affects scrollbars in Firefox without scrollbar-color. */
+    color-scheme: light;
+
     /* ---- Color — light (default) ---- */
     --color-navy: #0F2747;
     --color-navy-hover: #16375F;
@@ -124,6 +131,7 @@
    matching how depth reads in a dark UI. Keep both blocks below in sync. */
 @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
+        color-scheme: dark;
         --color-navy: #16375F;
         --color-navy-hover: #1E4A7A;
         --color-blue: #3B82F6;
@@ -152,6 +160,7 @@
 }
 
 :root[data-theme="dark"] {
+    color-scheme: dark;
     --color-navy: #16375F;
     --color-navy-hover: #1E4A7A;
     --color-blue: #3B82F6;
