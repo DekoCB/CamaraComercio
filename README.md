@@ -2,14 +2,14 @@
 
 Sistema web para automatizar la facturación y cobranza mensual de los asociados de la Cámara de Comercio, reemplazando el proceso manual en Excel. Documentación funcional completa en [`docs/PROJECT_ANALYSIS.md`](docs/PROJECT_ANALYSIS.md), backlog en [`docs/BACKLOG.md`](docs/BACKLOG.md).
 
-**Estado actual:** Sprints 1 y 2 completados sobre **Laravel 12 + MySQL** — acceso y seguridad, administración de módulos/usuarios/roles, gestión de asociados, facturación mensual masiva y registro de pagos totales/parciales. (El proyecto arrancó sobre un micro-framework PHP propio y fue migrado a Laravel a pedido explícito; ver `docs/PROJECT_ANALYSIS.md` sección 10 para el detalle del pivote.)
+**Estado actual:** Sprints 1, 2 y 3 completados sobre **Laravel 12 + MySQL** — acceso y seguridad, administración de módulos/usuarios/roles, gestión de asociados, facturación mensual masiva, pagos totales/parciales, cartera/morosidad/estado de cuenta, y reportes exportables a Excel/PDF. (El proyecto arrancó sobre un micro-framework PHP propio y fue migrado a Laravel a pedido explícito; ver `docs/PROJECT_ANALYSIS.md` sección 10 para el detalle del pivote.)
 
 ## Stack
 
 - **Laravel 12** (PHP 8.2) — Eloquent ORM, Blade, guard de autenticación y broker de recuperación de contraseña nativos
 - **MySQL / MariaDB**
 - Bootstrap 5 + Bootstrap Icons (servidos localmente, sin CDN) + JavaScript vanilla puntual — sin SPA
-- `phpoffice/phpspreadsheet` (Excel) y `dompdf/dompdf` (PDF), instalados para Sprint 3/4 (reportes, exportación, importación)
+- `phpoffice/phpspreadsheet` (Excel) y `dompdf/dompdf` (PDF) — exportación de reportes (Sprint 3); importación desde Excel queda para Sprint 4
 - PHPUnit (`php artisan test`) — Feature tests sobre SQLite en memoria
 
 Justificación de cada decisión en [`docs/PROJECT_ANALYSIS.md`](docs/PROJECT_ANALYSIS.md) y [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
@@ -64,8 +64,8 @@ Ver el modelo de datos completo en [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md).
 php artisan test
 ```
 
-- `tests/Feature/` — pruebas de extremo a extremo por HTTP (login, RBAC con 403 real, CRUD de asociados con validación, recuperación de contraseña de un solo uso, administración de usuarios/roles/módulos), usando `RefreshDatabase` sobre **SQLite en memoria** (nunca toca la base de datos MySQL de desarrollo).
-- `tests/Unit/` — reservado para lógica de dominio pura que no dependa del framework (p. ej. la máquina de estados de facturas en Sprint 2, si se extrae a una clase de servicio).
+- `tests/Feature/` — pruebas de extremo a extremo por HTTP (login, RBAC con 403 real, CRUD de asociados con validación, recuperación de contraseña de un solo uso, administración de usuarios/roles/módulos, generación de facturas, pagos, cartera y reportes con exportación), usando `RefreshDatabase` sobre **SQLite en memoria** (nunca toca la base de datos MySQL de desarrollo). 59 tests en total.
+- `tests/Unit/` — reservado para lógica de dominio pura que no dependa del framework; hasta ahora toda la lógica de negocio ha cabido en Form Requests, accessors/scopes de Eloquent o clases de `app/Services/`, cubiertas por Feature tests (ver `docs/ARCHITECTURE.md`).
 
 Nota: `phpunit.xml` sobreescribe `APP_URL` a un valor sin subcarpeta solo para el entorno de pruebas — ver el comentario en ese archivo y `docs/PROJECT_ANALYSIS.md` sección 10.4 si hace falta tocarlo.
 
@@ -75,10 +75,13 @@ Nota: `phpunit.xml` sobreescribe `APP_URL` a un valor sin subcarpeta solo para e
 app/
   Http/Controllers/    Controladores (incluye Admin/ y Auth/)
   Http/Requests/        Form Requests (validación + autorización por endpoint)
-  Models/                Modelos Eloquent (User, Role, Permission, Module, Associate, AuditLog...)
+  Models/                Modelos Eloquent (User, Role, Permission, Module, Associate, Invoice, Payment, AuditLog...)
+  Services/              Casos de uso con lógica no trivial: InvoiceGenerationService, PaymentService,
+                          PortfolioService, ReportService, ExportService — ver docs/ARCHITECTURE.md
   Providers/             AppServiceProvider: Gate::before (RBAC) y directiva Blade @module
 routes/web.php          Todas las rutas de la aplicación
-resources/views/        Plantillas Blade (layouts, auth, dashboard, associates, admin)
+resources/views/        Plantillas Blade (layouts, auth, dashboard, associates, invoices, payments,
+                          portfolio, reports, admin)
 database/migrations/    Esquema versionado
 database/seeders/       Roles/permisos/módulos/usuarios/asociados de desarrollo
 database/factories/     Factories para tests
@@ -100,5 +103,5 @@ Ver el plan de sprints completo en [`docs/PROJECT_ANALYSIS.md`](docs/PROJECT_ANA
 
 - **Sprint 1 (17–23 ago 2026):** ✅ Completado (reconstruido sobre Laravel el 17 ago) — acceso/seguridad, administración (módulos/usuarios/roles), asociados.
 - **Sprint 2 (24–30 ago 2026):** ✅ Completado (17 ago, adelantado) — facturación mensual masiva, consulta de facturas, pagos totales/parciales, máquina de estados.
-- **Sprint 3 (31 ago–6 sep 2026):** Cartera, morosidad, estado de cuenta, reportes y exportación.
+- **Sprint 3 (31 ago–6 sep 2026):** ✅ Completado (17 ago, adelantado) — cartera, a quién falta cobrar, estado de cuenta, reportes de cobranza/deuda y exportación a Excel/PDF.
 - **Sprint 4 (7–13 sep 2026):** UX/responsive, importación desde Excel, QA integral, cierre.

@@ -57,9 +57,25 @@
                 </a>
             @endmodule
             @module('payments')
-                <a href="{{ route('payments.index') }}" class="btn btn-outline-secondary btn-sm">
-                    <i class="bi bi-cash-coin"></i> Ver pagos
-                </a>
+                @can('payments.register')
+                    <a href="{{ route('payments.index') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-cash-coin"></i> Ver pagos
+                    </a>
+                @endcan
+            @endmodule
+            @module('portfolio')
+                @can('portfolio.view')
+                    <a href="{{ route('portfolio.debtors') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-exclamation-circle"></i> A quién falta cobrar
+                    </a>
+                @endcan
+            @endmodule
+            @module('reports')
+                @can('reports.view')
+                    <a href="{{ route('reports.index') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-bar-chart"></i> Reportes
+                    </a>
+                @endcan
             @endmodule
         </div>
     </div>

@@ -41,14 +41,18 @@
                 @endcan
             @endmodule
             @module('portfolio')
-                <a href="{{ url('portfolio') }}" class="nav-link {{ request()->routeIs('portfolio.*') ? 'active' : '' }}">
-                    <i class="bi bi-graph-up"></i><span>Cartera</span>
-                </a>
+                @can('portfolio.view')
+                    <a href="{{ route('portfolio.index') }}" class="nav-link {{ request()->routeIs('portfolio.*') || request()->routeIs('associates.statement') ? 'active' : '' }}">
+                        <i class="bi bi-graph-up"></i><span>Cartera</span>
+                    </a>
+                @endcan
             @endmodule
             @module('reports')
-                <a href="{{ url('reports') }}" class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}">
-                    <i class="bi bi-bar-chart"></i><span>Reportes</span>
-                </a>
+                @can('reports.view')
+                    <a href="{{ route('reports.index') }}" class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}">
+                        <i class="bi bi-bar-chart"></i><span>Reportes</span>
+                    </a>
+                @endcan
             @endmodule
             @module('administration')
                 <a href="{{ route('admin.users.index') }}" class="nav-link {{ request()->routeIs('admin.*') ? 'active' : '' }}">

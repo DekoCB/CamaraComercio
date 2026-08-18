@@ -10,6 +10,8 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PortfolioController;
+use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -69,6 +71,26 @@ Route::middleware('auth')->group(function () {
     Route::middleware('can:payments.register')->group(function () {
         Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
         Route::post('invoices/{invoice}/payments', [PaymentController::class, 'store'])->name('payments.store');
+    });
+
+    // Portfolio / cartera (EP-06).
+    Route::middleware('can:portfolio.view')->group(function () {
+        Route::get('portfolio', [PortfolioController::class, 'index'])->name('portfolio.index');
+        Route::get('portfolio/debtors', [PortfolioController::class, 'debtors'])->name('portfolio.debtors');
+        Route::get('associates/{associate}/statement', [PortfolioController::class, 'statement'])->name('associates.statement');
+    });
+
+    // Reports / reportes (EP-07). Exporting requires reports.export in
+    // addition to reports.view (checked separately so a role can see
+    // reports on screen without being able to extract the data).
+    Route::middleware('can:reports.view')->group(function () {
+        Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('reports/collections', [ReportController::class, 'collections'])->name('reports.collections');
+        Route::get('reports/debt', [ReportController::class, 'debt'])->name('reports.debt');
+    });
+    Route::middleware('can:reports.export')->group(function () {
+        Route::get('reports/collections/export/{format}', [ReportController::class, 'exportCollections'])->name('reports.collections.export');
+        Route::get('reports/debt/export/{format}', [ReportController::class, 'exportDebt'])->name('reports.debt.export');
     });
 
     // Administration (EP-02) — each sub-area gated by its own permission,

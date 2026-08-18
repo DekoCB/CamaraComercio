@@ -46,7 +46,7 @@ class AdminManagementTest extends TestCase
     public function test_deactivating_a_module_removes_it_from_the_sidebar(): void
     {
         $module = Module::factory()->create(['code' => 'portfolio', 'is_active' => true]);
-        $admin = $this->userWithPermissions(['admin.modules', 'admin.users'], ['portfolio']);
+        $admin = $this->userWithPermissions(['admin.modules', 'admin.users', 'portfolio.view'], ['portfolio']);
 
         // Sanity check: the module shows in the sidebar while active.
         $this->actingAs($admin)->get('/dashboard')->assertSee('Cartera');

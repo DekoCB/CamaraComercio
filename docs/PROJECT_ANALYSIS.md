@@ -166,6 +166,16 @@ EP-04 (facturación mensual masiva + consulta) y EP-05 (pagos totales/parciales)
 - 17 pruebas Feature nuevas (`tests/Feature/InvoiceGenerationTest.php`, `tests/Feature/PaymentTest.php`), suite completa en 46/46 verde.
 - Verificado en vivo contra Apache+MySQL: generación masiva para 5 asociados de desarrollo, pago parcial con recálculo de saldo, rechazo de sobrepago, y una factura vencida mostrando el badge `VENCIDA` correctamente aunque su columna `status` almacenada sea `PARCIAL`.
 
-### 10.7 Próximo paso
+### 10.7 Sprint 3 — completado el mismo día (17 ago 2026)
 
-Sprint 3 (31 ago–6 sep 2026): EP-06 (cartera/morosidad/estado de cuenta) y EP-07 (reportes + exportación a Excel/PDF vía `phpoffice/phpspreadsheet` y `dompdf/dompdf`, ya instalados).
+EP-06 (cartera/morosidad/estado de cuenta) y EP-07 (reportes + exportación) se implementaron a continuación de Sprint 2, con confirmación previa del usuario para seguir en modo autónomo:
+
+- `App\Services\PortfolioService`: `debtSummary()` (HU-10, todos los asociados con sus totales), `debtors()` (HU-11, solo quienes deben) y `statement()` (HU-12, hoja de vida de un asociado). El filtro de `debtors()` originalmente usaba `havingRaw()` sobre los alias de `withSum()` — funcionaba en MySQL pero rompía en el SQLite de los tests ("HAVING clause on a non-aggregate query", porque SQLite exige que un HAVING sin GROUP BY solo aparezca junto a una función agregada real en el nivel superior de la consulta, cosa que MySQL no exige). Se resolvió reemplazándolo por `whereHas('invoices', fn ($q) => $q->where('status', '!=', 'PAGADA'))`, que además es más correcto: por el propio invariante de la máquina de estados (`PAGADA` solo cuando `paid_total >= amount`), "tiene una factura que no está `PAGADA`" es exactamente equivalente a "debe algo", sin necesitar comparar sumas en absoluto.
+- `App\Services\ReportService`: `collections()` (HU-13) y `pendingDebt()` (HU-14). La distribución de deuda por estado (`PENDIENTE`/`PARCIAL`/`VENCIDA`) se calcula con SQL agregado (`GROUP BY`) reimplementando la misma regla que `Invoice::effectiveStatus()` — "hoy" se pasa como parámetro ligado (`?`) en vez de `CURDATE()` (función SQL específica de MySQL) para que la consulta funcione igual contra SQLite en los tests.
+- `App\Services\ExportService` (HU-15): un único servicio para exportar a Excel (`phpoffice/phpspreadsheet`, con bloque de título/fecha de generación/período y fila de totales) y a PDF (`dompdf/dompdf`, renderizando una vista Blade dedicada por reporte). Se implementó para los dos reportes de esta épica; extenderlo a cartera/morosidad queda pendiente de que se pida explícitamente. La exportación exige el permiso `reports.export`, separado de `reports.view` — un rol puede ver un reporte en pantalla sin poder extraer el archivo.
+- 13 pruebas Feature nuevas (`tests/Feature/PortfolioTest.php`, `tests/Feature/ReportTest.php`), suite completa en 59/59 verde.
+- Verificado en vivo contra Apache+MySQL: cartera y "a quién falta cobrar" con datos reales, estado de cuenta de un asociado, reporte de cobranza distinguiendo devengo vs. caja para el mes, reporte de deuda con distribución `VENCIDA`, y los cuatro archivos exportados (Excel/PDF × cobranza/deuda) — el `.xlsx` se releyó con PhpSpreadsheet para confirmar su contenido y el `.pdf` se verificó con la cabecera `%PDF-1.7`.
+
+### 10.8 Próximo paso
+
+Sprint 4 (7–13 sep 2026): EP-08 (pantalla principal, información ordenada, búsqueda/filtros y mensajes de confirmación — ya tienen una base sólida desde Sprint 1, falta pulido final), importación de información histórica desde Excel, pruebas integrales (QA), endurecimiento de seguridad y preparación para producción.
