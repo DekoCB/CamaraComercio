@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AssociateController;
+use App\Http\Controllers\AssociateImportController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
@@ -24,13 +25,19 @@ Route::get('/', function () {
 // -------------------------------------------------------------------
 Route::middleware('guest')->group(function () {
     Route::get('login', [AuthenticatedSessionController::class, 'create'])->name('login');
-    Route::post('login', [AuthenticatedSessionController::class, 'store']);
-
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])->name('password.request');
-    Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
-
     Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])->name('password.reset');
-    Route::post('reset-password', [NewPasswordController::class, 'store'])->name('password.store');
+
+    // Rate limited (5/min by IP) — these hand-rolled controllers don't
+    // come with Breeze/Fortify's built-in throttling, and brute-forcing
+    // login or spamming password-reset emails are the obvious abuse
+    // vectors to close before production (section 25 of the functional
+    // spec: "protección de endpoints").
+    Route::middleware('throttle:5,1')->group(function () {
+        Route::post('login', [AuthenticatedSessionController::class, 'store']);
+        Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])->name('password.email');
+        Route::post('reset-password', [NewPasswordController::class, 'store'])->name('password.store');
+    });
 });
 
 Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
@@ -50,6 +57,15 @@ Route::middleware('auth')->group(function () {
     Route::middleware('can:associates.manage')->group(function () {
         Route::get('associates/create', [AssociateController::class, 'create'])->name('associates.create');
         Route::post('associates', [AssociateController::class, 'store'])->name('associates.store');
+
+        // Import (section 15). Static paths registered before the
+        // {associate} wildcard below so "import" is never captured as
+        // a route-model-binding ID.
+        Route::get('associates/import', [AssociateImportController::class, 'create'])->name('associates.import.create');
+        Route::post('associates/import/preview', [AssociateImportController::class, 'preview'])->name('associates.import.preview');
+        Route::post('associates/import/confirm', [AssociateImportController::class, 'confirm'])->name('associates.import.confirm');
+        Route::post('associates/import/cancel', [AssociateImportController::class, 'cancel'])->name('associates.import.cancel');
+
         Route::get('associates/{associate}/edit', [AssociateController::class, 'edit'])->name('associates.edit');
         Route::put('associates/{associate}', [AssociateController::class, 'update'])->name('associates.update');
     });

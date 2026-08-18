@@ -3,8 +3,12 @@
 @section('title', 'Cartera')
 
 @section('content')
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <p class="text-muted small mb-0">Total facturado, pagado y pendiente por asociado.</p>
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <form class="d-flex gap-2" method="GET" action="{{ route('portfolio.index') }}">
+            <input type="search" name="q" class="form-control form-control-sm" placeholder="Buscar por nombre o empresa"
+                   value="{{ $term }}" style="min-width: 240px">
+            <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-search"></i></button>
+        </form>
         @can('portfolio.view')
             <a href="{{ route('portfolio.debtors') }}" class="btn btn-outline-primary btn-sm">
                 <i class="bi bi-exclamation-circle"></i> Ver solo quienes deben

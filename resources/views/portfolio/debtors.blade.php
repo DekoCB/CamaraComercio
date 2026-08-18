@@ -3,8 +3,12 @@
 @section('title', 'A quién falta cobrar')
 
 @section('content')
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <p class="text-muted small mb-0">Asociados con saldo pendiente, para priorizar el seguimiento de cobranza.</p>
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <form class="d-flex gap-2" method="GET" action="{{ route('portfolio.debtors') }}">
+            <input type="search" name="q" class="form-control form-control-sm" placeholder="Buscar por nombre o empresa"
+                   value="{{ $term }}" style="min-width: 240px">
+            <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-search"></i></button>
+        </form>
         <a href="{{ route('portfolio.index') }}" class="btn btn-outline-secondary btn-sm">
             <i class="bi bi-arrow-left"></i> Ver cartera completa
         </a>

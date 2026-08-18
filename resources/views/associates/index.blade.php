@@ -10,9 +10,14 @@
             <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-search"></i></button>
         </form>
         @can('associates.manage')
-            <a href="{{ route('associates.create') }}" class="btn btn-primary btn-sm">
-                <i class="bi bi-plus-lg"></i> Registrar asociado
-            </a>
+            <div class="d-flex gap-2">
+                <a href="{{ route('associates.import.create') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-file-earmark-excel"></i> Importar desde Excel
+                </a>
+                <a href="{{ route('associates.create') }}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-lg"></i> Registrar asociado
+                </a>
+            </div>
         @endcan
     </div>
 

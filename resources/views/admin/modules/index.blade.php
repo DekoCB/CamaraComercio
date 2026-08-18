@@ -37,7 +37,8 @@
                                 @endif
                             </td>
                             <td class="text-end">
-                                <form method="POST" action="{{ route('admin.modules.toggle', $module) }}" class="d-inline">
+                                <form method="POST" action="{{ route('admin.modules.toggle', $module) }}" class="d-inline"
+                                      @if ($module->is_active) data-confirm="¿Desactivar el módulo &quot;{{ $module->name }}&quot;? Desaparecerá del menú para todos los roles que lo tengan asignado." @endif>
                                     @csrf
                                     @method('PUT')
                                     <input type="hidden" name="is_active" value="{{ $module->is_active ? 0 : 1 }}">

@@ -82,4 +82,22 @@ class LoginTest extends TestCase
     {
         $this->get('/dashboard')->assertRedirect('/login');
     }
+
+    public function test_login_attempts_are_rate_limited(): void
+    {
+        $role = Role::factory()->create();
+        $user = User::factory()->for($role)->create(['password' => bcrypt('Correcta#123')]);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->post('/login', ['email' => $user->email, 'password' => 'clave-incorrecta']);
+        }
+
+        // The 6th attempt within a minute is throttled, even with the
+        // correct password — a hand-rolled login controller has no
+        // brute-force protection unless routed through throttle:5,1.
+        $response = $this->post('/login', ['email' => $user->email, 'password' => 'Correcta#123']);
+
+        $response->assertStatus(429);
+        $this->assertGuest();
+    }
 }

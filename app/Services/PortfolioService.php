@@ -21,9 +21,9 @@ class PortfolioService
      * and pending/overdue invoice counts, regardless of whether they
      * currently owe anything.
      */
-    public function debtSummary(): LengthAwarePaginator
+    public function debtSummary(?string $term = null): LengthAwarePaginator
     {
-        return $this->baseQuery()->orderBy('name')->paginate(20)->withQueryString();
+        return $this->baseQuery($term)->orderBy('name')->paginate(20)->withQueryString();
     }
 
     /**
@@ -41,9 +41,9 @@ class PortfolioService
      * docs/PROJECT_ANALYSIS.md section 10.4. whereHas is portable and
      * reads as the actual business rule besides.
      */
-    public function debtors(): LengthAwarePaginator
+    public function debtors(?string $term = null): LengthAwarePaginator
     {
-        return $this->baseQuery()
+        return $this->baseQuery($term)
             ->withMin(['invoices as oldest_pending_period' => fn (Builder $q) => $q->where('status', '!=', Invoice::STATUS_PAGADA)], 'period')
             ->whereHas('invoices', fn (Builder $q) => $q->where('status', '!=', Invoice::STATUS_PAGADA))
             ->orderBy('name')
@@ -74,9 +74,12 @@ class PortfolioService
         ];
     }
 
-    private function baseQuery(): Builder
+    private function baseQuery(?string $term = null): Builder
     {
         return Associate::query()
+            ->when($term, fn (Builder $q) => $q->where(fn (Builder $q2) => $q2
+                ->where('name', 'like', "%{$term}%")
+                ->orWhere('company', 'like', "%{$term}%")))
             ->withSum('invoices as total_invoiced', 'amount')
             ->withSum('invoices as total_paid', 'paid_total')
             ->withCount(['invoices as pending_invoices_count' => fn (Builder $q) => $q->where('status', '!=', Invoice::STATUS_PAGADA)])

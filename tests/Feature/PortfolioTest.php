@@ -80,6 +80,32 @@ class PortfolioTest extends TestCase
             ->assertSee('2026-07');
     }
 
+    public function test_portfolio_index_can_be_filtered_by_search_term(): void
+    {
+        Associate::factory()->create(['name' => 'Buscable Uno']);
+        Associate::factory()->create(['name' => 'Otro Distinto']);
+        $user = $this->userWithPermissions(['portfolio.view']);
+
+        $response = $this->actingAs($user)->get('/portfolio?q=Buscable');
+
+        $response->assertOk()->assertSee('Buscable Uno')->assertDontSee('Otro Distinto');
+    }
+
+    public function test_debtors_list_can_be_filtered_by_search_term(): void
+    {
+        $matching = Associate::factory()->create(['name' => 'Deudor Buscable']);
+        Invoice::factory()->for($matching)->create(['amount' => 100, 'paid_total' => 0, 'status' => Invoice::STATUS_PENDIENTE]);
+
+        $other = Associate::factory()->create(['name' => 'Otro Deudor']);
+        Invoice::factory()->for($other)->create(['amount' => 100, 'paid_total' => 0, 'status' => Invoice::STATUS_PENDIENTE]);
+
+        $user = $this->userWithPermissions(['portfolio.view']);
+
+        $response = $this->actingAs($user)->get('/portfolio/debtors?q=Buscable');
+
+        $response->assertOk()->assertSee('Deudor Buscable')->assertDontSee('Otro Deudor');
+    }
+
     public function test_portfolio_routes_require_portfolio_view_permission(): void
     {
         $associate = Associate::factory()->create();
