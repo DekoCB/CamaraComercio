@@ -2,13 +2,13 @@
 
 Sistema web para automatizar la facturación y cobranza mensual de los asociados de la Cámara de Comercio, reemplazando el proceso manual en Excel. Documentación funcional completa en [`docs/PROJECT_ANALYSIS.md`](docs/PROJECT_ANALYSIS.md), backlog en [`docs/BACKLOG.md`](docs/BACKLOG.md).
 
-**Estado actual:** Sprints 1 a 4 completados sobre **Laravel 12 + MySQL** — MVP funcional completo: acceso y seguridad, administración de módulos/usuarios/roles, gestión de asociados (incluida importación desde Excel), facturación mensual masiva, pagos totales/parciales, cartera/morosidad/estado de cuenta, reportes exportables a Excel/PDF, y endurecimiento de seguridad para producción. (El proyecto arrancó sobre un micro-framework PHP propio y fue migrado a Laravel a pedido explícito; ver `docs/PROJECT_ANALYSIS.md` sección 10 para el detalle del pivote.)
+**Estado actual:** Sprints 1 a 4 completados sobre **Laravel 12 + MySQL** — MVP funcional completo: acceso y seguridad, administración de módulos/usuarios/roles, gestión de asociados (incluida importación desde Excel), facturación mensual masiva, pagos totales/parciales, cartera/morosidad/estado de cuenta, reportes exportables a Excel/PDF, y endurecimiento de seguridad para producción. (El proyecto arrancó sobre un micro-framework PHP propio y fue migrado a Laravel a pedido explícito; ver `docs/PROJECT_ANALYSIS.md` sección 10 para el detalle del pivote.) Sobre ese MVP se aplicó además un rediseño completo de identidad visual ("Corporate Modern / Financial SaaS", ver `docs/DESIGN_SYSTEM.md`), sin tocar lógica de negocio.
 
 ## Stack
 
 - **Laravel 12** (PHP 8.2) — Eloquent ORM, Blade, guard de autenticación y broker de recuperación de contraseña nativos
 - **MySQL / MariaDB**
-- Bootstrap 5 + Bootstrap Icons (servidos localmente, sin CDN) + JavaScript vanilla puntual — sin SPA
+- Bootstrap 5 (solo utilidades de grid/layout) + sistema de diseño propio por tokens CSS (`public/assets/css/tokens.css`) + Lucide (iconos, vendorizados como SVG) + Chart.js (vendorizado) + Inter (autoalojada) — sin CDN, sin SPA
 - `phpoffice/phpspreadsheet` (Excel) y `dompdf/dompdf` (PDF) — exportación de reportes e importación de asociados desde Excel
 - PHPUnit (`php artisan test`) — Feature tests sobre SQLite en memoria
 
@@ -77,18 +77,20 @@ app/
   Http/Requests/        Form Requests (validación + autorización por endpoint)
   Models/                Modelos Eloquent (User, Role, Permission, Module, Associate, Invoice, Payment, AuditLog...)
   Services/              Casos de uso con lógica no trivial: InvoiceGenerationService, PaymentService,
-                          PortfolioService, ReportService, ExportService, AssociateImportService —
-                          ver docs/ARCHITECTURE.md
+                          PortfolioService, ReportService, ExportService, AssociateImportService,
+                          DashboardService — ver docs/ARCHITECTURE.md
   Providers/             AppServiceProvider: Gate::before (RBAC) y directiva Blade @module
+  helpers.php            format_money(), format_date(), icon() (inlinea SVGs de Lucide)
 routes/web.php          Todas las rutas de la aplicación (login rate-limited a 5/min)
 resources/views/        Plantillas Blade (layouts, auth, dashboard, associates —incl. import—, invoices,
-                          payments, portfolio, reports, admin)
+                          payments, portfolio, reports, admin, components/ con el sistema de diseño)
 database/migrations/    Esquema versionado
 database/seeders/       Roles/permisos/módulos/usuarios/asociados de desarrollo
 database/factories/     Factories para tests
 tests/Feature/          Pruebas de extremo a extremo
-public/assets/          CSS/JS propios + Bootstrap/Bootstrap Icons (vendorizados, sin CDN)
-docs/                    Documentación del proyecto
+public/assets/          CSS (tokens.css + app.css) / JS propios, iconos Lucide (SVG), Chart.js y
+                          fuente Inter vendorizados, Bootstrap (solo grid/layout) — sin CDN
+docs/                    Documentación del proyecto (incluye DESIGN_SYSTEM.md)
 ```
 
 ## Usuarios de desarrollo (creados por el seeder)
@@ -106,6 +108,7 @@ Ver el plan de sprints completo en [`docs/PROJECT_ANALYSIS.md`](docs/PROJECT_ANA
 - **Sprint 2 (24–30 ago 2026):** ✅ Completado (17 ago, adelantado) — facturación mensual masiva, consulta de facturas, pagos totales/parciales, máquina de estados.
 - **Sprint 3 (31 ago–6 sep 2026):** ✅ Completado (17 ago, adelantado) — cartera, a quién falta cobrar, estado de cuenta, reportes de cobranza/deuda y exportación a Excel/PDF.
 - **Sprint 4 (7–13 sep 2026):** ✅ Completado (17 ago, adelantado) — importación de asociados desde Excel, límite de intentos de login, filtros de búsqueda en cartera, verificación responsiva en navegador real, y este checklist de producción.
+- **Rediseño UI/UX (18 ago 2026):** ✅ Completado — identidad visual "Corporate Modern / Financial SaaS" propia de una Cámara de Comercio: tokens de diseño, iconografía Lucide, componentes Blade reutilizables, modal de confirmación y toasts propios (sin `window.confirm()` ni alertas nativas), dashboard con datos y gráficos reales, wizard de generación de facturación. Detalle en `docs/DESIGN_SYSTEM.md` y `docs/PROJECT_ANALYSIS.md` sección 10.10.
 
 ## Antes de desplegar a producción
 

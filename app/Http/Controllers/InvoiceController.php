@@ -42,6 +42,7 @@ class InvoiceController extends Controller
     {
         return view('invoices.generate', [
             'defaultPeriod' => now()->format('Y-m'),
+            'activeAssociatesCount' => Associate::where('is_active', true)->count(),
         ]);
     }
 

@@ -3,37 +3,38 @@
 @section('title', 'Cartera')
 
 @section('content')
-    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-        <form class="d-flex gap-2" method="GET" action="{{ route('portfolio.index') }}">
-            <input type="search" name="q" class="form-control form-control-sm" placeholder="Buscar por nombre o empresa"
-                   value="{{ $term }}" style="min-width: 240px">
-            <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-search"></i></button>
-        </form>
-        @can('portfolio.view')
-            <a href="{{ route('portfolio.debtors') }}" class="btn btn-outline-primary btn-sm">
-                <i class="bi bi-exclamation-circle"></i> Ver solo quienes deben
-            </a>
-        @endcan
-    </div>
+    <x-page-header title="Seguimiento de cartera" subtitle="Total facturado, pagado y pendiente por asociado.">
+        <x-slot:actions>
+            @can('portfolio.view')
+                <a href="{{ route('portfolio.debtors') }}" class="btn btn-secondary btn-sm">
+                    {{ icon('alert-triangle', 'icon', 16) }} Ver solo quienes deben
+                </a>
+            @endcan
+        </x-slot:actions>
+    </x-page-header>
 
     <div class="table-card">
+        <div class="table-toolbar">
+            <form class="search-input" method="GET" action="{{ route('portfolio.index') }}">
+                {{ icon('search', 'icon', 16) }}
+                <input type="search" name="q" class="form-control" placeholder="Buscar por nombre o empresa" value="{{ $term }}">
+            </form>
+        </div>
+
         @if ($associates->isEmpty())
-            <div class="empty-state">
-                <i class="bi bi-graph-up fs-1"></i>
-                <p class="mb-0 mt-2">No hay asociados registrados todavía.</p>
-            </div>
+            <x-empty-state icon="trending-up" title="No hay asociados registrados" message="Registra asociados para ver su cartera aquí." />
         @else
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+            <div class="table-wrap">
+                <table class="data-table">
                     <thead>
                     <tr>
                         <th>Asociado</th>
-                        <th>Facturado</th>
-                        <th>Pagado</th>
-                        <th>Pendiente</th>
+                        <th class="is-numeric">Facturado</th>
+                        <th class="is-numeric">Pagado</th>
+                        <th class="is-numeric">Pendiente</th>
                         <th>Facturas pendientes</th>
                         <th>Facturas vencidas</th>
-                        <th class="text-end">Acciones</th>
+                        <th class="is-numeric">Acciones</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -44,21 +45,21 @@
                             $pending = $invoiced - $paid;
                         @endphp
                         <tr>
-                            <td>{{ $associate->name }}</td>
-                            <td>{{ format_money($invoiced) }}</td>
-                            <td>{{ format_money($paid) }}</td>
-                            <td class="{{ $pending > 0 ? 'text-danger fw-semibold' : '' }}">{{ format_money($pending) }}</td>
-                            <td>{{ $associate->pending_invoices_count }}</td>
+                            <td class="cell-primary">{{ $associate->name }}</td>
+                            <td class="is-numeric cell-money">{{ format_money($invoiced) }}</td>
+                            <td class="is-numeric cell-money">{{ format_money($paid) }}</td>
+                            <td class="is-numeric cell-money" style="{{ $pending > 0 ? 'color: var(--color-danger);' : '' }}">{{ format_money($pending) }}</td>
+                            <td class="cell-muted">{{ $associate->pending_invoices_count }}</td>
                             <td>
                                 @if ($associate->overdue_invoices_count > 0)
                                     <span class="badge badge-status-VENCIDA">{{ $associate->overdue_invoices_count }}</span>
                                 @else
-                                    0
+                                    <span class="cell-muted">0</span>
                                 @endif
                             </td>
-                            <td class="text-end">
-                                <a href="{{ route('associates.statement', $associate) }}" class="btn btn-sm btn-outline-secondary">
-                                    <i class="bi bi-file-earmark-text"></i> Estado de cuenta
+                            <td class="is-numeric">
+                                <a href="{{ route('associates.statement', $associate) }}" class="btn btn-ghost btn-sm">
+                                    {{ icon('file-text', 'icon', 15) }} Estado de cuenta
                                 </a>
                             </td>
                         </tr>
@@ -66,7 +67,10 @@
                     </tbody>
                 </table>
             </div>
-            <div class="mt-3">{{ $associates->onEachSide(1)->links() }}</div>
+            <div class="table-footer">
+                <x-pagination-meta :paginator="$associates" noun="asociados" />
+                {{ $associates->onEachSide(1)->links() }}
+            </div>
         @endif
     </div>
 @endsection

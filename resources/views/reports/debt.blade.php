@@ -3,68 +3,46 @@
 @section('title', 'Deuda pendiente')
 
 @section('content')
-    <div class="d-flex justify-content-end mb-3">
-        @can('reports.export')
-            <div class="d-flex gap-2">
-                <a href="{{ route('reports.debt.export', ['format' => 'excel']) }}" class="btn btn-sm btn-outline-success">
-                    <i class="bi bi-file-earmark-excel"></i> Excel
+    <x-page-header title="Deuda pendiente" subtitle="Fotografía de lo que se adeuda hoy, por estado.">
+        <x-slot:actions>
+            @can('reports.export')
+                <a href="{{ route('reports.debt.export', ['format' => 'excel']) }}" class="btn btn-secondary btn-sm" data-export-toast="Preparando Excel…">
+                    {{ icon('file-spreadsheet', 'icon', 16) }} Excel
                 </a>
-                <a href="{{ route('reports.debt.export', ['format' => 'pdf']) }}" class="btn btn-sm btn-outline-danger">
-                    <i class="bi bi-file-earmark-pdf"></i> PDF
+                <a href="{{ route('reports.debt.export', ['format' => 'pdf']) }}" class="btn btn-secondary btn-sm" data-export-toast="Preparando PDF…">
+                    {{ icon('file-down', 'icon', 16) }} PDF
                 </a>
-            </div>
-        @endcan
-    </div>
+            @endcan
+        </x-slot:actions>
+    </x-page-header>
 
-    <div class="row g-3 mb-3">
-        <div class="col-6 col-md-3">
-            <div class="kpi-card">
-                <div class="kpi-label">Total pendiente</div>
-                <div class="kpi-value text-danger">{{ format_money($totalPending) }}</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="kpi-card">
-                <div class="kpi-label">Asociados con deuda</div>
-                <div class="kpi-value">{{ $debtorsCount }}</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="kpi-card">
-                <div class="kpi-label">Facturas pendientes</div>
-                <div class="kpi-value">{{ $pendingInvoicesCount }}</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="kpi-card">
-                <div class="kpi-label">Facturas vencidas</div>
-                <div class="kpi-value text-danger">{{ $overdueInvoicesCount }}</div>
-            </div>
-        </div>
+    <div class="kpi-grid">
+        <x-kpi-card label="Total pendiente" icon="alert-triangle" variant="danger" :value="format_money($totalPending)" :critical="$totalPending > 0" />
+        <x-kpi-card label="Asociados con deuda" icon="users" variant="navy" :value="$debtorsCount" />
+        <x-kpi-card label="Facturas pendientes" icon="file-text" variant="blue" :value="$pendingInvoicesCount" />
+        <x-kpi-card label="Facturas vencidas" icon="clock" variant="danger" :value="$overdueInvoicesCount" />
     </div>
 
     <div class="table-card">
-        <h2 class="h6 mb-3">Distribución de la deuda por estado</h2>
+        <h2 class="text-h3" style="margin-bottom: var(--space-4);">Distribución de la deuda por estado</h2>
         @if ($distribution->isEmpty())
-            <div class="empty-state">
-                <p class="mb-0">No hay deuda pendiente en este momento.</p>
-            </div>
+            <x-empty-state icon="check-circle-2" title="Sin deuda pendiente" message="No hay deuda pendiente en este momento." />
         @else
-            <div class="table-responsive">
-                <table class="table table-sm align-middle mb-0">
+            <div class="table-wrap">
+                <table class="data-table">
                     <thead>
                     <tr>
                         <th>Estado</th>
-                        <th>Facturas</th>
-                        <th>Saldo</th>
+                        <th class="is-numeric">Facturas</th>
+                        <th class="is-numeric">Saldo</th>
                     </tr>
                     </thead>
                     <tbody>
                     @foreach ($distribution as $row)
                         <tr>
-                            <td><span class="badge badge-status-{{ $row->bucket }}">{{ $row->bucket }}</span></td>
-                            <td>{{ $row->invoice_count }}</td>
-                            <td>{{ format_money($row->total_balance) }}</td>
+                            <td><x-status-badge :status="$row->bucket" /></td>
+                            <td class="is-numeric cell-muted">{{ $row->invoice_count }}</td>
+                            <td class="is-numeric cell-money">{{ format_money($row->total_balance) }}</td>
                         </tr>
                     @endforeach
                     </tbody>

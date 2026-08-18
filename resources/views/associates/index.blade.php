@@ -3,33 +3,39 @@
 @section('title', 'Asociados')
 
 @section('content')
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <form class="d-flex gap-2" method="GET" action="{{ route('associates.index') }}">
-            <input type="search" name="q" class="form-control form-control-sm" placeholder="Buscar por nombre, empresa, contacto o correo"
-                   value="{{ $term }}" style="min-width: 280px">
-            <button type="submit" class="btn btn-sm btn-outline-secondary"><i class="bi bi-search"></i></button>
-        </form>
-        @can('associates.manage')
-            <div class="d-flex gap-2">
-                <a href="{{ route('associates.import.create') }}" class="btn btn-outline-primary btn-sm">
-                    <i class="bi bi-file-earmark-excel"></i> Importar desde Excel
+    <x-page-header title="Gestión de asociados" subtitle="Administra la información de los asociados de la Cámara.">
+        <x-slot:actions>
+            @can('associates.manage')
+                <a href="{{ route('associates.import.create') }}" class="btn btn-secondary btn-sm">
+                    {{ icon('upload', 'icon', 16) }} Importar desde Excel
                 </a>
                 <a href="{{ route('associates.create') }}" class="btn btn-primary btn-sm">
-                    <i class="bi bi-plus-lg"></i> Registrar asociado
+                    {{ icon('plus', 'icon', 16) }} Nuevo asociado
                 </a>
-            </div>
-        @endcan
-    </div>
+            @endcan
+        </x-slot:actions>
+    </x-page-header>
 
     <div class="table-card">
+        <div class="table-toolbar">
+            <form class="search-input" method="GET" action="{{ route('associates.index') }}">
+                {{ icon('search', 'icon', 16) }}
+                <input type="search" name="q" class="form-control" placeholder="Buscar asociado, empresa o correo..." value="{{ $term }}">
+            </form>
+        </div>
+
         @if ($associates->isEmpty())
-            <div class="empty-state">
-                <i class="bi bi-people fs-1"></i>
-                <p class="mb-0 mt-2">No se encontraron asociados @if($term !== '') para "{{ $term }}" @endif.</p>
-            </div>
+            <x-empty-state icon="users" title="No hay asociados registrados"
+                :message="$term !== '' ? 'No se encontraron resultados para “'.$term.'”.' : 'Comienza registrando el primer asociado de la Cámara.'">
+                @can('associates.manage')
+                    @if ($term === '')
+                        <a href="{{ route('associates.create') }}" class="btn btn-primary btn-sm">{{ icon('plus', 'icon', 16) }} Nuevo asociado</a>
+                    @endif
+                @endcan
+            </x-empty-state>
         @else
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+            <div class="table-wrap">
+                <table class="data-table">
                     <thead>
                     <tr>
                         <th>Nombre</th>
@@ -37,34 +43,36 @@
                         <th>Contacto</th>
                         <th>Correo</th>
                         <th>Estado</th>
-                        <th class="text-end">Acciones</th>
+                        <th class="is-numeric">Acciones</th>
                     </tr>
                     </thead>
                     <tbody>
                     @foreach ($associates as $associate)
                         <tr>
-                            <td>{{ $associate->name }}</td>
-                            <td>{{ $associate->company ?? '-' }}</td>
-                            <td>{{ $associate->contact_phone ?? '-' }}</td>
-                            <td>{{ $associate->email ?? '-' }}</td>
+                            <td class="cell-primary">{{ $associate->name }}</td>
+                            <td class="cell-muted">{{ $associate->company ?? '-' }}</td>
+                            <td class="cell-muted">{{ $associate->contact_phone ?? '-' }}</td>
+                            <td class="cell-muted">{{ $associate->email ?? '-' }}</td>
                             <td>
                                 @if ($associate->is_active)
-                                    <span class="badge bg-success-subtle text-success-emphasis">Activo</span>
+                                    <span class="badge badge-success">Activo</span>
                                 @else
-                                    <span class="badge bg-secondary-subtle text-secondary-emphasis">Inactivo</span>
+                                    <span class="badge badge-neutral">Inactivo</span>
                                 @endif
                             </td>
-                            <td class="text-end">
-                                @can('billing.view')
-                                    <a href="{{ route('invoices.index', ['associate_id' => $associate->id]) }}" class="btn btn-sm btn-outline-secondary">
-                                        <i class="bi bi-receipt"></i> Facturas
-                                    </a>
-                                @endcan
-                                @can('associates.manage')
-                                    <a href="{{ route('associates.edit', $associate) }}" class="btn btn-sm btn-outline-secondary">
-                                        <i class="bi bi-pencil"></i> Editar
-                                    </a>
-                                @endcan
+                            <td class="is-numeric">
+                                <div class="d-flex gap-2 justify-content-end">
+                                    @can('billing.view')
+                                        <a href="{{ route('invoices.index', ['associate_id' => $associate->id]) }}" class="btn btn-ghost btn-sm" title="Ver facturas">
+                                            {{ icon('file-text', 'icon', 15) }} Facturas
+                                        </a>
+                                    @endcan
+                                    @can('associates.manage')
+                                        <a href="{{ route('associates.edit', $associate) }}" class="btn btn-ghost btn-sm" title="Editar">
+                                            {{ icon('pencil', 'icon', 15) }} Editar
+                                        </a>
+                                    @endcan
+                                </div>
                             </td>
                         </tr>
                     @endforeach
@@ -72,7 +80,8 @@
                 </table>
             </div>
 
-            <div class="mt-3">
+            <div class="table-footer">
+                <x-pagination-meta :paginator="$associates" noun="asociados" />
                 {{ $associates->onEachSide(1)->links() }}
             </div>
         @endif

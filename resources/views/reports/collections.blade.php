@@ -3,76 +3,60 @@
 @section('title', 'Cobrado en el mes')
 
 @section('content')
-    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-        <form method="GET" action="{{ route('reports.collections') }}" class="d-flex gap-2">
-            <input type="month" name="period" class="form-control form-control-sm" style="max-width: 160px" value="{{ $period }}">
-            <button type="submit" class="btn btn-sm btn-outline-secondary">Ver</button>
-        </form>
-        @can('reports.export')
-            <div class="d-flex gap-2">
-                <a href="{{ route('reports.collections.export', ['format' => 'excel', 'period' => $period]) }}" class="btn btn-sm btn-outline-success">
-                    <i class="bi bi-file-earmark-excel"></i> Excel
+    <x-page-header title="Lo cobrado en el mes" subtitle="Facturado (devengo) vs. cobrado (caja) para el período seleccionado.">
+        <x-slot:actions>
+            @can('reports.export')
+                <a href="{{ route('reports.collections.export', ['format' => 'excel', 'period' => $period]) }}" class="btn btn-secondary btn-sm" data-export-toast="Preparando Excel…">
+                    {{ icon('file-spreadsheet', 'icon', 16) }} Excel
                 </a>
-                <a href="{{ route('reports.collections.export', ['format' => 'pdf', 'period' => $period]) }}" class="btn btn-sm btn-outline-danger">
-                    <i class="bi bi-file-earmark-pdf"></i> PDF
+                <a href="{{ route('reports.collections.export', ['format' => 'pdf', 'period' => $period]) }}" class="btn btn-secondary btn-sm" data-export-toast="Preparando PDF…">
+                    {{ icon('file-down', 'icon', 16) }} PDF
                 </a>
+            @endcan
+        </x-slot:actions>
+    </x-page-header>
+
+    <div class="card-surface mb-4">
+        <form method="GET" action="{{ route('reports.collections') }}" class="d-flex gap-2 align-items-end">
+            <div class="field" style="margin-bottom: 0;">
+                <label class="field-label" for="period">Período</label>
+                <input type="month" id="period" name="period" class="form-control" style="max-width: 180px" value="{{ $period }}">
             </div>
-        @endcan
+            <button type="submit" class="btn btn-secondary">Ver</button>
+        </form>
     </div>
 
-    <div class="row g-3 mb-3">
-        <div class="col-6 col-md-3">
-            <div class="kpi-card">
-                <div class="kpi-label">Facturado del período</div>
-                <div class="kpi-value">{{ format_money($totalInvoiced) }}</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="kpi-card">
-                <div class="kpi-label">Cobrado del mes</div>
-                <div class="kpi-value text-success">{{ format_money($totalCollected) }}</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="kpi-card">
-                <div class="kpi-label">Pagos registrados</div>
-                <div class="kpi-value">{{ $paymentsCount }}</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="kpi-card">
-                <div class="kpi-label">Asociados que pagaron</div>
-                <div class="kpi-value">{{ $payingAssociatesCount }}</div>
-            </div>
-        </div>
+    <div class="kpi-grid">
+        <x-kpi-card label="Facturado del período" icon="file-text" variant="blue" :value="format_money($totalInvoiced)" />
+        <x-kpi-card label="Cobrado del mes" icon="wallet" variant="teal" :value="format_money($totalCollected)" />
+        <x-kpi-card label="Pagos registrados" icon="receipt" variant="navy" :value="$paymentsCount" />
+        <x-kpi-card label="Asociados que pagaron" icon="users" variant="navy" :value="$payingAssociatesCount" />
     </div>
 
     <div class="table-card">
-        <h2 class="h6 mb-3">Pagos de {{ $period }}</h2>
+        <h2 class="text-h3" style="margin-bottom: var(--space-4);">Pagos de {{ $period }}</h2>
         @if ($payments->isEmpty())
-            <div class="empty-state">
-                <p class="mb-0">No se registraron pagos en este período.</p>
-            </div>
+            <x-empty-state icon="wallet" title="Sin pagos" message="No se registraron pagos en este período." />
         @else
-            <div class="table-responsive">
-                <table class="table table-sm align-middle mb-0">
+            <div class="table-wrap">
+                <table class="data-table">
                     <thead>
                     <tr>
                         <th>Fecha</th>
                         <th>Asociado</th>
                         <th>Período factura</th>
-                        <th>Monto</th>
+                        <th class="is-numeric">Monto</th>
                         <th>Registrado por</th>
                     </tr>
                     </thead>
                     <tbody>
                     @foreach ($payments as $payment)
                         <tr>
-                            <td>{{ format_date($payment->paid_at) }}</td>
-                            <td>{{ $payment->invoice->associate->name }}</td>
-                            <td>{{ $payment->invoice->period }}</td>
-                            <td>{{ format_money($payment->amount) }}</td>
-                            <td>{{ $payment->registeredBy->name ?? '-' }}</td>
+                            <td class="cell-muted">{{ format_date($payment->paid_at) }}</td>
+                            <td class="cell-primary">{{ $payment->invoice->associate->name }}</td>
+                            <td class="cell-muted">{{ $payment->invoice->period }}</td>
+                            <td class="is-numeric cell-money">{{ format_money($payment->amount) }}</td>
+                            <td class="cell-muted">{{ $payment->registeredBy->name ?? '-' }}</td>
                         </tr>
                     @endforeach
                     </tbody>

@@ -188,6 +188,24 @@ EP-08 (experiencia de usuario), importación desde Excel, QA y endurecimiento de
 - 12 pruebas Feature nuevas (9 de importación, 1 de rate limiting, 2 de filtros de cartera), suite completa en 71/71 verde.
 - Se agregó un checklist de "antes de desplegar a producción" al `README.md` (entorno, correo, cachés de Laravel, respaldos de BD, cookies de sesión, credenciales de desarrollo, permisos de archivos) — es documentación, no una tarea de infraestructura ejecutada en esta sesión.
 
-### 10.9 Próximo paso
+### 10.9 Sprints funcionales — cierre
 
 El plan de sprints original (sección 7) queda completo: los cuatro sprints y las 23 historias de usuario de la documentación funcional están implementados, probados y verificados en vivo. Lo que sigue es explícitamente fuera de alcance del MVP (sección 6): integración contable, comprobantes electrónicos, pasarelas de pago, portal de asociados — cualquiera de esos requeriría una decisión de negocio explícita antes de comenzar, tal como se documentó desde la sección 41 del prompt maestro. La decisión pendiente más inmediata sigue siendo el proveedor de correo real (hoy `MAIL_MAILER=log`), que el usuario indicó que definiría más adelante.
+
+### 10.10 Rediseño UI/UX — 2026-08-18 ("Corporate Modern / Financial SaaS")
+
+A pedido explícito del usuario (segundo prompt maestro, 65 secciones), se rediseñó por completo la capa visual del sistema sin tocar lógica de negocio, rutas, controladores ni el esquema de base de datos — ningún test de `tests/Feature/` se modificó y los 71 siguen en verde. Decisiones y alcance documentados en detalle en [`docs/DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md); resumen:
+
+- **Tokens de diseño** (`public/assets/css/tokens.css`): paleta navy/azul/teal específica de una Cámara de Comercio (no una plantilla de dashboard genérica), tipografía Inter autoalojada (4 pesos, sin Google Fonts), escala de espaciado/radios/sombras/transiciones, modo oscuro preparado (no activado por UI) bajo `prefers-color-scheme`.
+- **Iconografía:** se reemplazó Bootstrap Icons por Lucide, vendorizado como SVGs individuales (`public/assets/icons/`, ~57 iconos) e inlineados server-side vía el helper `icon()` (`app/helpers.php`) — sin CDN ni icon-font.
+- **Componentes Blade nuevos** (`resources/views/components/`): `brand-mark`, `kpi-card`, `status-badge`, `page-header`, `empty-state`, `pagination-meta` — reutilizados en las 9 áreas del sistema, reemplazando el marcado Bootstrap-por-defecto anterior.
+- **Modal de confirmación y toasts propios:** reemplazan `window.confirm()` y las alertas Bootstrap estáticas, por requerimiento explícito de la sección 65. Bug real encontrado y corregido durante la verificación con Playwright: el backdrop del modal (`opacity: 0` cuando cerrado) seguía capturando clics en toda la página porque `opacity: 0` no saca un elemento del hit-testing — se corrigió agregando `pointer-events: none` por defecto y `auto` solo con `.is-open`.
+- **Dashboard con datos reales:** `App\Services\DashboardService` (nuevo) agrega KPIs, tendencia mes a mes (omitida si no hay mes anterior con qué comparar) y los datos para dos gráficos Chart.js vendorizado (cobranza mensual, distribución de cartera por estado) — sin invertir la regla de "no persistir `VENCIDA`" ya establecida (sección 10.5).
+- **Wizard de generación de facturación:** `invoices/generate.blade.php` pasó de un formulario de una pantalla a un stepper de 4 pasos (Período/Monto/Fecha límite/Confirmar) con resumen antes de confirmar.
+- **Verificación:** barrido con Playwright en dos viewports — 1440px (14 páginas, cero errores de consola) y 375px (todas las páginas del sistema, cero errores de consola). Un solo hallazgo de overflow horizontal real: el stepper del wizard no cabía en 375px porque mostraba las cuatro etiquetas de paso completas; se corrigió ocultando la etiqueta de los pasos no activos por debajo de 575.98px (solo el paso activo muestra texto, el resto queda como punto numerado + conector) — deja el patrón ya usado en Sprint 4 (nunca reducir tipografía para "que quepa", sino replantear qué se muestra).
+- **Qué no cambió:** ninguna ruta, ningún Form Request, ningún Service de dominio, ningún permiso ni regla de RBAC. `AuthenticatedSessionController` solo ganó el checkbox "Recordarme" (`Auth::attempt($credentials, $request->boolean('remember'))`), que antes estaba cableado a `false`.
+- **Logo:** no existe un logo oficial de la Cámara en el repositorio; `x-brand-mark` es un tratamiento tipográfico temporal, documentado como tal en `DESIGN_SYSTEM.md` para que se reemplace en cuanto haya un logo real (sección 52 del prompt).
+
+### 10.11 Próximo paso
+
+Con los cuatro sprints funcionales y el rediseño UI/UX completos, lo pendiente es: (1) definir el proveedor SMTP real para producción (`MAIL_MAILER=log` hoy), (2) reemplazar `x-brand-mark` por el logo oficial cuando exista, y (3) cualquier extensión fuera del alcance original del MVP (integración contable, comprobantes electrónicos, pasarelas de pago, portal de asociados), que requeriría una decisión de negocio explícita antes de comenzar.

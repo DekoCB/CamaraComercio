@@ -33,6 +33,15 @@ Nota (2026-08-17): Sprint 1 fue reconstruido sobre Laravel 12 (ver `PROJECT_ANAL
 | — | EP-08 | Carga de información desde Excel | Alta | 4 | **DONE** | `AssociateImportService` + `AssociateImportController`, flujo de tres pasos (cargar → previsualizar con errores por fila → confirmar) siguiendo literalmente la sección 15 del prompt maestro: nada se inserta sin que el usuario vea antes qué se va a importar y qué filas se omitirán. Reconoce encabezados en español (Nombre/Empresa/Contacto/Correo) en cualquier orden de columnas; valida nombre obligatorio, formato de correo y correos duplicados contra la base de datos. El archivo subido se re-parsea desde disco al confirmar (nunca se confía en lo que el navegador reenvía) y se borra apenas termina la importación o si se cancela. |
 | — | EP-08 | Pruebas integrales (QA), corrección de errores | Alta | 4 | **DONE** | 71 tests automatizados en verde (12 nuevos en Sprint 4: 9 de importación, 1 de rate limiting, 2 de filtros de cartera). Verificación en vivo contra Apache+MySQL para cada HU nueva. Endurecimiento de seguridad: límite de 5 intentos/minuto en login y en los formularios de recuperación de contraseña (ninguno de los dos lo tenía, al no venir de un scaffold de autenticación de Laravel); revisión de código sin salidas Blade sin escapar (`{!! !!}`) ni sentencias de depuración olvidadas. |
 
+## Criterios de aceptación — Rediseño UI/UX (2026-08-18)
+
+Trabajo puramente visual sobre EP-08 (HU-16 a HU-20), sin crear ni modificar historias de usuario nuevas — ver `docs/PROJECT_ANALYSIS.md` sección 10.10 y `docs/DESIGN_SYSTEM.md` para el detalle completo. Verificado con Playwright en dos viewports (1440px y 375px) contra la app corriendo en Apache, y con la suite completa (71/71 tests) sin cambios:
+
+- Cero errores de consola/página en las 14+ pantallas principales, en ambos viewports.
+- Cero overflow horizontal en 375px tras corregir el stepper del wizard de facturación (mostraba las 4 etiquetas de paso completas; se ocultan las de los pasos inactivos bajo 575.98px).
+- El modal de confirmación y los toasts (reemplazos de `window.confirm()` y las alertas Bootstrap) funcionan en las tres acciones que ya requerían confirmación (HU-20): generación masiva de facturación, confirmación de importación, desactivación de módulo.
+- El dashboard (HU-16) muestra KPIs reales con tendencia mes a mes y dos gráficos (cobranza mensual, distribución de cartera) alimentados por `App\Services\DashboardService`, sin alterar la regla de que `VENCIDA` nunca se persiste (`Invoice::effectiveStatus()`).
+
 ## Ejemplo de criterio de aceptación (HU-09)
 
 ```

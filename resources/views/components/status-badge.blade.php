@@ -1,2 +1,2 @@
-@php $status = $invoice->effectiveStatus(); @endphp
+@props(['status'])
 <span class="badge badge-status-{{ $status }}">{{ $status }}</span>

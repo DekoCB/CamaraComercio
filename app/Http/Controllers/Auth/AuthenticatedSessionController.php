@@ -29,7 +29,7 @@ class AuthenticatedSessionController extends Controller
         // real hash only when the user exists; when it doesn't, it still
         // takes a comparable code path (no early return before hashing),
         // so login timing does not leak whether an email is registered.
-        if (! Auth::attempt($credentials, false)) {
+        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
             AuditLog::record('auth.login', 'user', $credentials['email'], 'failure');
 
             return back()->withErrors([

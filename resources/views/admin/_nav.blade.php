@@ -1,6 +1,12 @@
 @php $current = request()->route()->getName(); @endphp
-<div class="btn-group btn-group-sm" role="group">
-    <a href="{{ route('admin.users.index') }}" class="btn {{ str_starts_with($current, 'admin.users') ? 'btn-primary' : 'btn-outline-primary' }}">Usuarios</a>
-    <a href="{{ route('admin.roles.index') }}" class="btn {{ str_starts_with($current, 'admin.roles') ? 'btn-primary' : 'btn-outline-primary' }}">Roles</a>
-    <a href="{{ route('admin.modules.index') }}" class="btn {{ str_starts_with($current, 'admin.modules') ? 'btn-primary' : 'btn-outline-primary' }}">Módulos</a>
+<div class="tabs">
+    <a href="{{ route('admin.users.index') }}" class="tab-link {{ str_starts_with($current, 'admin.users') ? 'is-active' : '' }}">
+        {{ icon('users', 'icon', 15) }} Usuarios
+    </a>
+    <a href="{{ route('admin.roles.index') }}" class="tab-link {{ str_starts_with($current, 'admin.roles') ? 'is-active' : '' }}">
+        {{ icon('shield', 'icon', 15) }} Roles
+    </a>
+    <a href="{{ route('admin.modules.index') }}" class="tab-link {{ str_starts_with($current, 'admin.modules') ? 'is-active' : '' }}">
+        {{ icon('grid-3x3', 'icon', 15) }} Módulos
+    </a>
 </div>
