@@ -9,7 +9,7 @@
                 <a href="{{ route('associates.import.create') }}" class="btn btn-secondary btn-sm">
                     {{ icon('upload', 'icon', 16) }} Importar desde Excel
                 </a>
-                <a href="{{ route('associates.create') }}" class="btn btn-primary btn-sm">
+                <a href="{{ route('associates.create') }}" class="btn btn-primary btn-sm js-modal-link" data-modal-title="Registrar asociado">
                     {{ icon('plus', 'icon', 16) }} Nuevo asociado
                 </a>
             @endcan
@@ -29,7 +29,7 @@
                 :message="$term !== '' ? 'No se encontraron resultados para “'.$term.'”.' : 'Comienza registrando el primer asociado de la Cámara.'">
                 @can('associates.manage')
                     @if ($term === '')
-                        <a href="{{ route('associates.create') }}" class="btn btn-primary btn-sm">{{ icon('plus', 'icon', 16) }} Nuevo asociado</a>
+                        <a href="{{ route('associates.create') }}" class="btn btn-primary btn-sm js-modal-link" data-modal-title="Registrar asociado">{{ icon('plus', 'icon', 16) }} Nuevo asociado</a>
                     @endif
                 @endcan
             </x-empty-state>
@@ -68,7 +68,7 @@
                                         </a>
                                     @endcan
                                     @can('associates.manage')
-                                        <a href="{{ route('associates.edit', $associate) }}" class="btn btn-ghost btn-sm" title="Editar">
+                                        <a href="{{ route('associates.edit', $associate) }}" class="btn btn-ghost btn-sm js-modal-link" title="Editar" data-modal-title="Editar asociado">
                                             {{ icon('pencil', 'icon', 15) }} Editar
                                         </a>
                                     @endcan

@@ -105,6 +105,9 @@ Sin logo oficial disponible. Tratamiento temporal: una marca geométrica simple 
 | Modal de confirmación | `confirm-modal.blade.php` + `confirm.js` | Reemplaza `window.confirm()` nativo — el brief lo prohíbe explícitamente (sección 32/40) |
 | Toast | `toast-container.blade.php` + `toast.js` | Reemplaza los `<div class="alert">` estáticos anteriores por notificaciones auto-descartables |
 | Ícono | función `icon()` | No es un componente Blade por rendimiento (se usa docenas de veces por página) |
+| Select personalizado | `app.js`: `enhanceSelects()` / `app.css`: `.select-field` | Progresivamente mejora cada `<select class="form-select">` (2026-08-18, ver sección 10) |
+| Selector de fecha/mes | `app.js`: `enhanceDateInputs()` / `app.css`: `.datepicker-field` | Progresivamente mejora `input[type="date"]` y `input[type="month"]` (2026-08-18, ver sección 10) |
+| Modal de formulario | `app.js`: `openFormModal()` / `app.css`: `.modal-panel-form` | Overlay para crear/editar registros sin navegar a otra pantalla (2026-08-18, ver sección 10) |
 
 No se duplican componentes: por ejemplo, la tarjeta de "asociado" (sección 24 del brief) reutiliza la vista de estado de cuenta ya construida en Sprint 3 (HU-12) en vez de crear una página nueva paralela.
 
@@ -123,3 +126,29 @@ Contraste verificado ≥ 4.5:1 en texto sobre superficies (navy #0F2747 sobre bl
 ## 9. Qué no cambia
 
 Las reglas de negocio, permisos (`Gate::before`), rutas, controladores y Form Requests **no se tocan** en este trabajo — es una capa visual sobre la funcionalidad existente. Cualquier ajuste de copy (textos de botones, mensajes) se hace *dentro* de las vistas Blade ya existentes, no reescribiendo lógica de servidor.
+
+## 10. Adenda — 2026-08-18: calendarios/listas personalizados y formularios en modal
+
+A pedido explícito del usuario: (1) unificar los calendarios y listas desplegables nativos del navegador con la identidad visual del sistema, y (2) hacer que los formularios pequeños de crear/editar se sobrepongan como modal en vez de navegar a una pantalla dedicada.
+
+### 10.1 Por qué progressive enhancement en vez de un plugin de terceros
+
+El popup nativo de `<input type="date">` y de `<select>` lo dibuja el sistema operativo/navegador — ningún CSS puede tocarlo. La única forma de que coincidan con la paleta navy/azul/teal es reemplazarlos por un widget propio. Se optó por JS vanilla (sin vendorizar una librería de fecha/select) siguiendo el mismo criterio ya aplicado a iconos y gráficos: cero CDN, dependencias mínimas. `enhanceSelects()`/`enhanceDateInputs()` (`public/assets/js/app.js`) envuelven cada `<select>`/`input[type="date"|"month"]` en un trigger + popup estilizados; **el elemento nativo original permanece en el DOM** (oculto, `tabindex="-1"`) y es el que de verdad viaja en el `<form>` — el backend nunca se entera de que la UI cambió: cero cambios en validación, cero cambios en cómo cada página ya leía `request()->input(...)`.
+
+- Selector de fecha: grid de días con semana en Lu-Do, hoy resaltado con anillo azul, seleccionado en navy. `input[type="month"]` usa un grid de 12 meses con navegación por año en su lugar (la generación de facturación y los reportes).
+- Selector genérico: listbox con navegación por teclado completa (flechas, Home/End, Escape, *typeahead* por letra) y checkmark en la opción activa — cumple operabilidad por teclado (WCAG 2.1.1) igual que el `<select>` nativo que reemplaza.
+- Ambos popups se alinean dinámicamente (`opens-up`/`opens-left`) para no salirse del viewport — el mismo problema, en otra forma, que el bug de `pointer-events` del modal de confirmación (sección "QA visual" de `PROJECT_ANALYSIS.md` §10.10): un elemento `position: absolute` sigue contando para el ancho/alto scrolleable de la página aunque esté visualmente oculto (`opacity: 0`), así que el cálculo de alineación corre tanto al construir el widget como al abrirlo, no solo al abrirlo.
+
+### 10.2 Formularios en modal
+
+Los CRUD pequeños (asociado, usuario, rol — solo nombre/descripción, módulo) se abren ahora con `openFormModal()` sobre la lista que los originó, en vez de navegar a `/asociados/create` como pantalla propia. La pantalla de permisos y módulos de un rol (`admin/roles/{role}/access`) **se dejó fuera a propósito**: es una matriz potencialmente larga de checkboxes, no encaja en "formularios que no sean tan grandes" (instrucción explícita del usuario).
+
+Mecanismo (sin duplicar lógica de validación en JS):
+1. Cada `create()`/`edit()` de controlador devuelve la vista completa (`*.form`) para navegación directa/sin JS, o solo el fragmento `<form>` (`*._form`) cuando la petición es AJAX (`$request->ajax()`) — un único partial Blade alimenta ambos caminos.
+2. El submit se intercepta y se reenvía por `fetch()` con `Accept: application/json`. Eso hace que Laravel, ante un `ValidationException`, responda **422 + JSON** en vez de redirigir con errores en sesión — comportamiento nativo del framework, no requirió tocar ningún Form Request.
+3. Un éxito real (redirect 302 que el propio controlador ya emitía) se sigue automáticamente; el JS navega el navegador a `response.url`, que es lo que el controlador decida — por eso crear un rol sigue aterrizando en la pantalla de permisos ("Ahora asigne sus permisos y módulos") sin ningún caso especial en el JS.
+4. Bug encontrado y corregido durante la verificación: el flash de sesión de Laravel solo sobrevive **una** petición siguiente; como `fetch()` ya sigue el redirect internamente, ese flash se consumía antes de que el navegador navegara de verdad, y el toast de éxito nunca aparecía. Se relevó vía `sessionStorage` (`cc_pending_flash`): el JS extrae el flash de la respuesta ya obtenida y lo vuelve a mostrar en la carga de página siguiente.
+
+### 10.3 Verificación
+
+Suite completa (71/71) sin cambios; verificado con Playwright en 1440px y 375px en las 15 pantallas principales — cero errores de consola, cero overflow horizontal tras corregir el alineamiento de los popups cerca del borde derecho en filtros angostos (cartera de pagos en mobile).

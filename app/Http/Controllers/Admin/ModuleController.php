@@ -19,11 +19,11 @@ class ModuleController extends Controller
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
-        return view('admin.modules.form', [
-            'action' => route('admin.modules.store'),
-        ]);
+        $data = ['action' => route('admin.modules.store')];
+
+        return $request->ajax() ? view('admin.modules._form', $data) : view('admin.modules.form', $data);
     }
 
     public function store(ModuleRequest $request): RedirectResponse

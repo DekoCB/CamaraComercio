@@ -60,7 +60,7 @@
         <div class="d-flex flex-wrap gap-2">
             @module('associates')
                 @can('associates.manage')
-                    <a href="{{ route('associates.create') }}" class="btn btn-secondary btn-sm">{{ icon('users', 'icon', 16) }} Registrar asociado</a>
+                    <a href="{{ route('associates.create') }}" class="btn btn-secondary btn-sm js-modal-link" data-modal-title="Registrar asociado">{{ icon('users', 'icon', 16) }} Registrar asociado</a>
                 @endcan
                 <a href="{{ route('associates.index') }}" class="btn btn-ghost btn-sm">{{ icon('users', 'icon', 16) }} Ver asociados</a>
             @endmodule

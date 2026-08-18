@@ -637,6 +637,338 @@ textarea:focus-visible,
 }
 
 /* ==========================================================================
+   Custom select — progressively enhances every <select class="form-select">
+   (app.js) into a styled trigger + listbox. The native <select> stays in the
+   DOM (visually hidden) so form submission and any onchange="" wiring on
+   filter selects keep working unmodified.
+   ========================================================================== */
+
+.select-field {
+    position: relative;
+}
+
+.select-field .form-select.is-enhanced {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.select-trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    color: var(--color-text);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2) var(--space-3);
+    cursor: pointer;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.select-trigger-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+}
+
+.select-trigger .icon {
+    flex-shrink: 0;
+    color: var(--color-text-tertiary);
+    transition: transform var(--transition-fast);
+}
+
+.select-field.is-open .select-trigger .icon {
+    transform: rotate(180deg);
+}
+
+.select-trigger:focus-visible,
+.select-field.is-open .select-trigger {
+    outline: none;
+    border-color: var(--color-blue);
+    box-shadow: 0 0 0 3px var(--color-blue-subtle);
+}
+
+.select-trigger:disabled {
+    background: var(--color-bg);
+    color: var(--color-text-tertiary);
+    cursor: not-allowed;
+}
+
+.select-popup {
+    position: absolute;
+    top: calc(100% + var(--space-1));
+    left: 0;
+    min-width: 100%;
+    max-height: 260px;
+    overflow-y: auto;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-md);
+    padding: var(--space-1);
+    margin: 0;
+    list-style: none;
+    z-index: 1500;
+    opacity: 0;
+    transform: translateY(-4px);
+    pointer-events: none;
+    transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+.select-field.opens-up .select-popup {
+    top: auto;
+    bottom: calc(100% + var(--space-1));
+    transform: translateY(4px);
+}
+
+.select-field.opens-left .select-popup {
+    left: auto;
+    right: 0;
+}
+
+.select-field.is-open .select-popup {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.select-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    font-size: var(--text-body);
+    color: var(--color-text);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.select-option .icon {
+    flex-shrink: 0;
+    color: var(--color-blue);
+    opacity: 0;
+}
+
+.select-option.is-selected {
+    color: var(--color-navy);
+    font-weight: 600;
+}
+
+.select-option.is-selected .icon {
+    opacity: 1;
+}
+
+.select-option.is-active {
+    background: var(--color-bg);
+}
+
+/* ==========================================================================
+   Custom date/month picker — progressively enhances input[type="date"] and
+   input[type="month"] (app.js). Same pattern as the custom select: the
+   native input stays in the DOM to hold the real ISO value.
+   ========================================================================== */
+
+.datepicker-field {
+    position: relative;
+}
+
+.datepicker-field input[type="date"].is-enhanced,
+.datepicker-field input[type="month"].is-enhanced {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.datepicker-trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    color: var(--color-text);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2) var(--space-3);
+    cursor: pointer;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.datepicker-trigger-label.is-placeholder {
+    color: var(--color-text-tertiary);
+}
+
+.datepicker-trigger .icon {
+    flex-shrink: 0;
+    color: var(--color-text-tertiary);
+}
+
+.datepicker-trigger:focus-visible,
+.datepicker-field.is-open .datepicker-trigger {
+    outline: none;
+    border-color: var(--color-blue);
+    box-shadow: 0 0 0 3px var(--color-blue-subtle);
+}
+
+.datepicker-popup {
+    position: absolute;
+    top: calc(100% + var(--space-1));
+    left: 0;
+    width: 272px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+    padding: var(--space-3);
+    z-index: 1500;
+    opacity: 0;
+    transform: translateY(-4px);
+    pointer-events: none;
+    transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+.datepicker-field.opens-up .datepicker-popup {
+    top: auto;
+    bottom: calc(100% + var(--space-1));
+    transform: translateY(4px);
+}
+
+.datepicker-field.opens-left .datepicker-popup {
+    left: auto;
+    right: 0;
+}
+
+.datepicker-field.is-open .datepicker-popup {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.datepicker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-3);
+}
+
+.datepicker-title {
+    font-size: var(--text-label);
+    font-weight: 600;
+    color: var(--color-text);
+    text-transform: capitalize;
+}
+
+.datepicker-nav {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.datepicker-nav:hover {
+    background: var(--color-bg);
+    color: var(--color-navy);
+}
+
+.datepicker-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--color-text-tertiary);
+    margin-bottom: var(--space-1);
+}
+
+.datepicker-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.datepicker-day {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    color: var(--color-text);
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.datepicker-day:hover,
+.datepicker-day.is-active {
+    background: var(--color-bg);
+}
+
+.datepicker-day.is-outside {
+    color: var(--color-text-tertiary);
+}
+
+.datepicker-day.is-today {
+    box-shadow: inset 0 0 0 1px var(--color-blue);
+}
+
+.datepicker-day.is-selected {
+    background: var(--color-navy);
+    color: var(--color-text-on-navy);
+}
+
+.datepicker-months-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-2);
+}
+
+.datepicker-month-cell {
+    padding: var(--space-3) var(--space-2);
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-body);
+    color: var(--color-text);
+    cursor: pointer;
+    text-transform: capitalize;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.datepicker-month-cell:hover,
+.datepicker-month-cell.is-active {
+    background: var(--color-bg);
+}
+
+.datepicker-month-cell.is-selected {
+    background: var(--color-navy);
+    color: var(--color-text-on-navy);
+}
+
+/* ==========================================================================
    Surfaces / cards
    ========================================================================== */
 
@@ -1094,6 +1426,91 @@ textarea:focus-visible,
     display: flex;
     justify-content: flex-end;
     gap: var(--space-3);
+}
+
+/* ==========================================================================
+   Form modal — overlays small create/edit forms on top of their list page
+   instead of navigating to a dedicated screen (app.js: openFormModal()).
+   Reuses .modal-backdrop-custom / .modal-dialog-custom, with a wider,
+   left-aligned panel variant.
+   ========================================================================== */
+
+.modal-panel-form {
+    text-align: left;
+    max-width: 520px;
+    padding: 0;
+}
+
+.modal-form-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-5) var(--space-6);
+    border-bottom: 1px solid var(--color-border);
+}
+
+.modal-form-header h3 {
+    margin: 0;
+    font-size: var(--text-h3);
+}
+
+.modal-form-close {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: transparent;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.modal-form-close:hover {
+    background: var(--color-bg);
+    color: var(--color-text);
+}
+
+.modal-form-body {
+    padding: var(--space-6);
+    max-height: calc(100vh - 220px);
+    overflow-y: auto;
+}
+
+.modal-form-body .field:last-of-type {
+    margin-bottom: 0;
+}
+
+.modal-form-body form > .d-flex:last-child {
+    margin-top: var(--space-6);
+}
+
+.modal-form-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-12) 0;
+    color: var(--color-text-secondary);
+}
+
+.spinner-lg {
+    width: 24px;
+    height: 24px;
+    border-width: 3px;
+    border-color: var(--color-border-strong);
+    border-top-color: var(--color-navy);
+}
+
+.select-field:has(.form-select.is-invalid) .select-trigger,
+.datepicker-field:has(input.is-invalid) .datepicker-trigger {
+    border-color: var(--color-danger);
+}
+
+.select-field:has(.form-select.is-invalid) .select-trigger:focus-visible,
+.datepicker-field:has(input.is-invalid) .datepicker-trigger:focus-visible {
+    box-shadow: 0 0 0 3px var(--color-danger-subtle);
 }
 
 /* ==========================================================================

@@ -5,7 +5,7 @@
 @section('content')
     <x-page-header title="Administración" subtitle="Usuarios, roles y módulos del sistema.">
         <x-slot:actions>
-            <a href="{{ route('admin.roles.create') }}" class="btn btn-primary btn-sm">{{ icon('plus', 'icon', 16) }} Nuevo rol</a>
+            <a href="{{ route('admin.roles.create') }}" class="btn btn-primary btn-sm js-modal-link" data-modal-title="Nuevo rol">{{ icon('plus', 'icon', 16) }} Nuevo rol</a>
         </x-slot:actions>
     </x-page-header>
 
@@ -31,7 +31,7 @@
                             <td class="cell-muted">{{ $role->description ?? '-' }}</td>
                             <td class="is-numeric">
                                 <a href="{{ route('admin.roles.access.edit', $role) }}" class="btn btn-ghost btn-sm">{{ icon('key', 'icon', 15) }} Permisos y módulos</a>
-                                <a href="{{ route('admin.roles.edit', $role) }}" class="btn btn-ghost btn-sm">{{ icon('pencil', 'icon', 15) }} Editar</a>
+                                <a href="{{ route('admin.roles.edit', $role) }}" class="btn btn-ghost btn-sm js-modal-link" data-modal-title="Editar rol">{{ icon('pencil', 'icon', 15) }} Editar</a>
                             </td>
                         </tr>
                     @endforeach

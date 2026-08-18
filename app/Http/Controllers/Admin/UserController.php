@@ -9,6 +9,7 @@ use App\Models\AuditLog;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
@@ -21,14 +22,16 @@ class UserController extends Controller
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
-        return view('admin.users.form', [
+        $data = [
             'user' => null,
             'roles' => Role::orderBy('name')->get(),
             'action' => route('admin.users.store'),
             'method' => 'POST',
-        ]);
+        ];
+
+        return $request->ajax() ? view('admin.users._form', $data) : view('admin.users.form', $data);
     }
 
     public function store(UserStoreRequest $request): RedirectResponse
@@ -44,14 +47,16 @@ class UserController extends Controller
         return redirect()->route('admin.users.index')->with('success', 'Usuario creado correctamente.');
     }
 
-    public function edit(User $user): View
+    public function edit(Request $request, User $user): View
     {
-        return view('admin.users.form', [
+        $data = [
             'user' => $user,
             'roles' => Role::orderBy('name')->get(),
             'action' => route('admin.users.update', $user),
             'method' => 'PUT',
-        ]);
+        ];
+
+        return $request->ajax() ? view('admin.users._form', $data) : view('admin.users.form', $data);
     }
 
     public function update(UserUpdateRequest $request, User $user): RedirectResponse

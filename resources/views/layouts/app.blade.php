@@ -122,6 +122,20 @@
     </div>
 </div>
 
+{{-- Form modal — overlays small create/edit forms (app.js: openFormModal()) so
+     they don't need a dedicated screen. Content is fetched on open and injected
+     into #formModalBody. --}}
+<div class="modal-backdrop-custom" id="formModalBackdrop"></div>
+<div class="modal-dialog-custom" id="formModalDialog" role="dialog" aria-modal="true" aria-labelledby="formModalTitle">
+    <div class="modal-panel modal-panel-form">
+        <div class="modal-form-header">
+            <h3 id="formModalTitle"></h3>
+            <button type="button" class="modal-form-close" id="formModalClose" aria-label="Cerrar">{{ icon('x', 'icon', 18) }}</button>
+        </div>
+        <div class="modal-form-body" id="formModalBody"></div>
+    </div>
+</div>
+
 {{-- Toasts: server flash messages rendered as auto-dismissing notifications instead of a static banner --}}
 <div class="toast-stack" id="toastStack" aria-live="polite"></div>
 <script type="application/json" id="flashData">{!! json_encode(['success' => session('success') ? [session('success')] : [], 'error' => session('error') ? [session('error')] : []]) !!}</script>
@@ -130,7 +144,12 @@
         'check-circle-2': {!! json_encode((string) icon('check-circle-2')) !!},
         'x-circle': {!! json_encode((string) icon('x-circle')) !!},
         'alert-triangle': {!! json_encode((string) icon('alert-triangle')) !!},
-        'info': {!! json_encode((string) icon('info')) !!}
+        'info': {!! json_encode((string) icon('info')) !!},
+        'chevron-down': {!! json_encode((string) icon('chevron-down', 'icon', 16)) !!},
+        'chevron-left': {!! json_encode((string) icon('chevron-left', 'icon', 16)) !!},
+        'chevron-right': {!! json_encode((string) icon('chevron-right', 'icon', 16)) !!},
+        'calendar': {!! json_encode((string) icon('calendar', 'icon', 16)) !!},
+        'check': {!! json_encode((string) icon('check', 'icon', 14)) !!}
     };
 </script>
 

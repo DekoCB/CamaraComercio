@@ -27,20 +27,20 @@ Justificación de cada decisión en [`docs/PROJECT_ANALYSIS.md`](docs/PROJECT_AN
    php artisan key:generate
    ```
 4. Ajustar `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` en `.env` si difieren de los valores por defecto (`camara_comercio` / `root` / vacío).
-5. Iniciar Apache y MySQL desde el panel de control de XAMPP.
+5. Este proyecto tiene un **puerto Apache dedicado (8002)**, distinto del resto de proyectos en `htdocs` (que siguen en el 8000) — evita que este sistema comparta origen/URL con otras aplicaciones ajenas alojadas en el mismo `htdocs`. Configuración en `c:\xampp\apache\conf\httpd.conf` (`Listen 8002`, agregado junto al `Listen 8000` ya existente) y `c:\xampp\apache\conf\extra\httpd-vhosts.conf` (`<VirtualHost *:8002>` con `DocumentRoot` apuntando directo a `CamaraComercio/public`, sin subcarpeta). Iniciar Apache y MySQL desde el panel de control de XAMPP (o `httpd.exe`/`mysqld.exe` directamente).
 6. Migrar y sembrar la base de datos (crea `camara_comercio` si no existe, carga roles/permisos/módulos/usuarios y asociados de ejemplo):
    ```
    php artisan migrate --seed
    ```
    El seeder imprime las credenciales generadas. **Cámbielas antes de usar el sistema fuera de un entorno de desarrollo.**
-7. Abrir en el navegador: `http://localhost:8000/CamaraComercio/public/` (ajustar host/puerto según la configuración de Apache y `APP_URL` en `.env`).
+7. Abrir en el navegador: `http://localhost:8002/` (sin subcarpeta, gracias al VirtualHost dedicado — ajustar si se cambia el puerto en `httpd-vhosts.conf` y `APP_URL`).
 
 ## Variables de entorno (`.env`)
 
 | Variable | Descripción |
 |---|---|
 | `APP_ENV`, `APP_DEBUG` | Entorno y si se muestran errores detallados |
-| `APP_URL` | URL base de la aplicación (incluye la subcarpeta `/CamaraComercio/public` en este entorno XAMPP) |
+| `APP_URL` | URL base de la aplicación — `http://localhost:8002` (puerto dedicado vía VirtualHost, ver paso 5 de instalación; sin subcarpeta porque el `DocumentRoot` del vhost ya apunta a `public/`) |
 | `APP_KEY` | Generada por `php artisan key:generate`, no compartir |
 | `DB_CONNECTION=mysql`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` | Conexión a MySQL/MariaDB |
 | `SESSION_DRIVER`, `SESSION_LIFETIME` | Configuración de sesión (por defecto `database`) |

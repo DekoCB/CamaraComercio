@@ -10,6 +10,7 @@ use App\Models\Module;
 use App\Models\Permission;
 use App\Models\Role;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class RoleController extends Controller
@@ -21,13 +22,15 @@ class RoleController extends Controller
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
-        return view('admin.roles.form', [
+        $data = [
             'role' => null,
             'action' => route('admin.roles.store'),
             'method' => 'POST',
-        ]);
+        ];
+
+        return $request->ajax() ? view('admin.roles._form', $data) : view('admin.roles.form', $data);
     }
 
     public function store(RoleRequest $request): RedirectResponse
@@ -40,13 +43,15 @@ class RoleController extends Controller
             ->with('success', 'Rol creado correctamente. Ahora asigne sus permisos y módulos.');
     }
 
-    public function edit(Role $role): View
+    public function edit(Request $request, Role $role): View
     {
-        return view('admin.roles.form', [
+        $data = [
             'role' => $role,
             'action' => route('admin.roles.update', $role),
             'method' => 'PUT',
-        ]);
+        ];
+
+        return $request->ajax() ? view('admin.roles._form', $data) : view('admin.roles.form', $data);
     }
 
     public function update(RoleRequest $request, Role $role): RedirectResponse

@@ -42,6 +42,14 @@ Trabajo puramente visual sobre EP-08 (HU-16 a HU-20), sin crear ni modificar his
 - El modal de confirmación y los toasts (reemplazos de `window.confirm()` y las alertas Bootstrap) funcionan en las tres acciones que ya requerían confirmación (HU-20): generación masiva de facturación, confirmación de importación, desactivación de módulo.
 - El dashboard (HU-16) muestra KPIs reales con tendencia mes a mes y dos gráficos (cobranza mensual, distribución de cartera) alimentados por `App\Services\DashboardService`, sin alterar la regla de que `VENCIDA` nunca se persiste (`Invoice::effectiveStatus()`).
 
+## Criterios de aceptación — Calendarios/listas personalizados y formularios en modal (2026-08-18)
+
+Mejora de UX sobre EP-08, sin historias de usuario nuevas — ver `docs/PROJECT_ANALYSIS.md` sección 10.11 y `docs/DESIGN_SYSTEM.md` sección 10:
+
+- Todo `<input type="date">`/`type="month"` y `<select>` del sistema usa ahora un widget propio con la paleta navy/azul/teal en vez del popup nativo del navegador; el valor que llega al backend es idéntico (el elemento nativo sigue en el DOM, solo oculto visualmente), así que ningún test de validación cambió.
+- Crear/editar asociado, usuario, rol (datos básicos) y módulo se abren como modal sobre la lista en vez de navegar a una pantalla propia; la matriz de permisos de un rol se dejó como pantalla completa a propósito (no es un "formulario pequeño"). Los errores de validación se muestran inline sin recargar; un envío exitoso muestra el mismo toast de siempre.
+- 71/71 tests sin cambios; verificado con Playwright en 1440px y 375px en las 15 pantallas del sistema.
+
 ## Ejemplo de criterio de aceptación (HU-09)
 
 ```

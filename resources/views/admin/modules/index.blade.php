@@ -5,7 +5,7 @@
 @section('content')
     <x-page-header title="Administración" subtitle="Usuarios, roles y módulos del sistema.">
         <x-slot:actions>
-            <a href="{{ route('admin.modules.create') }}" class="btn btn-primary btn-sm">{{ icon('plus', 'icon', 16) }} Nuevo módulo</a>
+            <a href="{{ route('admin.modules.create') }}" class="btn btn-primary btn-sm js-modal-link" data-modal-title="Nuevo módulo">{{ icon('plus', 'icon', 16) }} Nuevo módulo</a>
         </x-slot:actions>
     </x-page-header>
 

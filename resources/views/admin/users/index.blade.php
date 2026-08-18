@@ -5,7 +5,7 @@
 @section('content')
     <x-page-header title="Administración" subtitle="Usuarios, roles y módulos del sistema.">
         <x-slot:actions>
-            <a href="{{ route('admin.users.create') }}" class="btn btn-primary btn-sm">{{ icon('user-round-plus', 'icon', 16) }} Nuevo usuario</a>
+            <a href="{{ route('admin.users.create') }}" class="btn btn-primary btn-sm js-modal-link" data-modal-title="Nuevo usuario">{{ icon('user-round-plus', 'icon', 16) }} Nuevo usuario</a>
         </x-slot:actions>
     </x-page-header>
 
@@ -40,7 +40,7 @@
                                 @endif
                             </td>
                             <td class="is-numeric">
-                                <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-ghost btn-sm">{{ icon('pencil', 'icon', 15) }} Editar</a>
+                                <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-ghost btn-sm js-modal-link" data-modal-title="Editar usuario">{{ icon('pencil', 'icon', 15) }} Editar</a>
                             </td>
                         </tr>
                     @endforeach
