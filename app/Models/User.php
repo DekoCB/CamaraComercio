@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -19,6 +21,7 @@ class User extends Authenticatable
         'password',
         'role_id',
         'is_active',
+        'avatar_path',
     ];
 
     protected $hidden = [
@@ -59,5 +62,20 @@ class User extends Authenticatable
     public function moduleCodes(): array
     {
         return $this->role->modules->where('is_active', true)->pluck('code')->all();
+    }
+
+    /**
+     * Up to two initials from the user's name — the fallback avatar shown
+     * everywhere a profile photo hasn't been set (topbar, wherever else
+     * <x-avatar> is used).
+     */
+    public function initials(): string
+    {
+        return (string) Str::of($this->name)->explode(' ')->map(fn ($p) => mb_substr($p, 0, 1))->take(2)->implode('');
+    }
+
+    public function avatarUrl(): ?string
+    {
+        return $this->avatar_path ? Storage::disk('public')->url($this->avatar_path) : null;
     }
 }

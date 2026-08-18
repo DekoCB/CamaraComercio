@@ -108,6 +108,7 @@ Sin logo oficial disponible. Tratamiento temporal: una marca geométrica simple 
 | Select personalizado | `app.js`: `enhanceSelects()` / `app.css`: `.select-field` | Progresivamente mejora cada `<select class="form-select">` (2026-08-18, ver sección 10) |
 | Selector de fecha/mes | `app.js`: `enhanceDateInputs()` / `app.css`: `.datepicker-field` | Progresivamente mejora `input[type="date"]` y `input[type="month"]` (2026-08-18, ver sección 10) |
 | Modal de formulario | `app.js`: `openFormModal()` / `app.css`: `.modal-panel-form` | Overlay para crear/editar registros sin navegar a otra pantalla (2026-08-18, ver sección 10) |
+| Avatar | `avatar.blade.php` | `<x-avatar :user="...">` — foto si `User::avatarUrl()` existe, iniciales (`User::initials()`) si no. Único punto donde se calcula esto; antes vivía inline en el topbar (2026-08-19, ver sección 15) |
 
 No se duplican componentes: por ejemplo, la tarjeta de "asociado" (sección 24 del brief) reutiliza la vista de estado de cuenta ya construida en Sprint 3 (HU-12) en vez de crear una página nueva paralela.
 
@@ -243,3 +244,21 @@ El botón de "Deuda pendiente" es un `<a>` simple (no un formulario), así que n
 ### 14.4 Verificación
 
 Suite completa (71/71) sin cambios. Playwright: calendario dentro del modal confirmado con las 42 celdas del grid renderizadas y la caja completa dentro del viewport (antes se cortaba); popup de select también porteado y funcional, valor sincronizado al `<select>` nativo; sin acumulación de popups huérfanos tras varios ciclos de abrir/cerrar el modal; estado `disabled` de un botón simulando una restauración de bfcache (`pageshow` con `persisted: true`) confirmado que se limpia correctamente; captura de pantalla del sidebar centrado en ambos estados (expandido/colapsado).
+
+## 15. Adenda — 2026-08-19 (5): configuración de perfil de usuario
+
+A pedido del usuario: una pantalla donde cualquier usuario edite su propia foto, nombre, correo y contraseña — "por ahora" solo eso, explícitamente. Se implementó como un formulario más en modal (sección 10.2), abierto desde un enlace "Mi perfil" nuevo en el dropdown del topbar (visible en cualquier pantalla, ya que es autoservicio y no depende de ningún permiso de rol).
+
+### 15.1 Decisiones de diseño
+
+- **Foto:** un botón "Cambiar foto" (`<label for="avatar">`, sin JS) activa el selector de archivos nativo — el input real queda oculto con `.visually-hidden` de Bootstrap. Si ya hay foto, aparece un checkbox "Quitar foto actual" — sin él, una vez subida una foto no habría forma de volver a las iniciales. Sin previsualización antes de guardar (fuera del alcance "por ahora" pedido).
+- **Contraseña opcional:** los tres campos de contraseña se dejan en blanco por defecto; solo si se llena "Nueva contraseña" el backend exige y valida "Contraseña actual" (regla nativa `current_password` de Laravel) — cambiar el nombre o el correo no debería obligar a reescribir la contraseña.
+- **`<x-avatar>`:** antes el círculo con iniciales del topbar se calculaba inline (`Str::of(...)->explode(...)`) directamente en `layouts/app.blade.php`, sin reutilización posible. Se extrajo a `User::initials()`/`User::avatarUrl()` en el modelo y a un componente Blade que decide foto-o-iniciales en un solo lugar; el topbar y la vista previa del propio formulario de perfil usan el mismo componente.
+
+### 15.2 Bug real: `current_password` rechazaba guardados que no tocaban la contraseña
+
+Los 12 tests automatizados iniciales pasaban en verde, pero el formulario real fallaba siempre que se guardaba sin cambiar la contraseña. Causa: un `<form>` HTML envía **todos** sus campos al hacer submit, incluidos los que el usuario nunca tocó (`current_password=""`) — mientras que un test que llama `$this->put('/profile', [...])` con una clave simplemente omitida es indistinguible, para el test, de "el campo no existe". La regla `current_password` no tenía `nullable`, así que corría igual sobre ese string vacío, lo comparaba contra el hash real de la contraseña y fallaba siempre. Se agregó `nullable` a la regla y un test que replica la forma real de un envío de navegador (todas las claves presentes, contraseña vacía) para que quede cubierto automáticamente en adelante. Mismo patrón que otros bugs de esta sesión (parpadeo de sidebar, calendario recortado): solo apareció al verificar con un navegador real, no con la suite de tests.
+
+### 15.3 Verificación
+
+13/13 tests de `ProfileTest` en verde (84/84 en total, sin regresiones). Playwright: foto real subida (`set_input_files`) y confirmada tanto en la vista previa del formulario como en el avatar del topbar tras recargar; cambio de contraseña verificado cerrando sesión y volviendo a entrar con la contraseña nueva; modo oscuro y mobile (375px) revisados sin overflow ni fugas de fondo blanco.

@@ -33,7 +33,11 @@ Justificación de cada decisión en [`docs/PROJECT_ANALYSIS.md`](docs/PROJECT_AN
    php artisan migrate --seed
    ```
    El seeder imprime las credenciales generadas. **Cámbielas antes de usar el sistema fuera de un entorno de desarrollo.**
-7. Abrir en el navegador: `http://localhost:8002/` (sin subcarpeta, gracias al VirtualHost dedicado — ajustar si se cambia el puerto en `httpd-vhosts.conf` y `APP_URL`).
+7. Crear el enlace simbólico de almacenamiento público (necesario para que las fotos de perfil se sirvan por URL):
+   ```
+   php artisan storage:link
+   ```
+8. Abrir en el navegador: `http://localhost:8002/` (sin subcarpeta, gracias al VirtualHost dedicado — ajustar si se cambia el puerto en `httpd-vhosts.conf` y `APP_URL`).
 
 ## Variables de entorno (`.env`)
 
@@ -64,7 +68,7 @@ Ver el modelo de datos completo en [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md).
 php artisan test
 ```
 
-- `tests/Feature/` — pruebas de extremo a extremo por HTTP (login con límite de intentos, RBAC con 403 real, CRUD de asociados con validación, recuperación de contraseña de un solo uso, administración de usuarios/roles/módulos, generación de facturas, pagos, cartera y reportes con exportación, importación de asociados desde Excel), usando `RefreshDatabase` sobre **SQLite en memoria** (nunca toca la base de datos MySQL de desarrollo). 71 tests en total.
+- `tests/Feature/` — pruebas de extremo a extremo por HTTP (login con límite de intentos, RBAC con 403 real, CRUD de asociados con validación, recuperación de contraseña de un solo uso, administración de usuarios/roles/módulos, generación de facturas, pagos, cartera y reportes con exportación, importación de asociados desde Excel, configuración de perfil propio incluida foto/contraseña), usando `RefreshDatabase` sobre **SQLite en memoria** (nunca toca la base de datos MySQL de desarrollo). 84 tests en total.
 - `tests/Unit/` — reservado para lógica de dominio pura que no dependa del framework; hasta ahora toda la lógica de negocio ha cabido en Form Requests, accessors/scopes de Eloquent o clases de `app/Services/`, cubiertas por Feature tests (ver `docs/ARCHITECTURE.md`).
 
 Nota: `phpunit.xml` sobreescribe `APP_URL` a un valor sin subcarpeta solo para el entorno de pruebas — ver el comentario en ese archivo y `docs/PROJECT_ANALYSIS.md` sección 10.4 si hace falta tocarlo.
@@ -110,6 +114,7 @@ Ver el plan de sprints completo en [`docs/PROJECT_ANALYSIS.md`](docs/PROJECT_ANA
 - **Sprint 4 (7–13 sep 2026):** ✅ Completado (17 ago, adelantado) — importación de asociados desde Excel, límite de intentos de login, filtros de búsqueda en cartera, verificación responsiva en navegador real, y este checklist de producción.
 - **Rediseño UI/UX (18 ago 2026):** ✅ Completado — identidad visual "Corporate Modern / Financial SaaS" propia de una Cámara de Comercio: tokens de diseño, iconografía Lucide, componentes Blade reutilizables, modal de confirmación y toasts propios (sin `window.confirm()` ni alertas nativas), dashboard con datos y gráficos reales, wizard de generación de facturación. Detalle en `docs/DESIGN_SYSTEM.md` y `docs/PROJECT_ANALYSIS.md` sección 10.10.
 - **Calendarios/listas personalizados, formularios en modal y tema oscuro (18–19 ago 2026):** ✅ Completado — selectores de fecha/mes y listas desplegables con la identidad visual del sistema (reemplazan los popups nativos del navegador), crear/editar registros pequeños como overlay en vez de pantalla propia, toggle de tema oscuro/claro persistente, y colapso de sidebar sin saltos de posición. Detalle en `docs/DESIGN_SYSTEM.md` secciones 10–11 y `docs/PROJECT_ANALYSIS.md` secciones 10.11–10.12.
+- **Configuración de perfil de usuario (19 ago 2026):** ✅ Completado — cualquier usuario autenticado edita su propia foto, nombre, correo y contraseña desde un modal accesible desde el topbar; foto servida desde el disco público de Laravel. Detalle en `docs/PROJECT_ANALYSIS.md` sección 10.19.
 
 ## Antes de desplegar a producción
 
@@ -121,4 +126,4 @@ Este MVP fue desarrollado y verificado en un entorno local XAMPP. Antes de expon
 4. **Base de datos:** respaldos periódicos (`mysqldump`) antes de cada migración en producción; esta instalación de XAMPP en particular tiene antecedentes de corrupción de MariaDB (ver `docs/PROJECT_ANALYSIS.md` sección 2) — verificar la integridad del servidor de destino antes de migrar datos reales.
 5. **Sesiones:** confirmar que las cookies de sesión tengan `Secure` activado (automático detrás de HTTPS) y revisar `SESSION_LIFETIME` según la política de la Cámara.
 6. **Usuarios:** cambiar las contraseñas de los usuarios de desarrollo (`admin@camaracomercio.test`, `cobranzas@camaracomercio.test`) o eliminarlos y crear cuentas reales antes de dar acceso a usuarios finales.
-7. **Permisos de archivos:** `storage/` y `bootstrap/cache/` deben ser escribibles por el usuario del servidor web; nada bajo `storage/app/imports` debe quedar accesible públicamente (ya está fuera de `public/`).
+7. **Permisos de archivos:** `storage/` y `bootstrap/cache/` deben ser escribibles por el usuario del servidor web; nada bajo `storage/app/imports` debe quedar accesible públicamente (ya está fuera de `public/`). `php artisan storage:link` debe ejecutarse en el servidor de destino (no es algo que se versione en git) para que las fotos de perfil (`storage/app/public/avatars`) se sirvan correctamente; incluir esa carpeta en los respaldos periódicos junto con la base de datos.

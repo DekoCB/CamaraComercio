@@ -12,6 +12,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PortfolioController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -49,6 +50,10 @@ Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
 // -------------------------------------------------------------------
 Route::middleware('auth')->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
+
+    // Profile — self-service, no permission needed beyond being logged in.
+    Route::get('profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
 
     // Associates (EP-03). Everyone with a session can browse the list;
     // create/edit require the associates.manage permission (checked

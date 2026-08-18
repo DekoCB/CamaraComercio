@@ -110,7 +110,7 @@
             </button>
             <div class="dropdown">
                 <button class="topbar-user" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <span class="avatar">{{ Illuminate\Support\Str::of(auth()->user()->name)->explode(' ')->map(fn ($p) => mb_substr($p, 0, 1))->take(2)->implode('') }}</span>
+                    <x-avatar :user="auth()->user()" :size="32" />
                     <span class="topbar-user-meta">
                         <strong>{{ auth()->user()->name }}</strong>
                         <span>{{ auth()->user()->role->name }}</span>
@@ -119,6 +119,12 @@
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li><span class="dropdown-item-text text-secondary" style="font-size: 0.8rem">{{ auth()->user()->email }}</span></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a href="{{ route('profile.edit') }}" class="dropdown-item js-modal-link" data-modal-title="Mi perfil">
+                            {{ icon('circle-user-round') }} Mi perfil
+                        </a>
+                    </li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
                         <form method="POST" action="{{ route('logout') }}">

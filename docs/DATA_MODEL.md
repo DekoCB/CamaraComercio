@@ -35,7 +35,7 @@ Catálogo de módulos de navegación (`dashboard`, `associates`, `billing`, `pay
 Tabla puente `role_id` + `module_id`. Define qué puede *ver* cada rol en la navegación (independiente de qué puede *hacer* — ver `role_permissions`).
 
 ### users
-Cuentas de acceso al sistema (tabla base de Laravel + columnas propias añadidas en una segunda migración: `role_id`, `is_active`). La contraseña se guarda con el cast `'password' => 'hashed'` de Eloquent (bcrypt vía `Hash::make`) — nunca se almacena ni se expone en texto plano (`$hidden = ['password', 'remember_token']`). `email` es único.
+Cuentas de acceso al sistema (tabla base de Laravel + columnas propias añadidas en migraciones posteriores: `role_id`, `is_active`, `avatar_path`). La contraseña se guarda con el cast `'password' => 'hashed'` de Eloquent (bcrypt vía `Hash::make`) — nunca se almacena ni se expone en texto plano (`$hidden = ['password', 'remember_token']`). `email` es único. `avatar_path` (nullable) guarda la ruta relativa de la foto de perfil dentro del disco `public` (`storage/app/public/avatars`, servida vía `php artisan storage:link`); cada usuario edita su propia foto/nombre/correo/contraseña desde `/profile` (autoservicio, sin permiso de rol adicional).
 
 ### password_reset_tokens
 Tabla **nativa de Laravel** (no una tabla de diseño propio): clave primaria `email`, `token` (hash, generado por el `PasswordBroker` de Laravel) y `created_at`. El broker nativo (`Password::sendResetLink` / `Password::reset`) gestiona expiración (`config('auth.passwords.users.expire')`, 60 minutos por defecto) y uso único (el registro se borra al completar el reset) — ver HU-03 y la nota D9 en `PROJECT_ANALYSIS.md`.
