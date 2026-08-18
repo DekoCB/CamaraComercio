@@ -5,14 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Sistema de Facturación') · Cámara de Comercio</title>
     <script>
-        // Applies the saved theme choice before first paint so there's no
-        // flash of the wrong theme. Absent an explicit choice, the OS
-        // preference (prefers-color-scheme, handled in tokens.css) decides.
+        // Applies the saved theme choice and sidebar-collapsed state before
+        // first paint — same reasoning for both: this is a server-rendered
+        // MPA, so every navigation reloads the page from scratch. Without
+        // this, app.js (loaded at the bottom of body) would only add
+        // .is-collapsed after the sidebar already painted expanded, and
+        // its own width transition would visibly animate shut on every
+        // single page load — the "flickers open then snaps shut" bug.
+        // Setting the class here, on <html>, before the sidebar even
+        // exists in the DOM, means the very first layout pass is already
+        // correct. Absent an explicit theme choice, the OS preference
+        // (prefers-color-scheme, handled in tokens.css) decides.
         (function () {
             try {
                 var theme = localStorage.getItem('cc_theme');
                 if (theme === 'dark' || theme === 'light') {
                     document.documentElement.setAttribute('data-theme', theme);
+                }
+                if (localStorage.getItem('cc_sidebar_collapsed') === '1') {
+                    document.documentElement.classList.add('sidebar-collapsed');
                 }
             } catch (e) {}
         })();

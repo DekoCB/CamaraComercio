@@ -9,6 +9,7 @@ use App\Models\Invoice;
 use App\Services\InvoiceGenerationService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class InvoiceController extends Controller
@@ -38,12 +39,14 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
-        return view('invoices.generate', [
+        $data = [
             'defaultPeriod' => now()->format('Y-m'),
             'activeAssociatesCount' => Associate::where('is_active', true)->count(),
-        ]);
+        ];
+
+        return $request->ajax() ? view('invoices._generate', $data) : view('invoices.generate', $data);
     }
 
     public function store(InvoiceGenerateRequest $request, InvoiceGenerationService $service): RedirectResponse

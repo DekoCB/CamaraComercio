@@ -20,19 +20,17 @@
 
     /* ---------------------------------------------------------------
      * Desktop sidebar collapse (persisted per browser via localStorage —
-     * purely a display preference, not worth a server round-trip)
+     * purely a display preference, not worth a server round-trip). The
+     * initial state is already applied pre-paint by the inline script in
+     * <head> (on <html>, not .app-shell — see the comment there for why);
+     * this only needs to handle the click.
      * --------------------------------------------------------------- */
     var collapseToggle = document.getElementById('sidebarCollapseToggle');
-    var shell = document.querySelector('.app-shell');
     var COLLAPSE_KEY = 'cc_sidebar_collapsed';
 
-    if (shell && localStorage.getItem(COLLAPSE_KEY) === '1') {
-        shell.classList.add('is-collapsed');
-    }
-
-    if (collapseToggle && shell) {
+    if (collapseToggle) {
         collapseToggle.addEventListener('click', function () {
-            var collapsed = shell.classList.toggle('is-collapsed');
+            var collapsed = document.documentElement.classList.toggle('sidebar-collapsed');
             localStorage.setItem(COLLAPSE_KEY, collapsed ? '1' : '0');
         });
     }
@@ -127,8 +125,19 @@
         confirmAcceptBtn.addEventListener('click', function () {
             var form = pendingForm;
             closeConfirmModal();
-            if (form) {
+            if (!form) {
+                return;
+            }
+            if (form.__submitViaAjax) {
+                // Form is wired into the AJAX modal-form flow (e.g. the
+                // invoice generation wizard) — run that instead of a native
+                // submit, so validation errors still render inline and
+                // success still goes through the normal flash-relay/toast
+                // path rather than a full page navigation.
+                form.__submitViaAjax();
+            } else {
                 setButtonLoading(form.querySelector('[type="submit"]'));
+                form.dataset.confirmed = '1';
                 HTMLFormElement.prototype.submit.call(form);
             }
         });
@@ -736,6 +745,97 @@
     enhanceDateInputs(document);
 
     /* ---------------------------------------------------------------
+     * Invoice generation wizard (4 steps: período/monto/fecha límite/
+     * confirmar). Scoped to `root` rather than bare document.getElementById
+     * so it works identically whether the wizard is the full page
+     * (called once below, against `document`) or fetched into the form
+     * modal (called again against `formModalBody` once its HTML lands —
+     * see openFormModal below). No-ops on any page without the wizard.
+     * --------------------------------------------------------------- */
+    function initInvoiceWizard(root) {
+        var form = root.querySelector('#generateForm');
+        if (!form) {
+            return;
+        }
+
+        var totalSteps = 4;
+        var current = 1;
+        var stepsList = root.querySelectorAll('#wizardSteps li');
+        var panels = root.querySelectorAll('.wizard-panel');
+        var backBtn = root.querySelector('#wizardBack');
+        var nextBtn = root.querySelector('#wizardNext');
+        var submitBtn = root.querySelector('#wizardSubmit');
+
+        function fieldsForStep(step) {
+            return root.querySelector('.wizard-panel[data-panel="' + step + '"]').querySelectorAll('input[required]');
+        }
+
+        function validateStep(step) {
+            var valid = true;
+            fieldsForStep(step).forEach(function (field) {
+                if (!field.checkValidity()) {
+                    field.reportValidity();
+                    valid = false;
+                }
+            });
+            return valid;
+        }
+
+        function render() {
+            panels.forEach(function (panel) {
+                panel.classList.toggle('is-active', parseInt(panel.dataset.panel, 10) === current);
+            });
+            stepsList.forEach(function (li) {
+                var step = parseInt(li.dataset.step, 10);
+                li.classList.toggle('is-active', step === current);
+                li.classList.toggle('is-done', step < current);
+            });
+            backBtn.style.display = current === 1 ? 'none' : 'inline-flex';
+            nextBtn.style.display = current === totalSteps ? 'none' : 'inline-flex';
+            submitBtn.style.display = current === totalSteps ? 'inline-flex' : 'none';
+
+            if (current === totalSteps) {
+                updateSummary();
+            }
+        }
+
+        function updateSummary() {
+            var period = root.querySelector('#period').value;
+            var amount = parseFloat(root.querySelector('#amount').value || '0');
+            var dueDate = root.querySelector('#due_date').value;
+
+            root.querySelector('#summaryPeriod').textContent = period || '—';
+            root.querySelector('#summaryAmount').textContent = isNaN(amount) ? '—' : 'S/ ' + amount.toLocaleString('es-PE', { minimumFractionDigits: 2 });
+            root.querySelector('#summaryDueDate').textContent = dueDate ? new Date(dueDate + 'T00:00:00').toLocaleDateString('es-PE') : '—';
+        }
+
+        nextBtn.addEventListener('click', function () {
+            if (!validateStep(current)) { return; }
+            current = Math.min(current + 1, totalSteps);
+            render();
+        });
+
+        backBtn.addEventListener('click', function () {
+            current = Math.max(current - 1, 1);
+            render();
+        });
+
+        // A hidden submit button still responds to Enter in a text field by
+        // default — route Enter through "next" on every step except the
+        // last, where submitting is exactly what should happen.
+        form.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter' && current < totalSteps) {
+                event.preventDefault();
+                nextBtn.click();
+            }
+        });
+
+        render();
+    }
+
+    initInvoiceWizard(document);
+
+    /* ---------------------------------------------------------------
      * Form modal — overlays small create/edit forms on top of the list
      * page that opened them instead of navigating to a dedicated
      * screen. The fetched form is the exact same partial the full-page
@@ -807,8 +907,8 @@
         if (!form) {
             return;
         }
-        form.addEventListener('submit', function (event) {
-            event.preventDefault();
+
+        function submitViaAjax() {
             clearFormErrors(form);
             var submitBtn = form.querySelector('[type="submit"]');
             setButtonLoading(submitBtn);
@@ -851,6 +951,21 @@
                 resetSubmitButton(submitBtn);
                 window.__showToast && window.__showToast('danger', 'No pudimos guardar los cambios. Intenta nuevamente.');
             });
+        }
+
+        // Exposed so the shared confirm-modal (e.g. the invoice generation
+        // wizard's "¿Generar facturas?" dialog) can run the AJAX submit on
+        // accept instead of its default native form.submit() — see the
+        // confirmAcceptBtn handler near the top of this file.
+        form.__submitViaAjax = submitViaAjax;
+
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            if (form.dataset.confirm && form.dataset.confirmed !== '1') {
+                return; // the document-level data-confirm handler shows the dialog first
+            }
+            delete form.dataset.confirmed;
+            submitViaAjax();
         });
 
         var cancelBtn = form.querySelector('.js-modal-cancel');
@@ -888,6 +1003,7 @@
             formModalBody.innerHTML = html;
             enhanceSelects(formModalBody);
             enhanceDateInputs(formModalBody);
+            initInvoiceWizard(formModalBody);
             wireModalForm(formModalBody.querySelector('form'));
             var firstField = formModalBody.querySelector('input:not([type="hidden"]), .select-trigger, .datepicker-trigger, textarea');
             if (firstField) {

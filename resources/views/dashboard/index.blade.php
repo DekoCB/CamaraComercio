@@ -66,7 +66,7 @@
             @endmodule
             @module('billing')
                 @can('billing.generate')
-                    <a href="{{ route('invoices.create') }}" class="btn btn-secondary btn-sm">{{ icon('file-text', 'icon', 16) }} Generar facturación</a>
+                    <a href="{{ route('invoices.create') }}" class="btn btn-secondary btn-sm js-modal-link" data-modal-title="Generar facturación del mes">{{ icon('file-text', 'icon', 16) }} Generar facturación</a>
                 @endcan
                 <a href="{{ route('invoices.index') }}" class="btn btn-ghost btn-sm">{{ icon('file-text', 'icon', 16) }} Ver facturas</a>
             @endmodule
@@ -127,7 +127,7 @@
                 responsive: true,
                 plugins: { legend: { display: false } },
                 scales: {
-                    y: { beginAtZero: true, ticks: { callback: function (v) { return 'S/ ' + v; } }, grid: { color: '#F1F5F9' } },
+                    y: { beginAtZero: true, ticks: { callback: function (v) { return 'S/ ' + v; } }, grid: { display: false } },
                     x: { grid: { display: false } }
                 }
             }

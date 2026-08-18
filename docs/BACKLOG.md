@@ -58,6 +58,15 @@ Mejora de UX sobre EP-08, sin historias de usuario nuevas — ver `docs/PROJECT_
 - Los íconos del sidebar ya no saltan de posición al colapsar/expandir (verificado con Playwright: el ícono no se mueve ni un píxel durante la animación), y el botón de colapsar/expandir ya no desaparece al colapsar.
 - 71/71 tests sin cambios; verificado visualmente con Playwright en modo oscuro en 8+ pantallas, incluidos el modal de formulario, el selector personalizado y el selector de fecha.
 
+## Criterios de aceptación — Sidebar sin parpadeo, wizard en modal, gráfico sin líneas blancas (2026-08-19)
+
+Mejora de UX sobre EP-08, sin historias de usuario nuevas — ver `docs/PROJECT_ANALYSIS.md` sección 10.14 y `docs/DESIGN_SYSTEM.md` sección 12:
+
+- Con el sidebar colapsado, navegar entre módulos ya no muestra el sidebar expandiéndose y volviéndose a colapsar; queda colapsado desde el primer frame.
+- "Generar facturación del mes" se abre como modal sobre el listado de facturas, igual que el resto de formularios pequeños; el diálogo de confirmación previo a generar las facturas sigue apareciendo y ahora se muestra correctamente por encima del modal.
+- El gráfico de cobranza mensual del dashboard ya no muestra líneas de cuadrícula blancas en modo oscuro.
+- 71/71 tests sin cambios; verificado con Playwright (muestreo de frames para el sidebar, flujo completo del wizard en el modal, formularios de confirmación nativos sin regresión).
+
 ## Ejemplo de criterio de aceptación (HU-09)
 
 ```

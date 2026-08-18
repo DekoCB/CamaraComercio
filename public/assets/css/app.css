@@ -249,31 +249,31 @@ textarea:focus-visible,
    change here, which the sidebar's own width transition already smooths
    out. The collapse-toggle button itself (and its icon) is never touched
    by this rule, so it can't disappear when the sidebar collapses. */
-.app-shell.is-collapsed .sidebar {
+html.sidebar-collapsed .app-shell .sidebar {
     width: var(--sidebar-width-collapsed);
 }
 
-.app-shell.is-collapsed .sidebar-brand-text,
-.app-shell.is-collapsed .sidebar-nav .nav-link span {
+html.sidebar-collapsed .app-shell .sidebar-brand-text,
+html.sidebar-collapsed .app-shell .sidebar-nav .nav-link span {
     opacity: 0;
     max-width: 0;
 }
 
-.app-shell.is-collapsed .sidebar-nav .nav-link.active::before {
+html.sidebar-collapsed .app-shell .sidebar-nav .nav-link.active::before {
     left: 0;
 }
 
-.app-shell.is-collapsed .sidebar-collapse-toggle .icon-collapse {
+html.sidebar-collapsed .app-shell .sidebar-collapse-toggle .icon-collapse {
     transform: rotate(180deg);
 }
 
-.app-shell.is-collapsed .app-main {
+html.sidebar-collapsed .app-shell .app-main {
     margin-left: var(--sidebar-width-collapsed);
 }
 
 /* Tooltip shown on hover when collapsed (title attribute fallback covers
    no-JS/keyboard access; this is the visual affordance on top of it) */
-.app-shell.is-collapsed .sidebar-nav .nav-link {
+html.sidebar-collapsed .app-shell .sidebar-nav .nav-link {
     position: relative;
 }
 
@@ -1416,6 +1416,21 @@ textarea:focus-visible,
     pointer-events: none;
 }
 
+/* The confirmation dialog can be triggered from inside an already-open
+   form modal (e.g. "¿Generar facturas?" over the invoice wizard) — it
+   must always stack above it. Both share .modal-backdrop-custom/
+   .modal-dialog-custom, so without this override they'd tie at the same
+   z-index and DOM order (form modal markup comes after confirm modal
+   markup in the layout) would silently paint the form modal on top,
+   leaving the confirm dialog open but invisible underneath it. */
+#confirmModalBackdrop {
+    z-index: 1950;
+}
+
+#confirmModalDialog {
+    z-index: 1951;
+}
+
 .modal-panel {
     background: var(--color-surface);
     border-radius: var(--radius-lg);
@@ -1969,7 +1984,7 @@ textarea:focus-visible,
     }
 
     .app-main,
-    .app-shell.is-collapsed .app-main {
+    html.sidebar-collapsed .app-shell .app-main {
         margin-left: 0;
     }
 
