@@ -60,7 +60,7 @@ class ReportService
     {
         $unpaid = Invoice::where('status', '!=', Invoice::STATUS_PAGADA);
 
-        $totalPending = (float) (clone $unpaid)->selectRaw('COALESCE(SUM(amount - paid_total), 0) as total')->value('total');
+        $totalPending = (float) (clone $unpaid)->selectRaw('COALESCE(SUM('.Invoice::BALANCE_SQL.'), 0) as total')->value('total');
         $debtorsCount = (clone $unpaid)->distinct('associate_id')->count('associate_id');
         $pendingInvoicesCount = (clone $unpaid)->count();
         $overdueInvoicesCount = Invoice::overdue()->count();
@@ -72,7 +72,7 @@ class ReportService
             ->where('status', '!=', Invoice::STATUS_PAGADA)
             ->selectRaw("CASE WHEN due_date < ? THEN 'VENCIDA' ELSE status END as bucket", [now()->toDateString()])
             ->selectRaw('COUNT(*) as invoice_count')
-            ->selectRaw('SUM(amount - paid_total) as total_balance')
+            ->selectRaw('SUM('.Invoice::BALANCE_SQL.') as total_balance')
             ->groupBy('bucket')
             ->get()
             ->keyBy('bucket');

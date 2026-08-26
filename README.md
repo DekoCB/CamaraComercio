@@ -115,6 +115,32 @@ Ver el plan de sprints completo en [`docs/PROJECT_ANALYSIS.md`](docs/PROJECT_ANA
 - **Rediseño UI/UX (18 ago 2026):** ✅ Completado — identidad visual "Corporate Modern / Financial SaaS" propia de una Cámara de Comercio: tokens de diseño, iconografía Lucide, componentes Blade reutilizables, modal de confirmación y toasts propios (sin `window.confirm()` ni alertas nativas), dashboard con datos y gráficos reales, wizard de generación de facturación. Detalle en `docs/DESIGN_SYSTEM.md` y `docs/PROJECT_ANALYSIS.md` sección 10.10.
 - **Calendarios/listas personalizados, formularios en modal y tema oscuro (18–19 ago 2026):** ✅ Completado — selectores de fecha/mes y listas desplegables con la identidad visual del sistema (reemplazan los popups nativos del navegador), crear/editar registros pequeños como overlay en vez de pantalla propia, toggle de tema oscuro/claro persistente, y colapso de sidebar sin saltos de posición. Detalle en `docs/DESIGN_SYSTEM.md` secciones 10–11 y `docs/PROJECT_ANALYSIS.md` secciones 10.11–10.12.
 - **Configuración de perfil de usuario (19 ago 2026):** ✅ Completado — cualquier usuario autenticado edita su propia foto, nombre, correo y contraseña desde un modal accesible desde el topbar; foto servida desde el disco público de Laravel. Detalle en `docs/PROJECT_ANALYSIS.md` sección 10.19.
+- **Auditoría de aptitud para producción (19 ago 2026):** ✅ Completada — 16 documentos nuevos (ver "Documentación" abajo) cubriendo integridad de datos, seguridad, protección de datos, backups, QA/UAT, deployment y manual de usuario; 20 decisiones de negocio pendientes formalizadas sin implementarlas por inferencia. Detalle en `docs/PROJECT_ANALYSIS.md` sección 10.20.
+
+## Documentación
+
+| Documento | Contenido |
+|---|---|
+| [`docs/PROJECT_ANALYSIS.md`](docs/PROJECT_ANALYSIS.md) | Historia completa del proyecto — decisiones técnicas, cada sprint, cada pivote |
+| [`docs/BACKLOG.md`](docs/BACKLOG.md) | Estado historia por historia (23 HU + adicionales) |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Por qué la arquitectura es como es (capas, RBAC, lecciones SQLite/MySQL) |
+| [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md) | Modelo de datos con el razonamiento de cada decisión |
+| [`docs/DATA_SCHEMA.md`](docs/DATA_SCHEMA.md) | Esquema exhaustivo columna por columna, con cardinalidades |
+| [`docs/BUSINESS_RULES.md`](docs/BUSINESS_RULES.md) | Catálogo de reglas de negocio, categorizadas Definida/Inferible/No definida |
+| [`docs/OPEN_BUSINESS_DECISIONS.md`](docs/OPEN_BUSINESS_DECISIONS.md) | Las 20 decisiones de negocio pendientes de respuesta del cliente |
+| [`docs/REQUIREMENTS_GAP_ANALYSIS.md`](docs/REQUIREMENTS_GAP_ANALYSIS.md) | Qué está implementado, parcial o faltante frente a los requisitos de producción |
+| [`docs/TECHNICAL_SPECIFICATION.md`](docs/TECHNICAL_SPECIFICATION.md) | Especificación técnica consolidada (frontend, backend, seguridad, integraciones) |
+| [`docs/EXCEL_MIGRATION_SPECIFICATION.md`](docs/EXCEL_MIGRATION_SPECIFICATION.md) | Formato, validaciones y flujo de la importación de asociados |
+| [`docs/DATA_PROTECTION.md`](docs/DATA_PROTECTION.md) | Qué datos personales se manejan, quién accede, cómo se protegen |
+| [`docs/BACKUP_AND_RECOVERY.md`](docs/BACKUP_AND_RECOVERY.md) | Propuesta de backups (no configurados todavía) |
+| [`docs/QA_PLAN.md`](docs/QA_PLAN.md) | Plan de pruebas, casos cubiertos y pendientes |
+| [`docs/UAT_PLAN.md`](docs/UAT_PLAN.md) / [`docs/UAT_SEED_DATA.md`](docs/UAT_SEED_DATA.md) | 9 escenarios de aceptación de usuario y los datos ficticios para ejecutarlos |
+| [`docs/ACCEPTANCE_CRITERIA.md`](docs/ACCEPTANCE_CRITERIA.md) | Criterios Given/When/Then detallados para cada HU |
+| [`docs/DEFINITION_OF_DONE.md`](docs/DEFINITION_OF_DONE.md) | Cuándo una historia o el proyecto completo está realmente terminado |
+| [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) | Entornos, variables, migración, rollback, health checks |
+| [`docs/USER_MANUAL.md`](docs/USER_MANUAL.md) | Manual para el personal de la Cámara, sin lenguaje técnico |
+| [`docs/CHANGE_MANAGEMENT.md`](docs/CHANGE_MANAGEMENT.md) | Cómo se clasifica y aprueba cualquier cambio futuro |
+| [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | Sistema de diseño visual completo |
 
 ## Antes de desplegar a producción
 

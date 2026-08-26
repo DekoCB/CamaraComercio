@@ -48,6 +48,47 @@ class AssociateTest extends TestCase
         $response->assertSessionHasErrors('name');
     }
 
+    public function test_duplicate_email_is_rejected_on_manual_create(): void
+    {
+        Associate::factory()->create(['email' => 'ya-existe@example.com']);
+        $user = $this->userWithPermissions(['associates.manage']);
+
+        $response = $this->actingAs($user)->post('/associates', [
+            'name' => 'Otro Asociado',
+            'email' => 'ya-existe@example.com',
+        ]);
+
+        $response->assertSessionHasErrors('email');
+        $this->assertDatabaseMissing('associates', ['name' => 'Otro Asociado']);
+    }
+
+    public function test_multiple_associates_without_an_email_do_not_collide(): void
+    {
+        Associate::factory()->create(['email' => null]);
+        $user = $this->userWithPermissions(['associates.manage']);
+
+        $response = $this->actingAs($user)->post('/associates', [
+            'name' => 'Sin Correo Tambien',
+        ]);
+
+        $response->assertRedirect('/associates');
+        $this->assertDatabaseHas('associates', ['name' => 'Sin Correo Tambien']);
+    }
+
+    public function test_editing_an_associate_keeping_its_own_email_is_not_a_duplicate(): void
+    {
+        $user = $this->userWithPermissions(['associates.manage']);
+        $associate = Associate::factory()->create(['email' => 'propio@example.com']);
+
+        $response = $this->actingAs($user)->put("/associates/{$associate->id}", [
+            'name' => $associate->name,
+            'email' => 'propio@example.com',
+        ]);
+
+        $response->assertRedirect('/associates');
+        $response->assertSessionDoesntHaveErrors();
+    }
+
     public function test_user_without_permission_cannot_create_an_associate(): void
     {
         $user = $this->userWithPermissions([]);

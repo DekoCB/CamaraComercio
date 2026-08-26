@@ -20,6 +20,18 @@ class Invoice extends Model
 
     public const STATUS_VENCIDA = 'VENCIDA';
 
+    /**
+     * The single source of truth for the balance formula, expressed as a
+     * raw SQL fragment. balance() below is the same formula for a single
+     * loaded record; this exists because SUM() aggregates in ReportService
+     * and DashboardService need the formula in SQL, where a PHP method
+     * can't be called from inside SUM(amount - paid_total). Keeping both
+     * spellings next to each other (and this one named, not copy-pasted)
+     * is what "centralizar la lógica de negocio" means when the same rule
+     * genuinely has to exist in two languages.
+     */
+    public const BALANCE_SQL = 'amount - paid_total';
+
     protected $fillable = [
         'associate_id',
         'period',

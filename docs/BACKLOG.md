@@ -81,6 +81,10 @@ Mejora de UX sobre EP-08 — ver `docs/PROJECT_ANALYSIS.md` sección 10.18 y `do
 - Los íconos del menú lateral se ven centrados verticalmente en vez de apilados arriba con espacio vacío debajo.
 - 71/71 tests sin cambios; verificado con Playwright.
 
+## Criterio de aceptación — Auditoría de aptitud para producción (2026-08-19)
+
+Auditoría completa contra requerimientos de producción no cubiertos por las 23 HU originales — ver `docs/PROJECT_ANALYSIS.md` sección 10.20 para el resumen y los 16 documentos entregados (`docs/REQUIREMENTS_GAP_ANALYSIS.md` en adelante). Dos correcciones de código sin depender de ninguna decisión de negocio pendiente: fórmula de saldo centralizada (`Invoice::BALANCE_SQL`) y validación de correo duplicado aplicada de forma consistente entre alta manual e importación de asociados. 20 decisiones de negocio quedaron formalmente documentadas como pendientes de respuesta del cliente en `docs/OPEN_BUSINESS_DECISIONS.md`, ninguna implementada por inferencia. 87/87 tests sin regresiones (3 nuevos).
+
 ## Ejemplo de criterio de aceptación (HU-09)
 
 ```

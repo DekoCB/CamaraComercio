@@ -32,7 +32,7 @@ class DashboardService
             'collectedThisMonth' => $collectedThisMonth,
             'collectedTrend' => $this->trend($collectedThisMonth, $collectedLastMonth),
             'pendingBalance' => (float) Invoice::where('status', '!=', Invoice::STATUS_PAGADA)
-                ->selectRaw('COALESCE(SUM(amount - paid_total), 0) as total')->value('total'),
+                ->selectRaw('COALESCE(SUM('.Invoice::BALANCE_SQL.'), 0) as total')->value('total'),
             'overdueCount' => Invoice::overdue()->count(),
             'monthlyCollections' => $this->monthlyCollections(),
             'portfolioDistribution' => $this->portfolioDistribution(),
