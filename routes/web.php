@@ -91,6 +91,8 @@ Route::middleware('auth')->group(function () {
     // Payments (EP-05).
     Route::middleware('can:payments.register')->group(function () {
         Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
+        Route::get('payments/create', [PaymentController::class, 'create'])->name('payments.create');
+        Route::post('payments', [PaymentController::class, 'storeQuick'])->name('payments.storeQuick');
         Route::post('invoices/{invoice}/payments', [PaymentController::class, 'store'])->name('payments.store');
     });
     Route::middleware('can:payments.void')->group(function () {

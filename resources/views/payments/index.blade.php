@@ -3,7 +3,15 @@
 @section('title', 'Pagos')
 
 @section('content')
-    <x-page-header title="Registro de pagos" subtitle="Historial de todos los pagos registrados en el sistema." />
+    <x-page-header title="Registro de pagos" subtitle="Historial de todos los pagos registrados en el sistema.">
+        <x-slot:actions>
+            @can('payments.register')
+                <a href="{{ route('payments.create') }}" class="btn btn-primary btn-sm js-modal-link" data-modal-title="Registrar pago">
+                    {{ icon('plus', 'icon', 16) }} Registrar pago
+                </a>
+            @endcan
+        </x-slot:actions>
+    </x-page-header>
 
     <div class="table-card">
         <div class="table-toolbar">

@@ -5,6 +5,9 @@
 @section('content')
     <x-page-header title="Deuda pendiente" subtitle="Fotografía de lo que se adeuda hoy, por estado.">
         <x-slot:actions>
+            <a href="{{ route('reports.index') }}" class="btn btn-secondary btn-sm">
+                {{ icon('arrow-left', 'icon', 16) }} Volver
+            </a>
             @can('reports.export')
                 <a href="{{ route('reports.debt.export', ['format' => 'excel']) }}" class="btn btn-secondary btn-sm" data-export-toast="Preparando Excel…">
                     {{ icon('file-spreadsheet', 'icon', 16) }} Excel

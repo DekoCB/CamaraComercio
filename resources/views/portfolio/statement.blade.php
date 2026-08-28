@@ -3,7 +3,13 @@
 @section('title', 'Estado de cuenta — '.$associate->name)
 
 @section('content')
-    <x-page-header title="Estado de cuenta" :subtitle="$associate->name" />
+    <x-page-header title="Estado de cuenta" :subtitle="$associate->name">
+        <x-slot:actions>
+            <a href="{{ route('portfolio.index') }}" class="btn btn-secondary btn-sm">
+                {{ icon('arrow-left', 'icon', 16) }} Volver
+            </a>
+        </x-slot:actions>
+    </x-page-header>
 
     <div class="card-surface mb-3">
         <div class="d-flex align-items-center gap-3">

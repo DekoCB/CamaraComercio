@@ -3,7 +3,13 @@
 @section('title', 'Factura — '.$invoice->associate->name.' ('.$invoice->period.')')
 
 @section('content')
-    <x-page-header title="Detalle de factura" :subtitle="$invoice->associate->name.' · '.$invoice->period" />
+    <x-page-header title="Detalle de factura" :subtitle="$invoice->associate->name.' · '.$invoice->period">
+        <x-slot:actions>
+            <a href="{{ route('invoices.index') }}" class="btn btn-secondary btn-sm">
+                {{ icon('arrow-left', 'icon', 16) }} Volver
+            </a>
+        </x-slot:actions>
+    </x-page-header>
 
     <div class="row g-3">
         <div class="col-lg-7">

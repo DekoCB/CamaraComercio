@@ -241,4 +241,60 @@ class PaymentTest extends TestCase
         $collected = Payment::active()->whereBetween('paid_at', [now()->startOfMonth(), now()->endOfMonth()])->sum('amount');
         $this->assertSame(0.0, (float) $collected);
     }
+
+    public function test_payment_can_be_registered_from_the_payments_tab_by_picking_an_invoice(): void
+    {
+        $invoice = Invoice::factory()->create(['amount' => 500, 'paid_total' => 0]);
+        $user = $this->userWithPermissions(['payments.register']);
+
+        $response = $this->actingAs($user)->post('/payments', [
+            'invoice_id' => $invoice->id,
+            'amount' => '200.00',
+            'paid_at' => now()->toDateString(),
+        ]);
+
+        $response->assertRedirect(route('payments.index'));
+        $invoice->refresh();
+        $this->assertSame('200.00', $invoice->paid_total);
+        $this->assertCount(1, $invoice->payments);
+    }
+
+    public function test_quick_payment_requires_an_invoice(): void
+    {
+        $user = $this->userWithPermissions(['payments.register']);
+
+        $response = $this->actingAs($user)->post('/payments', [
+            'amount' => '200.00',
+            'paid_at' => now()->toDateString(),
+        ]);
+
+        $response->assertSessionHasErrors('invoice_id');
+    }
+
+    public function test_quick_payment_form_only_lists_invoices_with_a_pending_balance(): void
+    {
+        $pending = Invoice::factory()->create(['amount' => 500, 'paid_total' => 0]);
+        $paid = Invoice::factory()->create(['amount' => 500, 'paid_total' => 500, 'status' => Invoice::STATUS_PAGADA]);
+        $user = $this->userWithPermissions(['payments.register']);
+
+        $response = $this->actingAs($user)->get('/payments/create');
+
+        $response->assertOk();
+        $invoices = $response->viewData('invoices');
+        $this->assertTrue($invoices->contains('id', $pending->id));
+        $this->assertFalse($invoices->contains('id', $paid->id));
+    }
+
+    public function test_user_without_payments_register_permission_cannot_use_the_quick_payment_form(): void
+    {
+        $invoice = Invoice::factory()->create(['amount' => 500, 'paid_total' => 0]);
+        $user = $this->userWithPermissions(['billing.view']);
+
+        $this->actingAs($user)->get('/payments/create')->assertForbidden();
+        $this->actingAs($user)->post('/payments', [
+            'invoice_id' => $invoice->id,
+            'amount' => '200.00',
+            'paid_at' => now()->toDateString(),
+        ])->assertForbidden();
+    }
 }

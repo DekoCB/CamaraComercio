@@ -3,9 +3,15 @@
 @section('title', 'Permisos y módulos — '.$role->name)
 
 @section('content')
-    <x-page-header title="Permisos y módulos" :subtitle="$role->name" />
+    <x-page-header title="Permisos y módulos" :subtitle="$role->name">
+        <x-slot:actions>
+            <a href="{{ route('admin.roles.index') }}" class="btn btn-secondary btn-sm">
+                {{ icon('arrow-left', 'icon', 16) }} Volver
+            </a>
+        </x-slot:actions>
+    </x-page-header>
 
-    <div class="card-surface" style="max-width: 760px">
+    <div class="card-surface">
         <form method="POST" action="{{ route('admin.roles.access.update', $role) }}">
             @csrf
             @method('PUT')

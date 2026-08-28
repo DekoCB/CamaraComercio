@@ -5,6 +5,9 @@
 @section('content')
     <x-page-header title="Lo cobrado en el mes" subtitle="Facturado (devengo) vs. cobrado (caja) para el período seleccionado.">
         <x-slot:actions>
+            <a href="{{ route('reports.index') }}" class="btn btn-secondary btn-sm">
+                {{ icon('arrow-left', 'icon', 16) }} Volver
+            </a>
             @can('reports.export')
                 <a href="{{ route('reports.collections.export', ['format' => 'excel', 'period' => $period]) }}" class="btn btn-secondary btn-sm" data-export-toast="Preparando Excel…">
                     {{ icon('file-spreadsheet', 'icon', 16) }} Excel
