@@ -128,7 +128,30 @@ class AssociateTest extends TestCase
 
         $response = $this->actingAs($user)->get('/associates?q=Buscable+XYZ');
 
-        $response->assertSee('Unico Buscable XYZ')->assertDontSee('Otro Distinto');
+        // assertDontSee against the whole page would also fail on the
+        // filter's "Todos los asociados" dropdown, which always lists
+        // every associate regardless of the current search — so this
+        // checks the actual table results instead.
+        $response->assertOk();
+        $names = $response->viewData('associates')->pluck('name');
+        $this->assertTrue($names->contains('Unico Buscable XYZ'));
+        $this->assertFalse($names->contains('Otro Distinto'));
+    }
+
+    public function test_associate_can_be_filtered_by_selecting_it_from_the_list(): void
+    {
+        // Two associates can legitimately share a name (no uniqueness rule
+        // beyond RUC — docs/OPEN_BUSINESS_DECISIONS.md pregunta 12), so
+        // typing alone can't isolate one; selecting by id must.
+        Associate::factory()->create(['name' => 'Comercial Andina SAC', 'company' => 'Comercial Andina']);
+        $second = Associate::factory()->create(['name' => 'Comercial Andina SAC', 'company' => 'Andina']);
+        $user = $this->userWithPermissions([]);
+
+        $response = $this->actingAs($user)->get("/associates?associate_id={$second->id}");
+
+        $response->assertOk();
+        $this->assertSame(1, $response->viewData('associates')->total());
+        $this->assertSame($second->id, $response->viewData('associates')->first()->id);
     }
 
     public function test_associate_can_be_registered_with_a_valid_ruc(): void

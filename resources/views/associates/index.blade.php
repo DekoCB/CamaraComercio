@@ -18,17 +18,31 @@
 
     <div class="table-card">
         <div class="table-toolbar">
-            <form class="search-input" method="GET" action="{{ route('associates.index') }}">
-                {{ icon('search', 'icon', 16) }}
-                <input type="search" name="q" class="form-control" placeholder="Buscar asociado, RUC, empresa o correo..." value="{{ $term }}">
+            <form class="filter-bar" method="GET" action="{{ route('associates.index') }}">
+                <div class="search-input">
+                    {{ icon('search', 'icon', 16) }}
+                    <input type="search" name="q" class="form-control" placeholder="Buscar asociado, RUC, empresa o correo..." value="{{ $term }}">
+                </div>
+                <select name="associate_id" class="form-select form-select-sm" style="width: auto" onchange="this.form.submit()">
+                    <option value="">Todos los asociados</option>
+                    @foreach ($allAssociates as $a)
+                        <option value="{{ $a->id }}" {{ (string) ($filters['associate_id'] ?? '') === (string) $a->id ? 'selected' : '' }}>
+                            {{ $a->name }}{{ $a->company ? ' — '.$a->company : '' }}
+                        </option>
+                    @endforeach
+                </select>
+                <button type="submit" class="btn btn-secondary btn-sm">{{ icon('filter', 'icon', 15) }} Filtrar</button>
+                @if (array_filter($filters))
+                    <a href="{{ route('associates.index') }}" class="btn btn-link btn-sm">Limpiar</a>
+                @endif
             </form>
         </div>
 
         @if ($associates->isEmpty())
             <x-empty-state icon="users" title="No hay asociados registrados"
-                :message="$term !== '' ? 'No se encontraron resultados para “'.$term.'”.' : 'Comienza registrando el primer asociado de la Cámara.'">
+                :message="array_filter($filters) ? 'No se encontraron resultados para los filtros seleccionados.' : 'Comienza registrando el primer asociado de la Cámara.'">
                 @can('associates.manage')
-                    @if ($term === '')
+                    @if (! array_filter($filters))
                         <a href="{{ route('associates.create') }}" class="btn btn-primary btn-sm js-modal-link" data-modal-title="Registrar asociado">{{ icon('plus', 'icon', 16) }} Nuevo asociado</a>
                     @endif
                 @endcan

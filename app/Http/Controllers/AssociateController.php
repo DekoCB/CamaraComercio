@@ -14,8 +14,10 @@ class AssociateController extends Controller
     public function index(Request $request): View
     {
         $term = trim((string) $request->query('q', ''));
+        $associateId = $request->query('associate_id');
 
         $associates = Associate::query()
+            ->when($associateId, fn ($query) => $query->where('id', $associateId))
             ->when($term !== '', function ($query) use ($term) {
                 $query->where(function ($q) use ($term) {
                     $q->where('name', 'like', "%{$term}%")
@@ -32,6 +34,12 @@ class AssociateController extends Controller
         return view('associates.index', [
             'associates' => $associates,
             'term' => $term,
+            // Selecting directly from the list is the reliable way to pick
+            // one associate when the name repeats (nothing enforces name
+            // uniqueness — see docs/OPEN_BUSINESS_DECISIONS.md pregunta 12),
+            // which typing alone can't disambiguate.
+            'allAssociates' => Associate::orderBy('name')->get(['id', 'name', 'company']),
+            'filters' => ['q' => $term, 'associate_id' => $associateId],
         ]);
     }
 
