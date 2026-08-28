@@ -66,5 +66,6 @@
     </div>
 </div>
 <script src="{{ asset('assets/vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ asset('assets/js/password-toggle.js') }}?v={{ filemtime(public_path('assets/js/password-toggle.js')) }}"></script>
 </body>
 </html>

@@ -735,6 +735,47 @@ html.sidebar-collapsed .app-shell .sidebar-nav .nav-link {
     font-weight: 600;
 }
 
+.password-field {
+    position: relative;
+}
+
+.password-field input {
+    padding-right: calc(var(--space-3) * 2 + 18px);
+}
+
+.password-toggle {
+    position: absolute;
+    right: var(--space-2);
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-1);
+    background: none;
+    border: none;
+    color: var(--color-text-tertiary);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    line-height: 0;
+}
+
+.password-toggle:hover {
+    color: var(--color-text-secondary);
+}
+
+.password-toggle .icon-hide {
+    display: none;
+}
+
+.password-toggle.is-visible .icon-show {
+    display: none;
+}
+
+.password-toggle.is-visible .icon-hide {
+    display: flex;
+}
+
 /* ==========================================================================
    Custom select — progressively enhances every <select class="form-select">
    (app.js) into a styled trigger + listbox. The native <select> stays in the

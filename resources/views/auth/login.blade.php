@@ -16,7 +16,13 @@
         </div>
         <div class="field">
             <label class="field-label" for="password">Contraseña</label>
-            <input type="password" class="form-control" id="password" name="password" required>
+            <div class="password-field">
+                <input type="password" class="form-control" id="password" name="password" required>
+                <button type="button" class="password-toggle js-password-toggle" data-target="password" aria-label="Mostrar contraseña" aria-pressed="false">
+                    <span class="icon-show">{{ icon('eye', 'icon', 18) }}</span>
+                    <span class="icon-hide">{{ icon('eye-off', 'icon', 18) }}</span>
+                </button>
+            </div>
         </div>
         <div class="form-check" style="margin-bottom: var(--space-5);">
             <input type="checkbox" class="form-check-input" id="remember" name="remember">

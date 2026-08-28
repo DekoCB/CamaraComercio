@@ -188,6 +188,7 @@
 </script>
 
 <script src="{{ asset('assets/vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ asset('assets/js/password-toggle.js') }}?v={{ filemtime(public_path('assets/js/password-toggle.js')) }}"></script>
 <script src="{{ asset('assets/js/app.js') }}?v={{ filemtime(public_path('assets/js/app.js')) }}"></script>
 @stack('scripts')
 </body>

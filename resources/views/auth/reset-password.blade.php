@@ -17,12 +17,24 @@
         </div>
         <div class="field">
             <label class="field-label" for="password">Nueva contraseña</label>
-            <input type="password" class="form-control" id="password" name="password" minlength="8" required>
+            <div class="password-field">
+                <input type="password" class="form-control" id="password" name="password" minlength="8" required>
+                <button type="button" class="password-toggle js-password-toggle" data-target="password" aria-label="Mostrar contraseña" aria-pressed="false">
+                    <span class="icon-show">{{ icon('eye', 'icon', 18) }}</span>
+                    <span class="icon-hide">{{ icon('eye-off', 'icon', 18) }}</span>
+                </button>
+            </div>
             <div class="field-help">Mínimo 8 caracteres.</div>
         </div>
         <div class="field">
             <label class="field-label" for="password_confirmation">Confirmar contraseña</label>
-            <input type="password" class="form-control" id="password_confirmation" name="password_confirmation" minlength="8" required>
+            <div class="password-field">
+                <input type="password" class="form-control" id="password_confirmation" name="password_confirmation" minlength="8" required>
+                <button type="button" class="password-toggle js-password-toggle" data-target="password_confirmation" aria-label="Mostrar contraseña" aria-pressed="false">
+                    <span class="icon-show">{{ icon('eye', 'icon', 18) }}</span>
+                    <span class="icon-hide">{{ icon('eye-off', 'icon', 18) }}</span>
+                </button>
+            </div>
         </div>
         <button type="submit" class="btn btn-primary" style="width: 100%;">
             <span class="spinner"></span>
