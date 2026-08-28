@@ -542,7 +542,19 @@
             }
         }
 
-        function onAncestorScroll() {
+        // Registered with useCapture:true on document so it also sees
+        // scroll events from scrolling ancestors that don't bubble (e.g.
+        // the modal body). But .select-popup is itself scrollable
+        // (overflow-y:auto, capped at 260px), and every hover over an
+        // option calls scrollIntoView() below — which fires a real
+        // 'scroll' event ON THE POPUP, not an ancestor. Without this
+        // guard that self-scroll was misread as "the trigger moved,
+        // close the popup", slamming it shut the instant the user's
+        // mouse crossed into a list long enough to scroll.
+        function onAncestorScroll(event) {
+            if (popup.contains(event.target)) {
+                return;
+            }
             closePopup();
         }
 
@@ -794,7 +806,15 @@
             }
         }
 
-        function onAncestorScroll() {
+        // Same guard as the custom select's onAncestorScroll — a scroll
+        // event whose target is inside the popup itself isn't an
+        // ancestor moving out from under it, so it isn't a reason to
+        // close (kept consistent even though today the calendar body
+        // has no internal overflow of its own).
+        function onAncestorScroll(event) {
+            if (popup.contains(event.target)) {
+                return;
+            }
             closePopup();
         }
 
