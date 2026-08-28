@@ -951,9 +951,12 @@
 
     /* ---------------------------------------------------------------
      * Quick payment form (Pagos tab) — "Pago total" auto-fills the
-     * chosen invoice's balance; "Pago parcial" clears it for manual
-     * entry. Same root-scoped pattern as initInvoiceWizard above, so
-     * it works both as the full page and fetched into the form modal.
+     * chosen invoice's balance and locks the field (readonly, not
+     * disabled, so the value still submits) since a full payment is
+     * defined as exactly the balance, not an editable suggestion;
+     * "Pago parcial" clears it and unlocks it for manual entry. Same
+     * root-scoped pattern as initInvoiceWizard above, so it works both
+     * as the full page and fetched into the form modal.
      * --------------------------------------------------------------- */
     function initPaymentQuickForm(root) {
         var form = root.querySelector('.js-payment-quick-form');
@@ -970,6 +973,7 @@
         }
 
         function applyMode() {
+            amountInput.readOnly = totalRadio.checked;
             if (!totalRadio.checked) {
                 return;
             }
@@ -981,6 +985,7 @@
         invoiceSelect.addEventListener('change', applyMode);
         totalRadio.addEventListener('change', applyMode);
         partialRadio.addEventListener('change', function () {
+            amountInput.readOnly = false;
             amountInput.value = '';
             amountInput.focus();
         });

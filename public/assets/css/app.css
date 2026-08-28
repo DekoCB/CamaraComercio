@@ -678,6 +678,12 @@ html.sidebar-collapsed .app-shell .sidebar-nav .nav-link {
     color: var(--color-text-tertiary);
 }
 
+.form-control[readonly] {
+    background: var(--color-bg);
+    color: var(--color-text-secondary);
+    cursor: not-allowed;
+}
+
 .form-control:focus,
 .form-select:focus {
     background: var(--color-surface);

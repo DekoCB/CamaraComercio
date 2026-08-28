@@ -23,11 +23,13 @@
             <label class="field-label">Tipo de pago</label>
             <div class="d-flex gap-3">
                 <div class="form-check">
-                    <input type="radio" class="form-check-input" id="payment_type_total" name="payment_type" value="total" checked>
+                    <input type="radio" class="form-check-input" id="payment_type_total" name="payment_type" value="total"
+                           {{ old('payment_type', 'total') === 'total' ? 'checked' : '' }}>
                     <label for="payment_type_total" style="font-size: 0.875rem;">Pago total</label>
                 </div>
                 <div class="form-check">
-                    <input type="radio" class="form-check-input" id="payment_type_partial" name="payment_type" value="partial">
+                    <input type="radio" class="form-check-input" id="payment_type_partial" name="payment_type" value="partial"
+                           {{ old('payment_type') === 'partial' ? 'checked' : '' }}>
                     <label for="payment_type_partial" style="font-size: 0.875rem;">Pago parcial</label>
                 </div>
             </div>
@@ -37,9 +39,10 @@
             <div class="input-money">
                 <span class="currency-prefix">S/</span>
                 <input type="number" step="0.01" min="0.01" class="form-control @error('amount') is-invalid @enderror"
-                       id="amount" name="amount" required value="{{ old('amount') }}">
+                       id="amount" name="amount" required value="{{ old('amount') }}"
+                       {{ old('payment_type', 'total') === 'total' ? 'readonly' : '' }}>
             </div>
-            <div class="field-help">"Pago total" completa el saldo pendiente de la factura elegida; editalo para un pago parcial.</div>
+            <div class="field-help">"Pago total" completa el saldo pendiente de la factura y no se puede editar; elegí "Pago parcial" para ingresar un monto distinto.</div>
             @error('amount')
                 <div class="field-error">{{ icon('alert-triangle', 'icon', 14) }} {{ $message }}</div>
             @enderror
