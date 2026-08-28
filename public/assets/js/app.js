@@ -950,6 +950,47 @@
     initInvoiceWizard(document);
 
     /* ---------------------------------------------------------------
+     * Quick payment form (Pagos tab) — "Pago total" auto-fills the
+     * chosen invoice's balance; "Pago parcial" clears it for manual
+     * entry. Same root-scoped pattern as initInvoiceWizard above, so
+     * it works both as the full page and fetched into the form modal.
+     * --------------------------------------------------------------- */
+    function initPaymentQuickForm(root) {
+        var form = root.querySelector('.js-payment-quick-form');
+        if (!form) {
+            return;
+        }
+
+        var invoiceSelect = form.querySelector('#invoice_id');
+        var amountInput = form.querySelector('#amount');
+        var totalRadio = form.querySelector('#payment_type_total');
+        var partialRadio = form.querySelector('#payment_type_partial');
+        if (!invoiceSelect || !amountInput || !totalRadio || !partialRadio) {
+            return;
+        }
+
+        function applyMode() {
+            if (!totalRadio.checked) {
+                return;
+            }
+            var selectedOption = invoiceSelect.options[invoiceSelect.selectedIndex];
+            var balance = selectedOption ? parseFloat(selectedOption.dataset.balance || '0') : 0;
+            amountInput.value = balance > 0 ? balance.toFixed(2) : '';
+        }
+
+        invoiceSelect.addEventListener('change', applyMode);
+        totalRadio.addEventListener('change', applyMode);
+        partialRadio.addEventListener('change', function () {
+            amountInput.value = '';
+            amountInput.focus();
+        });
+
+        applyMode();
+    }
+
+    initPaymentQuickForm(document);
+
+    /* ---------------------------------------------------------------
      * Form modal — overlays small create/edit forms on top of the list
      * page that opened them instead of navigating to a dedicated
      * screen. The fetched form is the exact same partial the full-page
@@ -1119,6 +1160,7 @@
             enhanceSelects(formModalBody);
             enhanceDateInputs(formModalBody);
             initInvoiceWizard(formModalBody);
+            initPaymentQuickForm(formModalBody);
             wireModalForm(formModalBody.querySelector('form'));
             var firstField = formModalBody.querySelector('input:not([type="hidden"]), .select-trigger, .datepicker-trigger, textarea');
             if (firstField) {
