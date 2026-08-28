@@ -20,7 +20,7 @@ Este documento es el punto único de referencia para "¿cuál es la regla?" — 
 | Los asociados inactivos no reciben facturación masiva | **A** (comportamiento implementado y verificado) | `InvoiceGenerationService` filtra `is_active = true`; ver `docs/OPEN_BUSINESS_DECISIONS.md` pregunta 4 |
 | Cuándo/quién inactiva a un asociado, y si es automático | **C** | Preguntas 1-3 |
 | Un correo de asociado no puede repetirse (aplicado consistentemente en alta manual e importación por Excel) | **B** | Cerraba una inconsistencia real: el importador ya rechazaba correos duplicados, el alta manual no. Corregido en esta sesión (`AssociateRequest`) — no requiere validación porque es la misma regla ya existente en un flujo, aplicada al otro |
-| Identificador único de negocio del asociado más allá del correo (¿RUC? ¿nombre?) | **C** | Pregunta 12 — el correo ya es único, pero es opcional; sigue sin definirse cuál es el identificador real cuando no hay correo |
+| El RUC es el identificador legal del asociado, opcional (no obligatorio) y único cuando está presente | **A** (resuelto e implementado 2026-08-28) | Pregunta 12 — `associates.ruc`, `UNIQUE`, nullable |
 
 ## 2. Facturación
 
@@ -44,7 +44,8 @@ Este documento es el punto único de referencia para "¿cuál es la regla?" — 
 | Una factura puede recibir múltiples pagos parciales hasta completarse | **A** | HU-08/HU-09 |
 | El estado de la factura se recalcula automáticamente tras cada pago (PENDIENTE → PARCIAL → PAGADA) | **A** | HU-09 |
 | Dos registros de pago concurrentes sobre la misma factura no pueden sobrepasar el saldo conjuntamente | **A** | Requisito implícito de integridad financiera — implementado con `lockForUpdate()` transaccional |
-| Un pago, una vez registrado, no puede corregirse ni eliminarse desde la aplicación | **B** (comportamiento actual) / **C** (si se desea cambiar) | Pregunta 8 — el hallazgo de mayor impacto operativo de la auditoría |
+| Un pago, una vez registrado, no puede editarse ni eliminarse — solo anularse, con motivo obligatorio y sin borrar el registro original | **A** (resuelto e implementado 2026-08-28) | Pregunta 21 — `PaymentService::void()`, permiso `payments.void` |
+| Un pago anulado no cuenta para `paid_total`, ni para reportes de cobranza ni el dashboard | **A** (resuelto e implementado 2026-08-28) | `Payment::scopeActive()`, aplicado en `ReportService`/`DashboardService` |
 
 ## 4. Excel / Importación
 

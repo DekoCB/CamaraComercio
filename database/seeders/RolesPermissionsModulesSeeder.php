@@ -24,6 +24,7 @@ class RolesPermissionsModulesSeeder extends Seeder
             'billing.generate' => 'Generar la facturación mensual',
             'billing.view' => 'Consultar facturas',
             'payments.register' => 'Registrar pagos (totales y parciales)',
+            'payments.void' => 'Anular pagos registrados por error',
             'portfolio.view' => 'Consultar cartera, morosidad y estado de cuenta',
             'reports.view' => 'Ver reportes de cobranza y deuda',
             'reports.export' => 'Exportar reportes a Excel/PDF',

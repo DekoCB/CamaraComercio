@@ -23,8 +23,8 @@ class DashboardService
         $previousMonthEnd = now()->subMonthNoOverflow()->endOfMonth();
 
         $billedThisPeriod = (float) Invoice::forPeriod($currentPeriod)->sum('amount');
-        $collectedThisMonth = (float) Payment::whereBetween('paid_at', [now()->startOfMonth(), now()->endOfMonth()])->sum('amount');
-        $collectedLastMonth = (float) Payment::whereBetween('paid_at', [$previousMonthStart, $previousMonthEnd])->sum('amount');
+        $collectedThisMonth = (float) Payment::active()->whereBetween('paid_at', [now()->startOfMonth(), now()->endOfMonth()])->sum('amount');
+        $collectedLastMonth = (float) Payment::active()->whereBetween('paid_at', [$previousMonthStart, $previousMonthEnd])->sum('amount');
 
         return [
             'totalAssociates' => Associate::count(),
@@ -73,7 +73,7 @@ class DashboardService
             return [
                 'label' => ucfirst($month->translatedFormat('M Y')),
                 'billed' => (float) Invoice::forPeriod($period)->sum('amount'),
-                'collected' => (float) Payment::whereBetween('paid_at', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])->sum('amount'),
+                'collected' => (float) Payment::active()->whereBetween('paid_at', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])->sum('amount'),
             ];
         })->all();
     }

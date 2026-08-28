@@ -51,6 +51,43 @@ class PaymentService
         });
     }
 
+    /**
+     * Resolves OPEN_BUSINESS_DECISIONS.md #21: a payment is never edited or
+     * deleted, only voided (kept, flagged, excluded from sums). Correcting
+     * a wrong payment means voiding it here and registering a new one.
+     */
+    public function void(Payment $payment, string $reason, int $voidedBy): Payment
+    {
+        if ($payment->isVoided()) {
+            throw new InvalidArgumentException('Este pago ya fue anulado.');
+        }
+
+        return DB::transaction(function () use ($payment, $reason, $voidedBy) {
+            $locked = Invoice::whereKey($payment->invoice_id)->lockForUpdate()->firstOrFail();
+
+            $lockedPayment = Payment::whereKey($payment->id)->lockForUpdate()->firstOrFail();
+            if ($lockedPayment->isVoided()) {
+                throw new InvalidArgumentException('Este pago ya fue anulado.');
+            }
+
+            $lockedPayment->update([
+                'voided_at' => now(),
+                'voided_by' => $voidedBy,
+                'void_reason' => $reason,
+            ]);
+
+            // Recalculate from scratch (not by subtraction) so paid_total
+            // can never drift from the actual sum of active payments.
+            $newPaidTotal = round((float) Payment::where('invoice_id', $locked->id)->active()->sum('amount'), 2);
+            $locked->update([
+                'paid_total' => $newPaidTotal,
+                'status' => $this->statusFor((float) $locked->amount, $newPaidTotal),
+            ]);
+
+            return $lockedPayment;
+        });
+    }
+
     private function statusFor(float $amount, float $paidTotal): string
     {
         return match (true) {

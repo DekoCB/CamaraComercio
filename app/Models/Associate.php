@@ -12,6 +12,7 @@ class Associate extends Model
 
     protected $fillable = [
         'name',
+        'ruc',
         'company',
         'contact_phone',
         'email',

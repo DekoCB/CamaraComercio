@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Invoice;
+use App\Models\Payment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\CreatesUsers;
 use Tests\TestCase;
@@ -143,5 +144,101 @@ class PaymentTest extends TestCase
         $response = $this->actingAs($user)->get("/invoices/{$invoice->id}");
 
         $response->assertOk()->assertSee($invoice->associate->name);
+    }
+
+    public function test_voiding_a_payment_excludes_it_from_the_invoice_balance(): void
+    {
+        $invoice = Invoice::factory()->create(['amount' => 500, 'paid_total' => 0]);
+        $collector = $this->userWithPermissions(['payments.register']);
+        $admin = $this->userWithPermissions(['payments.void']);
+
+        $this->actingAs($collector)->post("/invoices/{$invoice->id}/payments", ['amount' => '200.00', 'paid_at' => now()->toDateString()]);
+        $payment = $invoice->fresh()->payments->first();
+
+        $response = $this->actingAs($admin)->put("/payments/{$payment->id}/void", ['reason' => 'Monto ingresado por error']);
+
+        $response->assertRedirect(route('invoices.show', $invoice));
+        $invoice->refresh();
+        $payment->refresh();
+        $this->assertTrue($payment->isVoided());
+        $this->assertSame('Monto ingresado por error', $payment->void_reason);
+        $this->assertSame($admin->id, $payment->voided_by);
+        $this->assertSame('0.00', $invoice->paid_total);
+        $this->assertSame(Invoice::STATUS_PENDIENTE, $invoice->status);
+    }
+
+    public function test_voided_payment_recalculates_status_back_from_pagada_to_parcial(): void
+    {
+        $invoice = Invoice::factory()->create(['amount' => 500, 'paid_total' => 0]);
+        $collector = $this->userWithPermissions(['payments.register']);
+        $admin = $this->userWithPermissions(['payments.void']);
+
+        $this->actingAs($collector)->post("/invoices/{$invoice->id}/payments", ['amount' => '300.00', 'paid_at' => now()->toDateString()]);
+        $this->actingAs($collector)->post("/invoices/{$invoice->id}/payments", ['amount' => '200.00', 'paid_at' => now()->toDateString()]);
+        $this->assertSame(Invoice::STATUS_PAGADA, $invoice->fresh()->status);
+
+        $lastPayment = $invoice->fresh()->payments->sortByDesc('id')->first();
+        $this->actingAs($admin)->put("/payments/{$lastPayment->id}/void", ['reason' => 'Duplicado']);
+
+        $invoice->refresh();
+        $this->assertSame('300.00', $invoice->paid_total);
+        $this->assertSame(Invoice::STATUS_PARCIAL, $invoice->status);
+    }
+
+    public function test_a_payment_cannot_be_voided_twice(): void
+    {
+        $invoice = Invoice::factory()->create(['amount' => 500, 'paid_total' => 0]);
+        $collector = $this->userWithPermissions(['payments.register']);
+        $admin = $this->userWithPermissions(['payments.void']);
+
+        $this->actingAs($collector)->post("/invoices/{$invoice->id}/payments", ['amount' => '200.00', 'paid_at' => now()->toDateString()]);
+        $payment = $invoice->fresh()->payments->first();
+
+        $this->actingAs($admin)->put("/payments/{$payment->id}/void", ['reason' => 'Primera anulación']);
+        $response = $this->actingAs($admin)->put("/payments/{$payment->id}/void", ['reason' => 'Segundo intento']);
+
+        $response->assertSessionHasErrors('reason');
+    }
+
+    public function test_voiding_a_payment_requires_a_reason(): void
+    {
+        $invoice = Invoice::factory()->create(['amount' => 500, 'paid_total' => 0]);
+        $collector = $this->userWithPermissions(['payments.register']);
+        $admin = $this->userWithPermissions(['payments.void']);
+
+        $this->actingAs($collector)->post("/invoices/{$invoice->id}/payments", ['amount' => '200.00', 'paid_at' => now()->toDateString()]);
+        $payment = $invoice->fresh()->payments->first();
+
+        $response = $this->actingAs($admin)->put("/payments/{$payment->id}/void", []);
+
+        $response->assertSessionHasErrors('reason');
+        $this->assertFalse($payment->fresh()->isVoided());
+    }
+
+    public function test_user_without_payments_void_permission_is_forbidden(): void
+    {
+        $invoice = Invoice::factory()->create(['amount' => 500, 'paid_total' => 0]);
+        $collector = $this->userWithPermissions(['payments.register']);
+
+        $this->actingAs($collector)->post("/invoices/{$invoice->id}/payments", ['amount' => '200.00', 'paid_at' => now()->toDateString()]);
+        $payment = $invoice->fresh()->payments->first();
+
+        $response = $this->actingAs($collector)->put("/payments/{$payment->id}/void", ['reason' => 'Intento no autorizado']);
+
+        $response->assertForbidden();
+    }
+
+    public function test_voided_payments_are_excluded_from_dashboard_and_report_collections(): void
+    {
+        $invoice = Invoice::factory()->create(['amount' => 500, 'paid_total' => 0]);
+        $collector = $this->userWithPermissions(['payments.register']);
+        $admin = $this->userWithPermissions(['payments.void', 'reports.view']);
+
+        $this->actingAs($collector)->post("/invoices/{$invoice->id}/payments", ['amount' => '200.00', 'paid_at' => now()->toDateString()]);
+        $payment = $invoice->fresh()->payments->first();
+        $this->actingAs($admin)->put("/payments/{$payment->id}/void", ['reason' => 'Error de digitación']);
+
+        $collected = Payment::active()->whereBetween('paid_at', [now()->startOfMonth(), now()->endOfMonth()])->sum('amount');
+        $this->assertSame(0.0, (float) $collected);
     }
 }

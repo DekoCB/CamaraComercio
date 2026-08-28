@@ -85,6 +85,10 @@ Mejora de UX sobre EP-08 — ver `docs/PROJECT_ANALYSIS.md` sección 10.18 y `do
 
 Auditoría completa contra requerimientos de producción no cubiertos por las 23 HU originales — ver `docs/PROJECT_ANALYSIS.md` sección 10.20 para el resumen y los 16 documentos entregados (`docs/REQUIREMENTS_GAP_ANALYSIS.md` en adelante). Dos correcciones de código sin depender de ninguna decisión de negocio pendiente: fórmula de saldo centralizada (`Invoice::BALANCE_SQL`) y validación de correo duplicado aplicada de forma consistente entre alta manual e importación de asociados. 20 decisiones de negocio quedaron formalmente documentadas como pendientes de respuesta del cliente en `docs/OPEN_BUSINESS_DECISIONS.md`, ninguna implementada por inferencia. 87/87 tests sin regresiones (3 nuevos).
 
+## Criterios de aceptación — Anulación de pagos e identificador RUC del asociado (2026-08-28)
+
+Implementación de las dos decisiones de negocio de mayor impacto de la auditoría anterior, autorizadas explícitamente por el cliente (`docs/PROJECT_ANALYSIS.md` sección 10.22). (1) Un pago se anula, nunca se edita ni se elimina — motivo obligatorio, `paid_total`/reportes/dashboard excluyen pagos anulados, permiso `payments.void` separado de `payments.register`. (2) `associates.ruc` como identificador legal opcional, único cuando está presente, validado en alta/edición y visible/buscable en el listado. Ambas resuelven y cierran las preguntas 21 y 12 de `docs/OPEN_BUSINESS_DECISIONS.md`. 98/98 tests sin regresiones (11 nuevos).
+
 ## Ejemplo de criterio de aceptación (HU-09)
 
 ```

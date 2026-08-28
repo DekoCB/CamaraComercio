@@ -13,6 +13,15 @@
         @enderror
     </div>
     <div class="field">
+        <label class="field-label" for="ruc">RUC</label>
+        <input type="text" class="form-control @error('ruc') is-invalid @enderror" id="ruc" name="ruc"
+               maxlength="11" inputmode="numeric" value="{{ old('ruc', $associate->ruc ?? '') }}">
+        <div class="field-help">Opcional. 11 dígitos.</div>
+        @error('ruc')
+            <div class="field-error">{{ icon('alert-triangle', 'icon', 14) }} {{ $message }}</div>
+        @enderror
+    </div>
+    <div class="field">
         <label class="field-label" for="company">Empresa</label>
         <input type="text" class="form-control" id="company" name="company"
                value="{{ old('company', $associate->company ?? '') }}">

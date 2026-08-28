@@ -20,7 +20,7 @@
         <div class="table-toolbar">
             <form class="search-input" method="GET" action="{{ route('associates.index') }}">
                 {{ icon('search', 'icon', 16) }}
-                <input type="search" name="q" class="form-control" placeholder="Buscar asociado, empresa o correo..." value="{{ $term }}">
+                <input type="search" name="q" class="form-control" placeholder="Buscar asociado, RUC, empresa o correo..." value="{{ $term }}">
             </form>
         </div>
 
@@ -39,6 +39,7 @@
                     <thead>
                     <tr>
                         <th>Nombre</th>
+                        <th>RUC</th>
                         <th>Empresa</th>
                         <th>Contacto</th>
                         <th>Correo</th>
@@ -50,6 +51,7 @@
                     @foreach ($associates as $associate)
                         <tr>
                             <td class="cell-primary">{{ $associate->name }}</td>
+                            <td class="cell-muted">{{ $associate->ruc ?? '-' }}</td>
                             <td class="cell-muted">{{ $associate->company ?? '-' }}</td>
                             <td class="cell-muted">{{ $associate->contact_phone ?? '-' }}</td>
                             <td class="cell-muted">{{ $associate->email ?? '-' }}</td>

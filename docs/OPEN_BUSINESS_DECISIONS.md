@@ -127,16 +127,9 @@ Esto **no requiere validación adicional** más allá de confirmar que la Cámar
 
 ### 12. ¿Cuál es el identificador único del asociado?
 
-**Comportamiento actual:** ninguno, más allá del `id` autoincremental interno. `associates.email` es nullable y **sin índice `UNIQUE`**; `associates.name` tampoco. El alta manual (`AssociateRequest`) no valida duplicados de ningún campo. La importación por Excel sí rechaza correos duplicados (`AssociateImportService::parse()`), pero solo dentro de ese flujo — es una inconsistencia real entre los dos caminos de alta.
+**Resuelto e implementado (2026-08-28):** se adoptó la Opción B — el RUC como identificador legal del asociado. Columna `associates.ruc` (`CHAR(11)`, nullable, `UNIQUE`), validada en `AssociateRequest` (`digits:11`, unicidad ignorando el propio registro en edición). **Se mantiene opcional, no obligatorio** — no todo alta tiene el RUC disponible al momento del registro, y volverlo obligatorio habría sido un cambio de alcance adicional no autorizado. Visible y buscable en `associates/index.blade.php` y en el formulario de alta/edición.
 
-**Opciones:**
-- **A.** El correo electrónico es el identificador de negocio — agregar `UNIQUE` a `associates.email` (con la complicación de que hoy es nullable: dos asociados sin correo no deberían chocar entre sí, así que sería un unique condicional/parcial, o se pasaría a requerir correo siempre).
-- **B.** Un número de RUC/documento de identidad tributario — **no existe ningún campo así en el modelo de datos actual**; sería una columna nueva.
-- **C.** Sin identificador de negocio único — el nombre puede repetirse legítimamente (empresas con nombres comerciales similares, personas con el mismo nombre), y la responsabilidad de no duplicar queda en el criterio de quien da de alta.
-
-**Recomendación:** para una Cámara de Comercio, lo más natural es el **RUC** (Opción B) — es el identificador legal real de una empresa afiliada en Perú, más confiable que el correo (que puede cambiar) o el nombre (que puede repetirse). Pero esto es un cambio de modelo de datos (columna nueva, posiblemente obligatoria) que la especificación funcional original nunca mencionó — es un cambio de alcance, no una corrección.
-
-`REQUIERE VALIDACIÓN DEL CLIENTE` — es la pregunta con mayor impacto de modelo de datos de todo este documento.
+Esto no reemplaza el `id` interno como clave primaria ni introduce una regla de "un asociado = un RUC obligatorio" — es un campo de negocio adicional para que la Cámara identifique asociados de forma más confiable que por nombre/correo, cuando lo tenga disponible.
 
 ---
 
@@ -203,6 +196,22 @@ Respondida por la pregunta 13: no, está bloqueado a nivel de base de datos. No 
 
 ---
 
+### 21. ¿Puede corregirse o anularse un pago ya registrado?
+
+**Nota de corrección documental:** esta pregunta no tenía número propio en la versión original de este documento — solo existía como hallazgo `INV-08` en `docs/REQUIREMENTS_GAP_ANALYSIS.md`, con una cita cruzada incorrecta ("Ver pregunta 7", que en realidad trata sobre eliminar facturas, no pagos). Se agrega aquí como pregunta 21 y se corrige la cita en `REQUIREMENTS_GAP_ANALYSIS.md`.
+
+**Resuelto e implementado (2026-08-28):** un pago **no se edita ni se elimina** — se **anula**. `payments.voided_at` / `payments.voided_by` / `payments.void_reason` (todas nullable) se agregan a la tabla; el registro original nunca se modifica ni desaparece, consistente con la política de "sin borrado físico, sin sobrescritura silenciosa" que ya rige facturas y asociados en todo el sistema.
+
+- `PaymentService::void()` — transaccional, con `lockForUpdate()` sobre la factura y el pago; recalcula `paid_total` sumando desde cero todos los pagos activos (no por resta), para que nunca pueda desalinearse; recalcula `status` con la misma lógica que `register()`.
+- Permiso nuevo `payments.void`, separado de `payments.register` — asignado por defecto solo al rol Administrador (anular es más sensible que registrar; configurable luego desde la UI de roles si la Cámara decide extenderlo a Cobranzas).
+- UI: acción "Anular" por pago en `invoices/show.blade.php`, con motivo obligatorio; pagos anulados se muestran tachados con la etiqueta "Anulado" y el motivo visible, tanto ahí como en el listado general de pagos.
+- Reportes/dashboard (`ReportService::collections()`, `DashboardService::summary()`/`monthlyCollections()`) excluyen pagos anulados de los totales cobrados (`Payment::scopeActive()`); `PortfolioService` se corrige automáticamente porque lee `invoices.paid_total`, que `PaymentService::void()` mantiene sincronizado.
+- Corregir un pago mal ingresado, bajo este diseño, significa: anularlo (con motivo) + registrar uno nuevo correcto — el mismo patrón de reversa contable que ya aplica el resto del sistema.
+
+No se implementó edición en línea del monto de un pago — eso fue evaluado y descartado explícitamente por borrar el historial sin dejar rastro, lo cual no es una corrección menor sino un cambio de alcance sobre la integridad del libro de pagos.
+
+---
+
 ## Resumen de impacto por pregunta
 
 | # | Pregunta | Impacto si se aprueba un cambio | Bloquea código hoy? |
@@ -214,10 +223,11 @@ Respondida por la pregunta 13: no, está bloqueado a nivel de base de datos. No 
 | 7 | Eliminar factura | — ya resuelto (nunca) | No |
 | 8-10 | Pagos múltiples / sobrepago / vencimiento | — ya resuelto | No |
 | 11 | Pago sobre factura vencida | — ya resuelto (se acepta) | No |
-| 12 | Identificador único del asociado | **Alto** — posible columna nueva (RUC), validación de unicidad real | **Sí** — cualquier regla de unicidad que se implemente sin esto se estaría inventando |
+| 12 | Identificador único del asociado | — resuelto e implementado (2026-08-28): RUC opcional | No |
 | 13-14 | Identificador de factura | — ya resuelto | No |
 | 15-17 | Formato del Excel real | Medio — el importador podría no reconocer el archivo real de la Cámara | No bloquea el código, sí la confianza en que funcione con datos reales |
 | 18 | Retención de datos | Bajo técnicamente, puede ser alto legalmente | No |
 | 19-20 | Quién exporta/ve qué | — ya resuelto | No |
+| 21 | Corregir/anular un pago registrado | — resuelto e implementado (2026-08-28): anulación, no edición | No |
 
-**La única pregunta que genuinamente bloquea escribir código nuevo con confianza es la 12** (identificador único del asociado) — es la base de cualquier regla de "no duplicar asociados" que se quiera implementar. Todas las demás son mejoras opcionales sobre un sistema que ya tiene un comportamiento coherente, documentado y probado.
+Las preguntas 12 y 21 —las de mayor impacto operativo y de modelo de datos identificadas en la auditoría del 2026-08-19— ya están resueltas e implementadas. Todas las demás siguen siendo mejoras opcionales sobre un sistema que ya tiene un comportamiento coherente, documentado y probado.

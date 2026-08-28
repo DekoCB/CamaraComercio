@@ -130,4 +130,64 @@ class AssociateTest extends TestCase
 
         $response->assertSee('Unico Buscable XYZ')->assertDontSee('Otro Distinto');
     }
+
+    public function test_associate_can_be_registered_with_a_valid_ruc(): void
+    {
+        $user = $this->userWithPermissions(['associates.manage']);
+
+        $response = $this->actingAs($user)->post('/associates', [
+            'name' => 'Comercial Andina SAC',
+            'ruc' => '20123456789',
+        ]);
+
+        $response->assertRedirect('/associates');
+        $this->assertDatabaseHas('associates', ['name' => 'Comercial Andina SAC', 'ruc' => '20123456789']);
+    }
+
+    public function test_ruc_is_optional(): void
+    {
+        $user = $this->userWithPermissions(['associates.manage']);
+
+        $response = $this->actingAs($user)->post('/associates', ['name' => 'Sin RUC Todavia']);
+
+        $response->assertRedirect('/associates');
+        $this->assertDatabaseHas('associates', ['name' => 'Sin RUC Todavia', 'ruc' => null]);
+    }
+
+    public function test_ruc_must_have_exactly_eleven_digits(): void
+    {
+        $user = $this->userWithPermissions(['associates.manage']);
+
+        $response = $this->actingAs($user)->post('/associates', [
+            'name' => 'RUC Invalido',
+            'ruc' => '12345',
+        ]);
+
+        $response->assertSessionHasErrors('ruc');
+        $this->assertDatabaseMissing('associates', ['name' => 'RUC Invalido']);
+    }
+
+    public function test_duplicate_ruc_is_rejected(): void
+    {
+        Associate::factory()->create(['ruc' => '20999999999']);
+        $user = $this->userWithPermissions(['associates.manage']);
+
+        $response = $this->actingAs($user)->post('/associates', [
+            'name' => 'Otro Asociado Con RUC Repetido',
+            'ruc' => '20999999999',
+        ]);
+
+        $response->assertSessionHasErrors('ruc');
+    }
+
+    public function test_multiple_associates_without_a_ruc_do_not_collide(): void
+    {
+        Associate::factory()->create(['ruc' => null]);
+        $user = $this->userWithPermissions(['associates.manage']);
+
+        $response = $this->actingAs($user)->post('/associates', ['name' => 'Sin RUC Tambien']);
+
+        $response->assertRedirect('/associates');
+        $response->assertSessionDoesntHaveErrors();
+    }
 }

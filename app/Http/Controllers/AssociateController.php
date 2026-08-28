@@ -19,6 +19,7 @@ class AssociateController extends Controller
             ->when($term !== '', function ($query) use ($term) {
                 $query->where(function ($q) use ($term) {
                     $q->where('name', 'like', "%{$term}%")
+                        ->orWhere('ruc', 'like', "%{$term}%")
                         ->orWhere('company', 'like', "%{$term}%")
                         ->orWhere('contact_phone', 'like', "%{$term}%")
                         ->orWhere('email', 'like', "%{$term}%");

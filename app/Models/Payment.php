@@ -16,6 +16,9 @@ class Payment extends Model
         'paid_at',
         'registered_by',
         'notes',
+        'voided_at',
+        'voided_by',
+        'void_reason',
     ];
 
     protected function casts(): array
@@ -23,6 +26,7 @@ class Payment extends Model
         return [
             'amount' => 'decimal:2',
             'paid_at' => 'datetime',
+            'voided_at' => 'datetime',
         ];
     }
 
@@ -34,5 +38,25 @@ class Payment extends Model
     public function registeredBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'registered_by');
+    }
+
+    public function voidedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'voided_by');
+    }
+
+    public function isVoided(): bool
+    {
+        return $this->voided_at !== null;
+    }
+
+    public function scopeActive($query)
+    {
+        return $query->whereNull('voided_at');
+    }
+
+    public function scopeVoided($query)
+    {
+        return $query->whereNotNull('voided_at');
     }
 }

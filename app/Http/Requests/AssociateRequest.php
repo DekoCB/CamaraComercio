@@ -16,6 +16,11 @@ class AssociateRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:150'],
+            // OPEN_BUSINESS_DECISIONS.md #12: RUC adopted as the associate's
+            // legal identifier, but optional — not every existing/new
+            // associate has it on hand at registration time. 11 digits per
+            // SUNAT (Peru) RUC format.
+            'ruc' => ['nullable', 'digits:11', Rule::unique('associates', 'ruc')->ignore($this->route('associate'))],
             'company' => ['nullable', 'string', 'max:150'],
             'contact_phone' => ['nullable', 'string', 'max:40'],
             // Not a full identifier-uniqueness rule (docs/OPEN_BUSINESS_DECISIONS.md
@@ -34,6 +39,8 @@ class AssociateRequest extends FormRequest
     {
         return [
             'name.required' => 'El nombre del asociado es obligatorio.',
+            'ruc.digits' => 'El RUC debe tener 11 dígitos.',
+            'ruc.unique' => 'Ya existe un asociado con ese RUC.',
             'email.email' => 'El correo del asociado no es válido.',
             'email.unique' => 'Ya existe un asociado con ese correo.',
         ];

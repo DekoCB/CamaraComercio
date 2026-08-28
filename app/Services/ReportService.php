@@ -29,7 +29,7 @@ class ReportService
 
         $totalInvoiced = (float) Invoice::forPeriod($period)->sum('amount');
 
-        $payments = Payment::whereBetween('paid_at', [$monthStart, $monthEnd]);
+        $payments = Payment::active()->whereBetween('paid_at', [$monthStart, $monthEnd]);
         $totalCollected = (float) (clone $payments)->sum('amount');
         $paymentsCount = (clone $payments)->count();
         $payingAssociatesCount = (clone $payments)

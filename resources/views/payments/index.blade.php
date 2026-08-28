@@ -37,6 +37,7 @@
                         <th>Período</th>
                         <th class="is-numeric">Monto</th>
                         <th>Registrado por</th>
+                        <th>Estado</th>
                         <th class="is-numeric">Acciones</th>
                     </tr>
                     </thead>
@@ -46,8 +47,15 @@
                             <td class="cell-muted">{{ format_date($payment->paid_at) }}</td>
                             <td class="cell-primary">{{ $payment->invoice->associate->name }}</td>
                             <td class="cell-muted">{{ $payment->invoice->period }}</td>
-                            <td class="is-numeric cell-money">{{ format_money($payment->amount) }}</td>
+                            <td class="is-numeric cell-money" style="{{ $payment->isVoided() ? 'text-decoration: line-through; opacity: .6;' : '' }}">{{ format_money($payment->amount) }}</td>
                             <td class="cell-muted">{{ $payment->registeredBy->name ?? '-' }}</td>
+                            <td>
+                                @if ($payment->isVoided())
+                                    <span class="badge badge-neutral" title="{{ $payment->void_reason }}">Anulado</span>
+                                @else
+                                    <span class="badge badge-success">Válido</span>
+                                @endif
+                            </td>
                             <td class="is-numeric">
                                 <a href="{{ route('invoices.show', $payment->invoice) }}" class="btn btn-ghost btn-sm">
                                     {{ icon('eye', 'icon', 15) }} Ver factura

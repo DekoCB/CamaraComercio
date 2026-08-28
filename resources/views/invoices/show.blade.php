@@ -64,15 +64,45 @@
                                 <th class="is-numeric">Monto</th>
                                 <th>Registrado por</th>
                                 <th>Notas</th>
+                                @can('payments.void')
+                                    <th class="is-numeric">Acciones</th>
+                                @endcan
                             </tr>
                             </thead>
                             <tbody>
                             @foreach ($invoice->payments->sortByDesc('paid_at') as $payment)
                                 <tr>
                                     <td class="cell-muted">{{ format_date($payment->paid_at) }}</td>
-                                    <td class="is-numeric cell-money">{{ format_money($payment->amount) }}</td>
+                                    <td class="is-numeric cell-money" style="{{ $payment->isVoided() ? 'text-decoration: line-through; opacity: .6;' : '' }}">{{ format_money($payment->amount) }}</td>
                                     <td class="cell-muted">{{ $payment->registeredBy->name ?? '-' }}</td>
-                                    <td class="cell-muted">{{ $payment->notes ?? '-' }}</td>
+                                    <td class="cell-muted">
+                                        @if ($payment->isVoided())
+                                            <span class="badge badge-neutral">Anulado</span>
+                                            <div style="font-size: 0.75rem; margin-top: 2px;">{{ $payment->void_reason }}</div>
+                                        @else
+                                            {{ $payment->notes ?? '-' }}
+                                        @endif
+                                    </td>
+                                    @can('payments.void')
+                                        <td class="is-numeric">
+                                            @if (! $payment->isVoided())
+                                                <details class="void-payment-details">
+                                                    <summary class="btn btn-ghost btn-sm" style="cursor: pointer; display: inline-flex;">
+                                                        {{ icon('x-circle', 'icon', 15) }} Anular
+                                                    </summary>
+                                                    <form method="POST" action="{{ route('payments.void', $payment) }}" class="mt-2" style="min-width: 220px;"
+                                                          data-confirm="¿Anular este pago? Esta acción no se puede deshacer." data-confirm-title="Anular pago">
+                                                        @csrf
+                                                        @method('PUT')
+                                                        <input type="text" class="form-control" name="reason" maxlength="255" required placeholder="Motivo de la anulación">
+                                                        <button type="submit" class="btn btn-danger btn-sm mt-2">
+                                                            Confirmar anulación
+                                                        </button>
+                                                    </form>
+                                                </details>
+                                            @endif
+                                        </td>
+                                    @endcan
                                 </tr>
                             @endforeach
                             </tbody>

@@ -26,6 +26,7 @@ users ──< audit_logs.user_id       (nullable)
 |---|---|---|---|
 | `id` | bigint | PK, autoincrement | Identificador técnico interno |
 | `name` | string(150) | `NOT NULL`, índice simple | Único campo obligatorio del alta |
+| `ruc` | string(11) | nullable, `UNIQUE` | Identificador legal (Perú, SUNAT) — resolución de la pregunta 12, opcional (no todo alta lo tiene disponible) |
 | `company` | string(150) | nullable, índice simple | |
 | `contact_phone` | string(40) | nullable | Sin formato validado (texto libre) |
 | `email` | string(190) | nullable | **Sin `UNIQUE`** — ver `docs/OPEN_BUSINESS_DECISIONS.md` pregunta 12 |
@@ -36,7 +37,7 @@ users ──< audit_logs.user_id       (nullable)
 
 **Cardinalidad:** un asociado tiene muchas facturas (`Associate::invoices(): HasMany`). Cero o muchas — un asociado recién creado no tiene facturas hasta la primera corrida de facturación masiva que lo incluya.
 
-**Identificador único de negocio:** ninguno definido — ver pregunta 12.
+**Identificador único de negocio:** el RUC (`ruc`), opcional — resuelto e implementado 2026-08-28, ver pregunta 12.
 
 ---
 
@@ -78,11 +79,14 @@ users ──< audit_logs.user_id       (nullable)
 | `paid_at` | datetime | `NOT NULL` | Fecha del pago tal como la ingresa quien lo registra — puede diferir de `created_at` |
 | `registered_by` | bigint FK → `users.id` | `NOT NULL`, `ON DELETE RESTRICT` | **No se puede borrar un usuario que registró al menos un pago** — es el límite práctico real para cualquier borrado físico de usuarios en todo el sistema |
 | `notes` | string(255) | nullable | Observación libre |
+| `voided_at` | timestamp | nullable | `NULL` = pago activo; con valor = anulado. Nunca se borra ni se edita el registro — ver pregunta 21 |
+| `voided_by` | bigint FK → `users.id` | nullable, `ON DELETE SET NULL` | Quién anuló el pago |
+| `void_reason` | string(255) | nullable | Motivo de la anulación — obligatorio en el formulario aunque la columna sea nullable a nivel de BD |
 | `created_at` / `updated_at` | timestamp | Laravel estándar | |
 
-**Cardinalidad:** un pago pertenece a exactamente una factura (`Payment::invoice(): BelongsTo`) y a exactamente un usuario que lo registró (`Payment::registeredBy(): BelongsTo`). No existe la cardinalidad inversa "una factura tiene un pago" — es 1 a N desde la factura.
+**Cardinalidad:** un pago pertenece a exactamente una factura (`Payment::invoice(): BelongsTo`), a exactamente un usuario que lo registró (`Payment::registeredBy(): BelongsTo`) y opcionalmente a un usuario que lo anuló (`Payment::voidedBy(): BelongsTo`, nullable). No existe la cardinalidad inversa "una factura tiene un pago" — es 1 a N desde la factura.
 
-**No editable ni eliminable una vez registrado** — ver pregunta 8 (`docs/OPEN_BUSINESS_DECISIONS.md`), es el hallazgo de mayor impacto operativo de la auditoría.
+**No editable ni eliminable una vez registrado — anulable con motivo obligatorio** — resuelto e implementado 2026-08-28, ver pregunta 21 (`docs/OPEN_BUSINESS_DECISIONS.md`). `paid_total` de la factura excluye pagos anulados (recalculado desde cero por `PaymentService::void()`).
 
 ---
 

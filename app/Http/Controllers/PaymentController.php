@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\PaymentRequest;
+use App\Http\Requests\PaymentVoidRequest;
 use App\Models\Associate;
 use App\Models\AuditLog;
 use App\Models\Invoice;
@@ -56,5 +57,23 @@ class PaymentController extends Controller
         ]);
 
         return redirect()->route('invoices.show', $invoice)->with('success', 'Pago registrado correctamente.');
+    }
+
+    public function void(PaymentVoidRequest $request, Payment $payment, PaymentService $service): RedirectResponse
+    {
+        $data = $request->validated();
+
+        try {
+            $service->void($payment, $data['reason'], $request->user()->id);
+        } catch (InvalidArgumentException $e) {
+            return back()->withErrors(['reason' => $e->getMessage()]);
+        }
+
+        AuditLog::record('payment.void', 'payment', (string) $payment->id, 'success', [
+            'invoice_id' => $payment->invoice_id,
+            'reason' => $data['reason'],
+        ]);
+
+        return redirect()->route('invoices.show', $payment->invoice_id)->with('success', 'Pago anulado correctamente.');
     }
 }

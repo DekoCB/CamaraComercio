@@ -93,6 +93,9 @@ Route::middleware('auth')->group(function () {
         Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
         Route::post('invoices/{invoice}/payments', [PaymentController::class, 'store'])->name('payments.store');
     });
+    Route::middleware('can:payments.void')->group(function () {
+        Route::put('payments/{payment}/void', [PaymentController::class, 'void'])->name('payments.void');
+    });
 
     // Portfolio / cartera (EP-06).
     Route::middleware('can:portfolio.view')->group(function () {
