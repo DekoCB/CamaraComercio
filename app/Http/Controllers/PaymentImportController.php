@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
-use App\Models\Notification;
 use App\Services\PaymentImportService;
 use App\Services\PaymentService;
 use Illuminate\Http\RedirectResponse;
@@ -79,17 +78,6 @@ class PaymentImportController extends Controller
         ]);
 
         $skipped = count($result['rows']) - count($validRows);
-
-        if ($summary['created'] > 0) {
-            Notification::record(
-                type: Notification::TYPE_IMPORT_COMPLETED,
-                title: "Importación de pagos completada — {$summary['created']} registrados",
-                message: $skipped > 0 ? "{$skipped} omitidos por errores de validación" : null,
-                entityType: 'payment',
-                link: route('payments.index'),
-            );
-        }
-
         $message = "Importación completa: {$summary['created']} pagos registrados";
         if ($skipped > 0) {
             $message .= ", {$skipped} omitidos por errores de validación";

@@ -5,7 +5,6 @@
         'all' => 'Todas',
         \App\Models\Notification::TYPE_INVOICE_GENERATED => 'Facturación',
         \App\Models\Notification::TYPE_PAYMENT_VOIDED => 'Pagos',
-        \App\Models\Notification::TYPE_IMPORT_COMPLETED => 'Importaciones',
     ];
 @endphp
 

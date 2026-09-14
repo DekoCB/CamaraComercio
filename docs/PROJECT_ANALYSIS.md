@@ -325,7 +325,8 @@ A pedido del usuario, guiado por una captura de pantalla de **otro proyecto suyo
 **Qué genera una notificación** (siempre en un punto de escritura que ya existía, nunca un job nuevo ni un cron — este sistema nunca tuvo un scheduler, y agregar uno solo para esto habría sido alcance no pedido):
 - `invoice.generated` — al generar facturación masiva (`InvoiceController::store()`), solo si se creó al menos una factura.
 - `payment.voided` — al anular un pago (`PaymentController::void()`).
-- `import.completed` — al confirmar cualquiera de los tres importadores de Excel (asociados/facturas/pagos), solo si se creó al menos un registro.
+
+Se evaluó un tercer tipo, `import.completed` (al confirmar cualquiera de los tres importadores de Excel), pero se quitó a pedido explícito del usuario el mismo día — las importaciones no deben generar notificaciones. Se removieron los tres puntos de escritura, la constante del modelo y la pestaña "Importaciones" del panel (habría quedado siempre vacía).
 
 **Cómo se muestra:** un View Composer en `AppServiceProvider` alimenta `layouts.app` en cada request autenticado (mismo patrón que ya usa el sidebar/topbar — nada de esto se carga por AJAX), con las últimas 30 notificaciones y el conteo de no-leídas del usuario actual. Las pestañas de categoría filtran en el cliente (sin pedidos adicionales al servidor, ya que las 30 filas ya están en el DOM). "Marcar todo como leído" es un POST simple que redirige de vuelta, igual que el resto de las acciones de este sistema.
 

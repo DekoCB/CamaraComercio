@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
-use App\Models\Notification;
 use App\Services\InvoiceImportService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -78,17 +77,6 @@ class InvoiceImportController extends Controller
         ]);
 
         $skipped = count($result['rows']) - count($validRows);
-
-        if ($summary['created'] > 0) {
-            Notification::record(
-                type: Notification::TYPE_IMPORT_COMPLETED,
-                title: "Importación de facturas completada — {$summary['created']} creadas",
-                message: $skipped > 0 ? "{$skipped} omitidas por errores de validación" : null,
-                entityType: 'invoice',
-                link: route('invoices.index'),
-            );
-        }
-
         $message = "Importación completa: {$summary['created']} facturas creadas";
         if ($skipped > 0) {
             $message .= ", {$skipped} omitidas por errores de validación";

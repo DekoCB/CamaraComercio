@@ -65,7 +65,7 @@ class NotificationTest extends TestCase
         ]);
     }
 
-    public function test_importing_associates_creates_a_notification(): void
+    public function test_importing_associates_does_not_create_a_notification(): void
     {
         $user = $this->userWithPermissions(['associates.manage']);
 
@@ -80,7 +80,7 @@ class NotificationTest extends TestCase
         $this->actingAs($user)->post('/associates/import/preview', ['file' => $file]);
         $this->actingAs($user)->post('/associates/import/confirm');
 
-        $this->assertDatabaseHas('notifications', ['type' => Notification::TYPE_IMPORT_COMPLETED]);
+        $this->assertDatabaseCount('notifications', 0);
 
         Storage::deleteDirectory('imports');
     }
