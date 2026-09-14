@@ -6,6 +6,7 @@ use App\Http\Requests\InvoiceGenerateRequest;
 use App\Models\Associate;
 use App\Models\AuditLog;
 use App\Models\Invoice;
+use App\Models\Notification;
 use App\Services\InvoiceGenerationService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -62,6 +63,16 @@ class InvoiceController extends Controller
         );
 
         AuditLog::record('invoice.generate_batch', 'invoice', $data['period'], 'success', $summary);
+
+        if ($summary['created'] > 0) {
+            Notification::record(
+                type: Notification::TYPE_INVOICE_GENERATED,
+                title: "Facturación generada — {$summary['created']} facturas",
+                message: "Período {$data['period']}",
+                entityType: 'invoice',
+                link: route('invoices.index', ['period' => $data['period']]),
+            );
+        }
 
         $message = "Facturación de {$data['period']}: {$summary['created']} facturas creadas, {$summary['skipped']} omitidas (ya existían)";
         if ($summary['errors'] !== []) {

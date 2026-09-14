@@ -8,6 +8,7 @@ use App\Http\Requests\PaymentVoidRequest;
 use App\Models\Associate;
 use App\Models\AuditLog;
 use App\Models\Invoice;
+use App\Models\Notification;
 use App\Models\Payment;
 use App\Services\PaymentService;
 use Carbon\Carbon;
@@ -114,6 +115,16 @@ class PaymentController extends Controller
             'invoice_id' => $payment->invoice_id,
             'reason' => $data['reason'],
         ]);
+
+        $invoice = $payment->invoice()->with('associate')->first();
+        Notification::record(
+            type: Notification::TYPE_PAYMENT_VOIDED,
+            title: "Pago anulado — {$invoice->associate->name}",
+            message: "{$invoice->period} — {$data['reason']}",
+            entityType: 'payment',
+            entityId: (string) $payment->id,
+            link: route('invoices.show', $payment->invoice_id),
+        );
 
         return redirect()->route('invoices.show', $payment->invoice_id)->with('success', 'Pago anulado correctamente.');
     }

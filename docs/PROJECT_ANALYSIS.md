@@ -315,3 +315,18 @@ Mismo patrón de dos pasos que el importador de asociados (`AssociateImportServi
 **Permisos:** importar facturas requiere `billing.generate` (el mismo que genera la facturación mensual); importar pagos requiere `payments.register` (el mismo que registra un pago manual) — ningún permiso nuevo.
 
 **Verificación:** 124/124 tests en verde (21 nuevos: 12 de facturas, 9 de pagos), Pint limpio. Verificado además con una carga real de archivo vía curl contra el servidor local (el puerto 8001 de esta sesión estaba ocupado por otro proyecto del usuario — `php artisan serve --port=8002` se usó solo para esta verificación, sin tocar ese otro proceso), confirmando en base de datos que tanto la factura como el pago importados quedaron con los valores correctos antes de limpiar los datos de prueba.
+
+### 10.25 Campana de notificaciones en el topbar — 2026-09-14
+
+A pedido del usuario, guiado por una captura de pantalla de **otro proyecto suyo** (un sistema con integración a SUNAT — comprobantes electrónicos, inventario). Se aclaró explícitamente con el usuario antes de tocar código: se toma solo el estilo visual de esa captura (campana con contador, panel desplegable con pestañas, puntos de no-leído, "marcar todo como leído"), nunca su contenido — este sistema no tiene ni necesita nada relacionado con SUNAT/comprobantes/inventario.
+
+**Diseño:** no se usa el sistema de notificaciones nativo de Laravel (pensado para notificaciones por-usuario vía `notifiable_id`) — no encaja con un feed compartido donde todos los usuarios ven las mismas filas. En su lugar, tabla propia `notifications` (una fila por evento, visible a todos, con `read_by` como array JSON de IDs de usuario que ya la vieron — un pivote sería sobre-ingeniería para el puñado de usuarios que tiene este sistema hoy).
+
+**Qué genera una notificación** (siempre en un punto de escritura que ya existía, nunca un job nuevo ni un cron — este sistema nunca tuvo un scheduler, y agregar uno solo para esto habría sido alcance no pedido):
+- `invoice.generated` — al generar facturación masiva (`InvoiceController::store()`), solo si se creó al menos una factura.
+- `payment.voided` — al anular un pago (`PaymentController::void()`).
+- `import.completed` — al confirmar cualquiera de los tres importadores de Excel (asociados/facturas/pagos), solo si se creó al menos un registro.
+
+**Cómo se muestra:** un View Composer en `AppServiceProvider` alimenta `layouts.app` en cada request autenticado (mismo patrón que ya usa el sidebar/topbar — nada de esto se carga por AJAX), con las últimas 30 notificaciones y el conteo de no-leídas del usuario actual. Las pestañas de categoría filtran en el cliente (sin pedidos adicionales al servidor, ya que las 30 filas ya están en el DOM). "Marcar todo como leído" es un POST simple que redirige de vuelta, igual que el resto de las acciones de este sistema.
+
+**Verificación:** 131/131 tests en verde (7 nuevos), Pint limpio. Se encontró y corrigió un bug real antes de commitear: `read_by` no estaba en `$fillable` del modelo, así que `Notification::record()` lo descartaba silenciosamente y violaba el `NOT NULL` de la columna — lo detectó la propia suite de tests, no una revisión manual. Verificado además en vivo contra el servidor local: badge en 0 sin notificaciones, badge en 1 y título correcto tras anular un pago real, badge vuelve a 0 tras "marcar todo como leído".

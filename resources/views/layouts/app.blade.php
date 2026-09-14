@@ -108,6 +108,7 @@
                 <span class="icon-sun">{{ icon('sun', 'icon', 18) }}</span>
                 <span class="icon-moon">{{ icon('moon', 'icon', 18) }}</span>
             </button>
+            <x-notification-bell :notifications="$notifications" :unread="$unreadNotificationsCount" />
             <div class="dropdown">
                 <button class="topbar-user" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                     <x-avatar :user="auth()->user()" :size="32" />

@@ -68,6 +68,31 @@
     }
 
     /* ---------------------------------------------------------------
+     * Notification bell — client-side tab filter. The panel is always
+     * rendered server-side (View Composer in AppServiceProvider feeds
+     * layouts.app on every request, same as the sidebar), so filtering
+     * by category just toggles which already-present .notification-item
+     * rows are visible instead of a second request per tab.
+     * --------------------------------------------------------------- */
+    var notificationTabs = document.querySelector('.js-notification-tabs');
+    var notificationList = document.querySelector('.js-notification-list');
+    if (notificationTabs && notificationList) {
+        notificationTabs.addEventListener('click', function (event) {
+            var tab = event.target.closest('.notification-tab');
+            if (!tab) { return; }
+
+            Array.prototype.forEach.call(notificationTabs.querySelectorAll('.notification-tab'), function (t) {
+                t.classList.toggle('is-active', t === tab);
+            });
+
+            var filter = tab.dataset.filter;
+            Array.prototype.forEach.call(notificationList.querySelectorAll('.notification-item'), function (item) {
+                item.hidden = filter !== 'all' && item.dataset.type !== filter;
+            });
+        });
+    }
+
+    /* ---------------------------------------------------------------
      * Confirmation modal — replaces window.confirm() for data-confirm
      * forms (native browser alerts are explicitly out per the design
      * brief). Falls back to submitting immediately if the modal

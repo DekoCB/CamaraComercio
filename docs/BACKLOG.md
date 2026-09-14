@@ -93,6 +93,10 @@ Implementación de las dos decisiones de negocio de mayor impacto de la auditor�
 
 Cierra el hallazgo `XLS-04` de `docs/REQUIREMENTS_GAP_ANALYSIS.md`, marcado desde la auditoría del 19 de agosto como cambio de alcance pendiente de aprobación — autorizado explícitamente por el cliente en esta sesión, ya con el sistema en producción. Mismo flujo de dos pasos (previsualizar → confirmar) que el importador de asociados. Ninguno de los dos crea el registro padre si no existe: la importación de facturas rechaza filas de asociados inexistentes o ambiguos (mismo nombre repetido — pide el RUC para desambiguar); la importación de pagos rechaza filas sin una factura ya existente para ese asociado+período, y registra cada pago válido a través de `PaymentService::register()` para mantener `paid_total`/`status` consistentes con el registro manual. Ver `docs/PROJECT_ANALYSIS.md` sección 10.24. 124/124 tests sin regresiones (21 nuevos).
 
+## Criterios de aceptación — Campana de notificaciones (2026-09-14)
+
+Feed compartido de notificaciones (tabla propia `notifications`, no el sistema nativo de Laravel — no encaja con "todos ven las mismas filas"). Se generan en tres eventos que ya existían: facturación masiva generada, pago anulado, importación de Excel completada (cualquiera de las tres) — siempre que el evento haya creado al menos un registro. Panel en el topbar con contador de no-leídas, pestañas por categoría (filtrado en el cliente, sin pedidos extra) y "marcar todo como leído". El estilo visual se guió por una captura de otro proyecto del usuario (con integración SUNAT); el contenido es enteramente propio de este sistema — se confirmó explícitamente con el usuario antes de implementar, para no mezclar dominios de negocio de dos proyectos distintos. Ver `docs/PROJECT_ANALYSIS.md` sección 10.25. 131/131 tests sin regresiones (7 nuevos).
+
 ## Ejemplo de criterio de aceptación (HU-09)
 
 ```

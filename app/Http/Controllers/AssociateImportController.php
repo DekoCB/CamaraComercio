@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
+use App\Models\Notification;
 use App\Services\AssociateImportService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -80,6 +81,16 @@ class AssociateImportController extends Controller
         ]);
 
         $skipped = count($result['rows']) - count($validRows);
+
+        if ($summary['created'] > 0) {
+            Notification::record(
+                type: Notification::TYPE_IMPORT_COMPLETED,
+                title: "Importación de asociados completada — {$summary['created']} creados",
+                message: $skipped > 0 ? "{$skipped} omitidos por errores de validación" : null,
+                entityType: 'associate',
+                link: route('associates.index'),
+            );
+        }
         $message = "Importación completa: {$summary['created']} asociados creados";
         if ($skipped > 0) {
             $message .= ", {$skipped} omitidos por errores de validación";

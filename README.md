@@ -119,6 +119,7 @@ Ver el plan de sprints completo en [`docs/PROJECT_ANALYSIS.md`](docs/PROJECT_ANA
 - **Anulación de pagos e identificador RUC del asociado (28 ago 2026):** ✅ Completado — un pago se anula (con motivo obligatorio), nunca se edita ni se elimina; el RUC se adoptó como identificador legal opcional del asociado. Resuelve las preguntas 21 y 12 de `docs/OPEN_BUSINESS_DECISIONS.md`. Detalle en `docs/PROJECT_ANALYSIS.md` sección 10.22.
 - **Primer despliegue a producción, Hostinger hosting compartido (14 sep 2026):** ✅ Completado — dominio real, base de datos y usuarios de producción configurados. Detalle en `docs/PROJECT_ANALYSIS.md` sección 10.23.
 - **Importación de facturas y pagos desde Excel (14 sep 2026):** ✅ Completado — mismo patrón cargar/previsualizar/confirmar que la importación de asociados; ninguno de los dos crea el registro padre (asociado o factura) si no existe de antemano. Cierra el hallazgo `XLS-04` de `docs/REQUIREMENTS_GAP_ANALYSIS.md`. Detalle en `docs/PROJECT_ANALYSIS.md` sección 10.24.
+- **Campana de notificaciones (14 sep 2026):** ✅ Completado — feed compartido en el topbar con contador de no leídas, pestañas por categoría y "marcar todo como leído"; se genera al facturar en masa, anular un pago o completar una importación de Excel. Detalle en `docs/PROJECT_ANALYSIS.md` sección 10.25.
 
 ## Documentación
 

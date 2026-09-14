@@ -11,6 +11,7 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceImportController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymentImportController;
 use App\Http\Controllers\PortfolioController;
@@ -56,6 +57,10 @@ Route::middleware('auth')->group(function () {
     // Profile — self-service, no permission needed beyond being logged in.
     Route::get('profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
+
+    // Notifications — shared feed, visible to anyone with a session (same
+    // reasoning as the profile routes above: no per-permission gate).
+    Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
 
     // Associates (EP-03). Everyone with a session can browse the list;
     // create/edit require the associates.manage permission (checked

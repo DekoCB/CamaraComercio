@@ -2,11 +2,14 @@
 
 namespace App\Providers;
 
+use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\View\View as ViewContract;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -47,6 +50,23 @@ class AppServiceProvider extends ServiceProvider
             $user = auth()->user();
 
             return $user && in_array($code, $user->moduleCodes(), true);
+        });
+
+        // Feeds the notification bell in the topbar (layouts.app) on every
+        // authenticated page, the same way the sidebar/topbar user menu are
+        // always just rendered inline rather than fetched separately — a
+        // View Composer keeps that query out of every controller instead
+        // of repeating it wherever the layout is used.
+        View::composer('layouts.app', function (ViewContract $view) {
+            $user = auth()->user();
+            if (! $user) {
+                return;
+            }
+
+            $recent = Notification::query()->latest()->limit(30)->get();
+
+            $view->with('notifications', $recent);
+            $view->with('unreadNotificationsCount', $recent->filter(fn (Notification $n) => ! $n->isReadBy($user->id))->count());
         });
     }
 }
