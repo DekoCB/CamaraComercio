@@ -117,6 +117,8 @@ Ver el plan de sprints completo en [`docs/PROJECT_ANALYSIS.md`](docs/PROJECT_ANA
 - **Configuración de perfil de usuario (19 ago 2026):** ✅ Completado — cualquier usuario autenticado edita su propia foto, nombre, correo y contraseña desde un modal accesible desde el topbar; foto servida desde el disco público de Laravel. Detalle en `docs/PROJECT_ANALYSIS.md` sección 10.19.
 - **Auditoría de aptitud para producción (19 ago 2026):** ✅ Completada — 16 documentos nuevos (ver "Documentación" abajo) cubriendo integridad de datos, seguridad, protección de datos, backups, QA/UAT, deployment y manual de usuario; 20 decisiones de negocio pendientes formalizadas sin implementarlas por inferencia. Detalle en `docs/PROJECT_ANALYSIS.md` sección 10.20.
 - **Anulación de pagos e identificador RUC del asociado (28 ago 2026):** ✅ Completado — un pago se anula (con motivo obligatorio), nunca se edita ni se elimina; el RUC se adoptó como identificador legal opcional del asociado. Resuelve las preguntas 21 y 12 de `docs/OPEN_BUSINESS_DECISIONS.md`. Detalle en `docs/PROJECT_ANALYSIS.md` sección 10.22.
+- **Primer despliegue a producción, Hostinger hosting compartido (14 sep 2026):** ✅ Completado — dominio real, base de datos y usuarios de producción configurados. Detalle en `docs/PROJECT_ANALYSIS.md` sección 10.23.
+- **Importación de facturas y pagos desde Excel (14 sep 2026):** ✅ Completado — mismo patrón cargar/previsualizar/confirmar que la importación de asociados; ninguno de los dos crea el registro padre (asociado o factura) si no existe de antemano. Cierra el hallazgo `XLS-04` de `docs/REQUIREMENTS_GAP_ANALYSIS.md`. Detalle en `docs/PROJECT_ANALYSIS.md` sección 10.24.
 
 ## Documentación
 

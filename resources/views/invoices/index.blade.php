@@ -6,6 +6,9 @@
     <x-page-header title="Facturación" subtitle="Consulta y genera la facturación mensual de los asociados.">
         <x-slot:actions>
             @can('billing.generate')
+                <a href="{{ route('invoices.import.create') }}" class="btn btn-secondary btn-sm">
+                    {{ icon('upload', 'icon', 16) }} Importar desde Excel
+                </a>
                 <a href="{{ route('invoices.create') }}" class="btn btn-primary btn-sm js-modal-link" data-modal-title="Generar facturación del mes">
                     {{ icon('plus', 'icon', 16) }} Generar facturación del mes
                 </a>

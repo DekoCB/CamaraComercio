@@ -289,3 +289,29 @@ A pedido explícito del usuario ("procede con la implementación de la pregunta 
 **Identificador RUC del asociado (pregunta 12):** columna `associates.ruc` (migración `2026_08_20_100012`, `CHAR(11)` nullable con `UNIQUE`), opcional a propósito — no se hizo obligatorio porque eso habría sido un cambio de alcance adicional no autorizado. Validado en `AssociateRequest` (`digits:11`, unicidad ignorando el propio registro), visible/editable en el formulario y en el listado, incluido en la búsqueda. 5 tests nuevos.
 
 **Verificación:** 98/98 tests en verde (11 nuevos), Pint limpio, smoke test manual vía curl autenticado contra el servidor local confirmando que ambas UI renderizan correctamente (campo RUC en alta/listado de asociados, acción "Anular" con motivo en el historial de pagos de una factura con pagos reales).
+
+### 10.23 Primer despliegue a producción — Hostinger, hosting compartido — 2026-09-14
+
+Primer despliegue real fuera de XAMPP local, guiado paso a paso por SSH contra hosting compartido de Hostinger (dominio `camaradecomercio.leongrup.com`). Sin acceso root ni control del document root del panel, así que el proyecto completo vive en `~/domains/camaradecomercio.leongrup.com/` y solo el contenido de `public/` se copió a `public_html/`, con `public_html/index.php` editado para apuntar `require` a `../vendor/autoload.php` y `../bootstrap/app.php` (un nivel arriba, no a una subcarpeta — a diferencia de un VPS con document root propio).
+
+**Particularidades reales de este hosting, no anticipadas en `docs/DEPLOYMENT.md` (documento genérico, sin proveedor definido):**
+- `symlink()` **y** `exec()` deshabilitadas en el PHP de Hostinger (seguridad estándar de hosting compartido) — `php artisan storage:link` falla con `Call to undefined function Illuminate\Filesystem\exec()`. Se resolvió creando el enlace a mano con `ln -s` directo en la sesión de bash (fuera de PHP, así que no está sujeto a esa restricción), no con un cambio de código.
+- Sin acceso a `npm`/Node — no hace falta: el proyecto nunca tuvo un paso de build real (ver 10.20), sirve `public/assets/*` vendorizado tal cual.
+- `DatabaseSeeder` encadena datos ficticios (`AssociateSeeder`, `UatDemoDataSeeder`) — en producción se corrió **solo** `php artisan db:seed --class=RolesPermissionsModulesSeeder`, nunca el `db:seed` completo, para no mezclar asociados/facturas de prueba con datos reales.
+- El certificado SSL y el `platform: hostinger`/`server: hcdn` en las respuestas confirman que Hostinger enruta el tráfico por su propio CDN — no se detectó ningún problema de detección de HTTPS en el smoke test, pero queda como algo a vigilar si a futuro aparecen enlaces generados en `http://` en vez de `https://`.
+
+**Pendiente, ya señalado antes de este despliegue:** rotar la contraseña del usuario administrador (quedó con la credencial de desarrollo conocida hasta el primer login), configurar un proveedor SMTP real (sigue en `MAIL_MAILER=log`), y decidir si se arma el `APP_TIMEZONE=America/Lima` que `docs/DEPLOYMENT.md` nunca tuvo explícito.
+
+### 10.24 Importación de facturas y pagos desde Excel — 2026-09-14
+
+A pedido explícito del usuario, ya con el sistema en producción ("necesito que para facturación y pagos se pueda importar desde Excel"). Resuelve el hallazgo `XLS-04` de `docs/REQUIREMENTS_GAP_ANALYSIS.md`, marcado desde la auditoría del 19 de agosto como cambio de alcance que requería aprobación explícita — ya autorizado.
+
+Mismo patrón de dos pasos que el importador de asociados (`AssociateImportService`, sección 15 de la especificación original): cargar → previsualizar con errores fila por fila → confirmar. Nada se escribe en la base de datos hasta la confirmación explícita.
+
+**`InvoiceImportService`:** columnas reconocidas RUC/Asociado, Período (AAAA-MM), Monto, Fecha de emisión, Fecha de vencimiento. Nunca crea el asociado — si no existe (por RUC o por nombre), la fila se rechaza. Si el nombre coincide con más de un asociado (el caso real de los dos "Comercial Andina SAC" de esta misma sesión), la fila se rechaza pidiendo el RUC para desambiguar en vez de adivinar. Detecta tanto una factura ya existente para ese asociado+período como dos filas del mismo archivo intentando crear la misma.
+
+**`PaymentImportService`:** columnas RUC/Asociado, Período de factura, Monto, Fecha de pago, Notas. Nunca crea la factura — si no existe, la fila se rechaza ("impórtela primero"). Cada fila válida pasa por `PaymentService::register()`, el mismo camino transaccional (`lockForUpdate()`) que usa el registro manual, así que `paid_total`/`status` quedan exactamente igual de consistentes. Lleva un acumulado de "monto ya en cola" por factura dentro del mismo archivo, para que dos pagos parciales a la misma factura en un solo archivo no puedan sobrepasar juntos el saldo aunque cada uno por separado parezca válido.
+
+**Permisos:** importar facturas requiere `billing.generate` (el mismo que genera la facturación mensual); importar pagos requiere `payments.register` (el mismo que registra un pago manual) — ningún permiso nuevo.
+
+**Verificación:** 124/124 tests en verde (21 nuevos: 12 de facturas, 9 de pagos), Pint limpio. Verificado además con una carga real de archivo vía curl contra el servidor local (el puerto 8001 de esta sesión estaba ocupado por otro proyecto del usuario — `php artisan serve --port=8002` se usó solo para esta verificación, sin tocar ese otro proceso), confirmando en base de datos que tanto la factura como el pago importados quedaron con los valores correctos antes de limpiar los datos de prueba.

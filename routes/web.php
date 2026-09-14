@@ -10,7 +10,9 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\InvoiceImportController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\PaymentImportController;
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
@@ -82,6 +84,11 @@ Route::middleware('auth')->group(function () {
     Route::middleware('can:billing.generate')->group(function () {
         Route::get('invoices/generate', [InvoiceController::class, 'create'])->name('invoices.create');
         Route::post('invoices/generate', [InvoiceController::class, 'store'])->name('invoices.store');
+
+        Route::get('invoices/import', [InvoiceImportController::class, 'create'])->name('invoices.import.create');
+        Route::post('invoices/import/preview', [InvoiceImportController::class, 'preview'])->name('invoices.import.preview');
+        Route::post('invoices/import/confirm', [InvoiceImportController::class, 'confirm'])->name('invoices.import.confirm');
+        Route::post('invoices/import/cancel', [InvoiceImportController::class, 'cancel'])->name('invoices.import.cancel');
     });
     Route::middleware('can:billing.view')->group(function () {
         Route::get('invoices', [InvoiceController::class, 'index'])->name('invoices.index');
@@ -94,6 +101,11 @@ Route::middleware('auth')->group(function () {
         Route::get('payments/create', [PaymentController::class, 'create'])->name('payments.create');
         Route::post('payments', [PaymentController::class, 'storeQuick'])->name('payments.storeQuick');
         Route::post('invoices/{invoice}/payments', [PaymentController::class, 'store'])->name('payments.store');
+
+        Route::get('payments/import', [PaymentImportController::class, 'create'])->name('payments.import.create');
+        Route::post('payments/import/preview', [PaymentImportController::class, 'preview'])->name('payments.import.preview');
+        Route::post('payments/import/confirm', [PaymentImportController::class, 'confirm'])->name('payments.import.confirm');
+        Route::post('payments/import/cancel', [PaymentImportController::class, 'cancel'])->name('payments.import.cancel');
     });
     Route::middleware('can:payments.void')->group(function () {
         Route::put('payments/{payment}/void', [PaymentController::class, 'void'])->name('payments.void');
