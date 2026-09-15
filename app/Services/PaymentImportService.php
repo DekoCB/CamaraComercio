@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Associate;
 use App\Models\Invoice;
+use App\Models\Payment;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -28,6 +29,7 @@ class PaymentImportService
         'amount' => ['monto', 'amount'],
         'paid_at' => ['fecha de pago', 'fecha', 'paid_at'],
         'notes' => ['notas', 'notes', 'observaciones'],
+        'method' => ['metodo de pago', 'metodo', 'forma de pago', 'medio de pago', 'method'],
     ];
 
     /**
@@ -68,6 +70,7 @@ class PaymentImportService
             $amountRaw = trim((string) ($line[$columnIndex['amount']] ?? ''));
             $paidAtRaw = isset($columnIndex['paid_at']) ? ($line[$columnIndex['paid_at']] ?? '') : '';
             $notes = isset($columnIndex['notes']) ? trim((string) ($line[$columnIndex['notes']] ?? '')) : '';
+            $methodRaw = isset($columnIndex['method']) ? trim((string) ($line[$columnIndex['method']] ?? '')) : '';
 
             if ($ruc === '' && $associateName === '' && $period === '' && $amountRaw === '') {
                 continue;
@@ -120,6 +123,7 @@ class PaymentImportService
                 'amount' => $amount,
                 'paid_at' => $paidAt,
                 'notes' => $notes !== '' ? $notes : null,
+                'method' => $this->parseMethod($methodRaw, $errors),
                 'errors' => $errors,
             ];
 
@@ -149,6 +153,7 @@ class PaymentImportService
                     paidAt: $row['paid_at'],
                     registeredBy: $registeredBy,
                     notes: $row['notes'],
+                    method: $row['method'],
                 );
                 $created++;
             } catch (InvalidArgumentException|Throwable $e) {
@@ -215,6 +220,33 @@ class PaymentImportService
         } catch (Throwable) {
             return null;
         }
+    }
+
+    /**
+     * Accepts the stored key or the label, case/accent-insensitive
+     * ("yape", "Transferencia bancaria", "transferencia"…); blank means
+     * the column is absent or empty → stored as NULL, not an error.
+     */
+    private function parseMethod(string $raw, array &$errors): ?string
+    {
+        if ($raw === '') {
+            return null;
+        }
+
+        $needle = Str::of($raw)->lower()->ascii()->squish()->value();
+        foreach (Payment::METHODS as $key => $label) {
+            if ($needle === Str::of($key)->lower()->ascii()->value() || $needle === Str::of($label)->lower()->ascii()->value()) {
+                return $key;
+            }
+            // "transferencia" alone should match "Transferencia bancaria"
+            if (str_starts_with(Str::of($label)->lower()->ascii()->value(), $needle)) {
+                return $key;
+            }
+        }
+
+        $errors[] = "Método de pago no reconocido ({$raw}). Valores válidos: ".implode(', ', Payment::METHODS).'.';
+
+        return null;
     }
 
     private function normalizeHeader(string $header): string

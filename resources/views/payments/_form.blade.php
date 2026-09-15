@@ -10,7 +10,7 @@
                 <option value="">Selecciona una factura...</option>
                 @foreach ($invoices as $invoice)
                     <option value="{{ $invoice->id }}" data-balance="{{ $invoice->balance() }}"
-                            {{ (string) old('invoice_id') === (string) $invoice->id ? 'selected' : '' }}>
+                            {{ (string) old('invoice_id', $selectedInvoiceId ?? '') === (string) $invoice->id ? 'selected' : '' }}>
                         {{ $invoice->associate->name }} — {{ $invoice->period }} — Saldo: {{ format_money($invoice->balance()) }}
                     </option>
                 @endforeach
@@ -52,6 +52,18 @@
             <input type="date" class="form-control @error('paid_at') is-invalid @enderror" id="paid_at" name="paid_at" required
                    value="{{ old('paid_at', now()->toDateString()) }}" max="{{ now()->toDateString() }}">
             @error('paid_at')
+                <div class="field-error">{{ icon('alert-triangle', 'icon', 14) }} {{ $message }}</div>
+            @enderror
+        </div>
+        <div class="field">
+            <label class="field-label" for="method">Método de pago <span class="required">*</span></label>
+            <select class="form-select @error('method') is-invalid @enderror" id="method" name="method" required>
+                <option value="">— Selecciona —</option>
+                @foreach (\App\Models\Payment::METHODS as $key => $label)
+                    <option value="{{ $key }}" {{ old('method', 'EFECTIVO') === $key ? 'selected' : '' }}>{{ $label }}</option>
+                @endforeach
+            </select>
+            @error('method')
                 <div class="field-error">{{ icon('alert-triangle', 'icon', 14) }} {{ $message }}</div>
             @enderror
         </div>

@@ -1246,6 +1246,169 @@
             return;
         }
         event.preventDefault();
+        if (formModalDialog) {
+            formModalDialog.classList.toggle('is-wide', link.dataset.modalSize === 'lg');
+        }
         openFormModal(link.href, link.dataset.modalTitle || link.textContent.trim());
     });
+})();
+
+/* ==========================================================================
+   Live filtering — forms with data-live-filter="#target" refresh only the
+   target block (server returns the partial for XHR requests) as the user
+   types or changes a dropdown, and keep the URL in sync so reload/back
+   and copy-paste keep working. Pagination links and filter chips inside
+   the target are fetched the same way.
+   ========================================================================== */
+(function () {
+    var DEBOUNCE_MS = 300;
+
+    function init(form) {
+        var target = document.querySelector(form.dataset.liveFilter);
+        if (!target) {
+            return;
+        }
+        var timer = null;
+        var controller = null;
+        var clearLink = form.querySelector('.js-live-clear');
+
+        function load(url, pushUrl) {
+            if (controller) {
+                controller.abort();
+            }
+            controller = new AbortController();
+            target.classList.add('is-loading');
+            target.setAttribute('aria-busy', 'true');
+
+            fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                credentials: 'same-origin',
+                signal: controller.signal,
+            }).then(function (response) {
+                if (!response.ok) {
+                    throw new Error('live-filter-failed');
+                }
+                return response.text();
+            }).then(function (html) {
+                target.innerHTML = html;
+                if (pushUrl) {
+                    window.history.replaceState(null, '', url);
+                }
+                target.dispatchEvent(new CustomEvent('live-filter:loaded', { bubbles: true }));
+                if (clearLink) {
+                    clearLink.hidden = !hasActiveFilters();
+                }
+            }).catch(function (error) {
+                if (error.name !== 'AbortError') {
+                    window.location.href = url; // plain navigation fallback
+                }
+            }).finally(function () {
+                target.classList.remove('is-loading');
+                target.removeAttribute('aria-busy');
+            });
+        }
+
+        function formUrl() {
+            var params = new URLSearchParams(new FormData(form));
+            Array.from(params.keys()).forEach(function (key) {
+                if (params.get(key) === '') {
+                    params.delete(key);
+                }
+            });
+            var query = params.toString();
+            return form.action + (query ? '?' + query : '');
+        }
+
+        function hasActiveFilters() {
+            return formUrl().indexOf('?') !== -1;
+        }
+
+        function refresh() {
+            load(formUrl(), true);
+        }
+
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+            clearTimeout(timer);
+            refresh();
+        });
+
+        form.addEventListener('input', function (event) {
+            if (event.target.matches('input[type="search"], input[type="text"]')) {
+                clearTimeout(timer);
+                timer = setTimeout(refresh, DEBOUNCE_MS);
+            }
+        });
+
+        form.addEventListener('change', function (event) {
+            if (event.target.matches('select, input[type="date"], input[type="checkbox"]')) {
+                clearTimeout(timer);
+                refresh();
+            }
+        });
+
+        if (clearLink) {
+            clearLink.addEventListener('click', function (event) {
+                event.preventDefault();
+                form.querySelectorAll('input[type="search"], input[type="text"], select').forEach(function (field) {
+                    field.value = '';
+                    if (field.tagName === 'SELECT') {
+                        field.dispatchEvent(new Event('live-reset'));
+                    }
+                });
+                form.querySelectorAll('input[type="hidden"]').forEach(function (field) {
+                    field.remove();
+                });
+                syncEnhancedSelects(form);
+                refresh();
+            });
+        }
+
+        // Pagination + filter chips rendered inside the results block
+        target.addEventListener('click', function (event) {
+            var link = event.target.closest('.pagination a, .js-live-link');
+            if (!link || !link.href || event.ctrlKey || event.metaKey || event.shiftKey || event.button === 1) {
+                return;
+            }
+            event.preventDefault();
+            load(link.href, true);
+            if (link.classList.contains('js-live-link')) {
+                // a chip removed one filter: reflect it in the form controls
+                syncFormFromUrl(link.href);
+            }
+        });
+
+        function syncFormFromUrl(url) {
+            var params = new URL(url, window.location.href).searchParams;
+            form.querySelectorAll('input[type="search"], input[type="text"], select').forEach(function (field) {
+                field.value = params.get(field.name) || '';
+            });
+            form.querySelectorAll('input[type="hidden"]').forEach(function (field) {
+                if (!params.has(field.name)) {
+                    field.remove();
+                }
+            });
+            syncEnhancedSelects(form);
+        }
+    }
+
+    // The custom select widget (enhanceSelects) mirrors the native <select>;
+    // after we change the native value programmatically, refresh its label.
+    function syncEnhancedSelects(form) {
+        form.querySelectorAll('select.is-enhanced').forEach(function (select) {
+            var field = select.closest('.select-field');
+            var label = field ? field.querySelector('.select-trigger-label, .select-trigger span') : null;
+            var option = select.options[select.selectedIndex];
+            if (label && option) {
+                label.textContent = option.textContent;
+            }
+            if (field) {
+                field.querySelectorAll('.select-option').forEach(function (o) {
+                    o.classList.toggle('is-selected', parseInt(o.dataset.index, 10) === select.selectedIndex);
+                });
+            }
+        });
+    }
+
+    document.querySelectorAll('form[data-live-filter]').forEach(init);
 })();

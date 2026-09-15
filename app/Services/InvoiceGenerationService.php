@@ -46,7 +46,10 @@ class InvoiceGenerationService
                 Invoice::create([
                     'associate_id' => $associate->id,
                     'period' => $period,
-                    'amount' => $amount,
+                    // "MONTO A PAGAR" from the associates master sheet wins
+                    // over the batch amount; the form value is the fallback
+                    // for associates without their own fee.
+                    'amount' => $associate->monthly_fee !== null ? (float) $associate->monthly_fee : $amount,
                     'paid_total' => 0,
                     'issue_date' => $issueDate,
                     'due_date' => $dueDate,

@@ -41,6 +41,7 @@
                         <th>Período factura</th>
                         <th class="is-numeric">Monto</th>
                         <th>Fecha de pago</th>
+                        <th>Método</th>
                         <th>Notas</th>
                         <th>Estado</th>
                     </tr>
@@ -53,6 +54,7 @@
                             <td class="cell-muted">{{ $row['period'] ?? '-' }}</td>
                             <td class="is-numeric cell-money">{{ $row['amount'] !== null ? format_money($row['amount']) : '-' }}</td>
                             <td class="cell-muted">{{ $row['paid_at'] ? format_date($row['paid_at']) : '-' }}</td>
+                            <td class="cell-muted">{{ isset($row['method']) && $row['method'] ? \App\Models\Payment::METHODS[$row['method']] : '-' }}</td>
                             <td class="cell-muted">{{ $row['notes'] ?? '-' }}</td>
                             <td>
                                 @if ($row['errors'] === [])

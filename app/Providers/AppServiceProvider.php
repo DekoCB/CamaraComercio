@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Notification;
 use App\Models\User;
+use App\Services\BirthdayService;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
@@ -62,6 +63,11 @@ class AppServiceProvider extends ServiceProvider
             if (! $user) {
                 return;
             }
+
+            // Cumpleaños de socios: without a running scheduler (typical
+            // XAMPP install) this is what gets today's birthday
+            // notifications into the feed — cached to one run per day.
+            app(BirthdayService::class)->ensureNotifiedToday();
 
             $recent = Notification::query()->latest()->limit(30)->get();
 

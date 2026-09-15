@@ -32,7 +32,7 @@
                 <input type="number" step="0.01" min="0.01" class="form-control @error('amount') is-invalid @enderror"
                        id="amount" name="amount" required value="{{ old('amount') }}">
             </div>
-            <div class="field-help">Se aplicará el mismo monto a cada asociado activo.</div>
+            <div class="field-help">Se aplicará a cada asociado activo que no tenga un "Monto a pagar" propio en su ficha; los que sí lo tienen se facturan con ese monto.</div>
             @error('amount')
                 <div class="field-error">{{ icon('alert-triangle', 'icon', 14) }} {{ $message }}</div>
             @enderror

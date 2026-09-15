@@ -54,7 +54,7 @@ class NotificationTest extends TestCase
         $collector = $this->userWithPermissions(['payments.register']);
         $admin = $this->userWithPermissions(['payments.void']);
 
-        $this->actingAs($collector)->post("/invoices/{$invoice->id}/payments", ['amount' => '200.00', 'paid_at' => now()->toDateString()]);
+        $this->actingAs($collector)->post("/invoices/{$invoice->id}/payments", ['amount' => '200.00', 'paid_at' => now()->toDateString(), 'method' => 'EFECTIVO']);
         $payment = $invoice->fresh()->payments->first();
 
         $this->actingAs($admin)->put("/payments/{$payment->id}/void", ['reason' => 'Monto ingresado por error']);

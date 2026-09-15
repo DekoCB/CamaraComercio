@@ -10,10 +10,26 @@ class Payment extends Model
 {
     use HasFactory;
 
+    /**
+     * Payment channels the Cámara receives money through. Keys are what
+     * gets stored; labels are what the UI shows.
+     */
+    public const METHODS = [
+        'EFECTIVO' => 'Efectivo',
+        'TRANSFERENCIA' => 'Transferencia bancaria',
+        'DEPOSITO' => 'Depósito bancario',
+        'YAPE' => 'Yape',
+        'PLIN' => 'Plin',
+        'TARJETA' => 'Tarjeta',
+        'CHEQUE' => 'Cheque',
+        'OTRO' => 'Otro',
+    ];
+
     protected $fillable = [
         'invoice_id',
         'amount',
         'paid_at',
+        'method',
         'registered_by',
         'notes',
         'voided_at',
@@ -48,6 +64,11 @@ class Payment extends Model
     public function isVoided(): bool
     {
         return $this->voided_at !== null;
+    }
+
+    public function methodLabel(): string
+    {
+        return self::METHODS[$this->method] ?? ($this->method ?: 'Sin especificar');
     }
 
     public function scopeActive($query)

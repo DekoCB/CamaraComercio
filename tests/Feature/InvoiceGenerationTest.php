@@ -50,6 +50,18 @@ class InvoiceGenerationTest extends TestCase
         $this->assertSame('150.00', $invoices->first()->amount);
     }
 
+    public function test_associates_with_their_own_monthly_fee_are_invoiced_with_it(): void
+    {
+        $withFee = Associate::factory()->create(['is_active' => true, 'monthly_fee' => 75]);
+        $withoutFee = Associate::factory()->create(['is_active' => true, 'monthly_fee' => null]);
+        $user = $this->userWithPermissions(['billing.generate']);
+
+        $this->actingAs($user)->post('/invoices/generate', $this->validPayload(['amount' => '150.00']));
+
+        $this->assertSame('75.00', Invoice::where('associate_id', $withFee->id)->first()->amount);
+        $this->assertSame('150.00', Invoice::where('associate_id', $withoutFee->id)->first()->amount);
+    }
+
     public function test_new_associates_get_invoiced_on_a_later_run_for_the_same_period(): void
     {
         Associate::factory()->create(['is_active' => true]);

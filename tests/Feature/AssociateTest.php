@@ -107,7 +107,7 @@ class AssociateTest extends TestCase
             ->assertSee('Visible Para Todos');
     }
 
-    public function test_updating_an_associate_can_toggle_active_state(): void
+    public function test_updating_an_associate_status_toggles_active_flag(): void
     {
         $user = $this->userWithPermissions(['associates.manage']);
         $associate = Associate::factory()->create(['is_active' => true]);
@@ -115,9 +115,198 @@ class AssociateTest extends TestCase
         $this->actingAs($user)->put("/associates/{$associate->id}", [
             'name' => $associate->name,
             'email' => $associate->email,
+            'status' => Associate::STATUS_SUSPENDIDO,
         ]);
 
-        $this->assertFalse($associate->fresh()->is_active);
+        $fresh = $associate->fresh();
+        $this->assertSame(Associate::STATUS_SUSPENDIDO, $fresh->status);
+        $this->assertFalse($fresh->is_active);
+
+        $this->actingAs($user)->put("/associates/{$associate->id}", [
+            'name' => $associate->name,
+            'email' => $associate->email,
+            'status' => Associate::STATUS_ACTIVO,
+        ]);
+
+        $this->assertTrue($associate->fresh()->is_active);
+    }
+
+    public function test_factory_flag_and_status_stay_coherent(): void
+    {
+        $inactive = Associate::factory()->create(['is_active' => false]);
+        $unaffiliated = Associate::factory()->create(['status' => Associate::STATUS_DESAFILIADO]);
+
+        $this->assertSame(Associate::STATUS_SUSPENDIDO, $inactive->fresh()->status);
+        $this->assertFalse($unaffiliated->fresh()->is_active);
+    }
+
+    public function test_all_master_data_fields_are_persisted(): void
+    {
+        $user = $this->userWithPermissions(['associates.manage']);
+
+        $payload = [
+            'name' => '4OS GROUP ARQUITECTURA Y DESARROLLO S.A.C.',
+            'status' => Associate::STATUS_ACTIVO,
+            'sectorista' => 'ROSA',
+            'category' => 'D',
+            'monthly_fee' => '75.00',
+            'joined_at' => '2018-09-25',
+            'person_type' => 'PERSONA JURÍDICA',
+            'anniversary_date' => '2017-07-01',
+            'ruc' => '20602485146',
+            'company' => '4OS GROUP',
+            'email' => 'empresa@4os.example.com',
+            'billing_address' => 'JR HUANCAS 269 SAN CARLOS',
+            'billing_district' => 'EL TAMBO',
+            'mailing_address' => 'JR. HUANCAS Y URUGUAY',
+            'mailing_district' => 'HUANCAYO',
+            'company_size' => 'MICROEMPRESAS',
+            'activity_type' => 'SERVICIO',
+            'sector_committee' => 'CONSTRUCCION E INMOBILIARIA / SALUD',
+            'ciiu' => 'ACTIVIDADES DE MÉDICOS Y ODONTÓLOGOS',
+            'sub_sector' => 'ACTIVIDADES DE ARQUITECTURA E INGENIERÍA',
+            'legal_rep_name' => 'SAPAICO VARGAS MARIO OSMAN',
+            'legal_rep_dni' => '20019748',
+            'legal_rep_gender' => 'MASCULINO',
+            'legal_rep_birthday' => '1967-05-10',
+            'legal_rep_phone' => '954436988',
+            'legal_rep_email' => 'mario@4os.example.com',
+            'cch_rep_name' => 'OTRA PERSONA',
+            'cch_rep_dni' => '11223344',
+            'cch_rep_gender' => 'FEMENINO',
+            'cch_rep_birthday' => '1980-01-15',
+            'cch_rep_phone' => '999888777',
+            'cch_rep_email' => 'otra@4os.example.com',
+            'notes' => 'Paga siempre a inicio de mes.',
+        ];
+
+        $this->actingAs($user)->post('/associates', $payload)->assertRedirect('/associates');
+
+        $associate = Associate::where('ruc', '20602485146')->firstOrFail();
+        foreach ($payload as $field => $expected) {
+            $actual = $associate->{$field};
+            if ($actual instanceof \Carbon\CarbonInterface) {
+                $actual = $actual->format('Y-m-d');
+            }
+            $this->assertEquals($expected, $actual, "Campo {$field}");
+        }
+        $this->assertTrue($associate->is_active);
+    }
+
+    public function test_unknown_catalog_values_are_rejected(): void
+    {
+        $user = $this->userWithPermissions(['associates.manage']);
+
+        $response = $this->actingAs($user)->post('/associates', [
+            'name' => 'Catálogos Inválidos',
+            'status' => 'BORRADO',
+            'person_type' => 'ROBOT',
+            'legal_rep_gender' => 'OTRO',
+        ]);
+
+        $response->assertSessionHasErrors(['status', 'person_type', 'legal_rep_gender']);
+    }
+
+    public function test_detail_page_shows_every_section(): void
+    {
+        $user = $this->userWithPermissions([]);
+        $associate = Associate::factory()->create([
+            'name' => 'Ficha Completa SAC',
+            'legal_rep_name' => 'REPRESENTANTE LEGAL UNO',
+            'cch_rep_name' => 'REPRESENTANTE CCH DOS',
+            'sector_committee' => 'COMITE DE PRUEBA',
+        ]);
+
+        $this->actingAs($user)->get("/associates/{$associate->id}")
+            ->assertOk()
+            ->assertSee('Ficha Completa SAC')
+            ->assertSee('REPRESENTANTE LEGAL UNO')
+            ->assertSee('REPRESENTANTE CCH DOS')
+            ->assertSee('COMITE DE PRUEBA')
+            ->assertSee('Representante ante la CCH');
+    }
+
+    public function test_list_can_be_filtered_by_status(): void
+    {
+        $user = $this->userWithPermissions([]);
+        Associate::factory()->create(['ruc' => '20100000111', 'status' => Associate::STATUS_ACTIVO]);
+        Associate::factory()->create(['ruc' => '20100000222', 'status' => Associate::STATUS_SUSPENDIDO]);
+
+        // RUC only appears in the table rows (the "Todos los asociados"
+        // picker lists every associate by name regardless of the filter).
+        $this->actingAs($user)->get('/associates?status=ACTIVO')
+            ->assertOk()
+            ->assertSee('20100000111')
+            ->assertDontSee('20100000222');
+    }
+
+    public function test_list_can_be_filtered_by_sectorista_category_person_type_and_district(): void
+    {
+        $user = $this->userWithPermissions([]);
+        Associate::factory()->create(['ruc' => '20100000001', 'sectorista' => 'ROSA', 'category' => 'D', 'person_type' => 'PERSONA JURÍDICA', 'billing_district' => 'EL TAMBO']);
+        Associate::factory()->create(['ruc' => '20100000002', 'sectorista' => 'CARMEN', 'category' => 'E', 'person_type' => 'PERSONA NATURAL', 'billing_district' => 'HUANCAYO']);
+
+        $this->actingAs($user)->get('/associates?sectorista=ROSA')->assertOk()->assertSee('20100000001')->assertDontSee('20100000002');
+        $this->actingAs($user)->get('/associates?category=E')->assertOk()->assertSee('20100000002')->assertDontSee('20100000001');
+        $this->actingAs($user)->get('/associates?person_type=PERSONA+NATURAL')->assertOk()->assertSee('20100000002')->assertDontSee('20100000001');
+        $this->actingAs($user)->get('/associates?billing_district=EL+TAMBO')->assertOk()->assertSee('20100000001')->assertDontSee('20100000002');
+
+        // Filters combine (AND) and an impossible combination yields the
+        // filtered empty state rather than the "no associates yet" one.
+        $this->actingAs($user)->get('/associates?sectorista=ROSA&category=E')
+            ->assertOk()
+            ->assertSee('No se encontraron resultados para los filtros seleccionados');
+    }
+
+    public function test_dropdown_options_and_active_chips_reflect_stored_values(): void
+    {
+        $user = $this->userWithPermissions([]);
+        Associate::factory()->create(['sectorista' => 'ROSA', 'billing_district' => 'EL TAMBO']);
+        Associate::factory()->create(['sectorista' => 'CARMEN']);
+
+        $response = $this->actingAs($user)->get('/associates?sectorista=ROSA&status=ACTIVO');
+
+        $response->assertOk()
+            ->assertSee('Sectorista: todos')
+            ->assertSee('<option value="CARMEN"', false)
+            ->assertSee('<option value="EL TAMBO"', false)
+            // one chip per active filter, each linking to the listing without it
+            ->assertSee('1 resultado con:')
+            ->assertSee(route('associates.index', ['status' => 'ACTIVO']), false)
+            ->assertSee(route('associates.index', ['sectorista' => 'ROSA']), false);
+    }
+
+    public function test_associate_without_invoices_can_be_deleted(): void
+    {
+        $user = $this->userWithPermissions(['associates.manage']);
+        $associate = Associate::factory()->create(['name' => 'Para Borrar SAC']);
+
+        $response = $this->actingAs($user)->delete("/associates/{$associate->id}");
+
+        $response->assertRedirect('/associates')->assertSessionHas('success');
+        $this->assertDatabaseMissing('associates', ['id' => $associate->id]);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'associate.delete', 'entity_id' => (string) $associate->id, 'result' => 'success']);
+    }
+
+    public function test_associate_with_invoices_cannot_be_deleted(): void
+    {
+        $user = $this->userWithPermissions(['associates.manage']);
+        $associate = Associate::factory()->create();
+        \App\Models\Invoice::factory()->for($associate)->create();
+
+        $response = $this->actingAs($user)->from('/associates')->delete("/associates/{$associate->id}");
+
+        $response->assertRedirect('/associates')->assertSessionHas('error');
+        $this->assertDatabaseHas('associates', ['id' => $associate->id]);
+    }
+
+    public function test_deleting_requires_manage_permission(): void
+    {
+        $user = $this->userWithPermissions([]);
+        $associate = Associate::factory()->create();
+
+        $this->actingAs($user)->delete("/associates/{$associate->id}")->assertForbidden();
+        $this->assertDatabaseHas('associates', ['id' => $associate->id]);
     }
 
     public function test_search_filters_by_name_company_phone_or_email(): void

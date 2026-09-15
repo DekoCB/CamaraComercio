@@ -8,8 +8,8 @@
     <form method="POST" action="{{ route('login') }}" novalidate>
         @csrf
         <div class="field">
-            <label class="field-label" for="email">Correo electrónico</label>
-            <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}" required autofocus>
+            <label class="field-label" for="email">Usuario o correo electrónico</label>
+            <input type="text" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}" autocomplete="username" required autofocus>
             @error('email')
                 <div class="field-error">{{ icon('alert-triangle', 'icon', 14) }} {{ $message }}</div>
             @enderror

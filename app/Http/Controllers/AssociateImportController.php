@@ -38,7 +38,7 @@ class AssociateImportController extends Controller
             Storage::delete($storedPath);
 
             return back()->withErrors([
-                'file' => 'No se encontró una columna "Nombre" en el archivo. Verifique que la primera fila tenga los encabezados (Nombre, Empresa, Contacto, Correo).',
+                'file' => 'No se encontró la columna "Razón social" (o "Nombre") en el archivo. Verifique que la primera fila tenga los encabezados del padrón de asociados.',
             ]);
         }
 
@@ -50,6 +50,8 @@ class AssociateImportController extends Controller
             'rows' => $result['rows'],
             'validCount' => count($validRows),
             'errorCount' => count($result['rows']) - count($validRows),
+            'updateCount' => count(array_filter($validRows, fn ($r) => $r['action'] === AssociateImportService::ACTION_UPDATE)),
+            'paymentCount' => array_sum(array_map(fn ($r) => count($r['contributions']), $validRows)),
         ]);
     }
 
@@ -68,19 +70,28 @@ class AssociateImportController extends Controller
         $result = $this->importer->parse(Storage::path($storedPath));
         $validRows = array_values(array_filter($result['rows'], fn ($r) => $r['errors'] === []));
 
-        $summary = $this->importer->import($validRows);
+        $summary = $this->importer->import($validRows, $request->user()->id);
 
         Storage::delete($storedPath);
         $request->session()->forget(self::SESSION_KEY);
 
         AuditLog::record('associate.import', 'associate', null, 'success', [
             'created' => $summary['created'],
+            'updated' => $summary['updated'],
+            'invoices' => $summary['invoices'],
+            'payments' => $summary['payments'],
             'skipped' => count($result['rows']) - count($validRows),
             'errors' => count($summary['errors']),
         ]);
 
         $skipped = count($result['rows']) - count($validRows);
         $message = "Importación completa: {$summary['created']} asociados creados";
+        if ($summary['updated'] > 0) {
+            $message .= ", {$summary['updated']} actualizados";
+        }
+        if ($summary['payments'] > 0) {
+            $message .= ", {$summary['payments']} pagos registrados ({$summary['invoices']} cuotas nuevas)";
+        }
         if ($skipped > 0) {
             $message .= ", {$skipped} omitidos por errores de validación";
         }

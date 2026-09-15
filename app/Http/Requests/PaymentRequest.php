@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Payment;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class PaymentRequest extends FormRequest
 {
@@ -16,6 +18,7 @@ class PaymentRequest extends FormRequest
         return [
             'amount' => ['required', 'numeric', 'min:0.01', 'max:999999.99'],
             'paid_at' => ['required', 'date', 'before_or_equal:today'],
+            'method' => ['required', Rule::in(array_keys(Payment::METHODS))],
             'notes' => ['nullable', 'string', 'max:255'],
         ];
     }
@@ -25,6 +28,8 @@ class PaymentRequest extends FormRequest
         return [
             'amount.min' => 'El monto del pago debe ser mayor a cero.',
             'paid_at.before_or_equal' => 'La fecha de pago no puede ser futura.',
+            'method.required' => 'Indica el método de pago.',
+            'method.in' => 'El método de pago no es válido.',
         ];
     }
 }

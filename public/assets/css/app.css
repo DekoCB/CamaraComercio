@@ -572,6 +572,12 @@ html.sidebar-collapsed .app-shell .sidebar-nav .nav-link {
     color: var(--color-text);
 }
 
+.btn-ghost-danger:hover:not(:disabled) {
+    background: var(--color-danger-subtle);
+    border-color: transparent;
+    color: var(--color-danger);
+}
+
 .btn-danger {
     background: var(--color-danger);
     border-color: var(--color-danger);
@@ -1140,6 +1146,92 @@ html.sidebar-collapsed .app-shell .sidebar-nav .nav-link {
     border-color: var(--color-border-strong);
 }
 
+/* Compact variant (payments quick filters): roughly half the height of
+   the dashboard cards — label and value side by side, small icon. */
+.kpi-grid-compact {
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.kpi-grid-compact .kpi-card {
+    padding: var(--space-3) var(--space-4);
+    gap: 2px;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.kpi-grid-compact .kpi-card-top {
+    order: 2;
+    flex: 0 0 auto;
+    margin-left: auto;
+}
+
+.kpi-grid-compact .kpi-label {
+    display: none;
+}
+
+.kpi-grid-compact .kpi-icon {
+    width: 28px;
+    height: 28px;
+}
+
+.kpi-grid-compact .kpi-icon .icon {
+    width: 15px;
+    height: 15px;
+}
+
+.kpi-grid-compact .kpi-value {
+    order: 1;
+    font-size: 1.125rem;
+}
+
+.kpi-grid-compact .kpi-value::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--color-text-secondary);
+    margin-bottom: 1px;
+}
+
+.kpi-grid-compact .kpi-trend-context,
+.kpi-grid-compact .kpi-active-mark {
+    order: 3;
+    flex: 1 1 100%;
+    font-size: 0.6875rem !important;
+}
+
+.kpi-grid-compact .kpi-card.is-critical {
+    background: var(--color-danger-subtle);
+}
+
+.kpi-card.is-link {
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.kpi-card.is-link:hover {
+    border-color: var(--color-blue);
+}
+
+.kpi-card.is-active {
+    border-color: var(--color-blue);
+    box-shadow: 0 0 0 2px var(--color-blue-subtle), var(--shadow-sm);
+}
+
+.kpi-active-mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--color-blue);
+}
+
 .kpi-card.is-critical {
     border-color: rgba(220, 38, 38, 0.35);
     background: linear-gradient(180deg, var(--color-danger-subtle) 0%, var(--color-surface) 42%);
@@ -1166,6 +1258,7 @@ html.sidebar-collapsed .app-shell .sidebar-nav .nav-link {
 .kpi-icon.icon-teal { background: var(--color-teal-subtle); color: var(--color-teal); }
 .kpi-icon.icon-navy { background: rgba(15, 39, 71, 0.08); color: var(--color-navy); }
 .kpi-icon.icon-danger { background: var(--color-danger-subtle); color: var(--color-danger); }
+.kpi-icon.icon-warning { background: var(--color-warning-subtle); color: #92620A; }
 
 .kpi-label {
     color: var(--color-text-secondary);
@@ -1212,6 +1305,28 @@ html.sidebar-collapsed .app-shell .sidebar-nav .nav-link {
     font-size: var(--text-h3);
     font-weight: 600;
     margin-bottom: var(--space-1);
+}
+
+/* Fixed-height canvas wrappers so Chart.js (maintainAspectRatio: false)
+   fills the card and re-renders cleanly after a live-filter swap. */
+.chart-box {
+    position: relative;
+    height: 220px;
+}
+
+.chart-box-lg {
+    height: 280px;
+}
+
+.chart-legend-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2) var(--space-4);
+}
+
+.chart-legend strong {
+    margin-left: auto;
+    color: var(--color-text);
 }
 
 .chart-legend {
@@ -1317,6 +1432,296 @@ html.sidebar-collapsed .app-shell .sidebar-nav .nav-link {
     color: var(--color-text-secondary);
 }
 
+/* Compact variant for wide master-data listings (associates): smaller
+   type, tighter cells, icon-only row actions so every column fits
+   without a horizontal scroll on a laptop screen. */
+.data-table-compact {
+    font-size: 0.8125rem;
+}
+
+.data-table-compact thead th {
+    font-size: 0.6875rem;
+    padding: var(--space-2) var(--space-2);
+    white-space: nowrap;
+}
+
+.data-table-compact tbody td {
+    padding: var(--space-2) var(--space-2);
+    line-height: 1.35;
+}
+
+.data-table-compact .cell-nowrap {
+    white-space: nowrap;
+}
+
+.data-table-compact .cell-clamp {
+    max-width: 220px;
+}
+
+.data-table-compact .cell-email {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.data-table-compact .badge {
+    font-size: 0.6875rem;
+    padding: 2px var(--space-2);
+}
+
+.row-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 2px;
+    white-space: nowrap;
+}
+
+.row-actions form {
+    display: inline-flex;
+}
+
+.btn-icon {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+}
+
+.btn-icon .icon {
+    width: 16px;
+    height: 16px;
+}
+
+/* Cumpleaños de socios */
+.birthday-today.has-events {
+    border-color: var(--color-warning);
+    background: var(--color-warning-subtle);
+}
+
+.birthday-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.birthday-item {
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.birthday-item:last-child {
+    border-bottom: none;
+}
+
+.birthday-item-main {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.birthday-person {
+    font-weight: 600;
+}
+
+.birthday-item-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1) var(--space-3);
+    margin-top: 2px;
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+}
+
+.birthday-item-meta span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.birthday-day {
+    padding: var(--space-2) 0;
+}
+
+.birthday-day + .birthday-day {
+    border-top: 1px solid var(--color-border);
+}
+
+.birthday-day.is-today {
+    background: var(--color-warning-subtle);
+    margin: 0 calc(-1 * var(--space-3));
+    padding-left: var(--space-3);
+    padding-right: var(--space-3);
+    border-radius: var(--radius-sm);
+}
+
+.birthday-day-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    margin-bottom: var(--space-1);
+}
+
+.birthday-day-label .cell-muted {
+    font-weight: 400;
+    font-size: var(--text-xs);
+}
+
+/* Month calendar (Cumpleaños de socios) */
+.calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+.calendar-title {
+    margin: 0;
+    font-size: var(--text-h3);
+    min-width: 170px;
+    text-align: center;
+}
+
+.calendar-legend {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+}
+
+.calendar-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.calendar-legend-dot.is-legal,
+.calendar-event.is-legal { background: var(--color-blue-subtle); }
+.calendar-legend-dot.is-cch,
+.calendar-event.is-cch { background: var(--color-bg); }
+.calendar-legend-dot.is-anniversary,
+.calendar-event.is-anniversary { background: var(--color-success-subtle); }
+
+.calendar-legend-dot.is-legal { background: var(--color-blue); }
+.calendar-legend-dot.is-cch { background: var(--color-text-tertiary); }
+.calendar-legend-dot.is-anniversary { background: var(--color-success); }
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--color-border);
+    gap: 1px;
+}
+
+.calendar-weekday {
+    background: var(--color-bg);
+    padding: var(--space-2);
+    text-align: center;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-secondary);
+}
+
+.calendar-day {
+    background: var(--color-surface);
+    min-height: 88px;
+    padding: var(--space-1) var(--space-2) var(--space-2);
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.calendar-day.is-outside {
+    background: var(--color-bg);
+}
+
+.calendar-day.is-outside .calendar-day-number {
+    color: var(--color-text-tertiary);
+}
+
+.calendar-day-number {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    align-self: flex-end;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+    border-radius: 50%;
+}
+
+.calendar-day.is-today .calendar-day-number {
+    background: var(--color-navy);
+    color: var(--color-text-on-navy);
+}
+
+.calendar-day.has-events {
+    background: var(--color-warning-subtle);
+}
+
+.calendar-event {
+    display: block;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    border-left: 3px solid var(--color-blue);
+    font-size: 0.6875rem;
+    line-height: 1.25;
+    color: var(--color-text);
+    text-decoration: none;
+    overflow: hidden;
+}
+
+.calendar-event.is-cch { border-left-color: var(--color-text-tertiary); }
+.calendar-event.is-anniversary { border-left-color: var(--color-success); }
+
+.calendar-event:hover {
+    filter: brightness(0.96);
+    color: var(--color-text);
+}
+
+.calendar-event-name {
+    display: block;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.calendar-event-kind {
+    display: block;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+    .calendar-day {
+        min-height: 56px;
+    }
+
+    .calendar-event-kind {
+        display: none;
+    }
+}
+
 .table-toolbar {
     display: flex;
     justify-content: space-between;
@@ -1354,6 +1759,278 @@ html.sidebar-collapsed .app-shell .sidebar-nav .nav-link {
 .search-input input {
     padding-left: calc(var(--space-3) * 2 + 18px);
     min-width: 260px;
+}
+
+/* Associates toolbar: the search box takes the free space, the
+   attribute dropdowns wrap underneath on narrow screens. */
+.filter-bar-grow {
+    flex: 1 1 100%;
+}
+
+.search-input-grow {
+    flex: 1 1 320px;
+}
+
+.filter-bar .search-input-grow input {
+    width: 100%;
+}
+
+/* Active-filter chips under the toolbar (each one links to the same
+   listing minus that filter). */
+.filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin: calc(-1 * var(--space-2)) 0 var(--space-4);
+    font-size: var(--text-xs);
+}
+
+.filter-chips-label {
+    color: var(--color-text-secondary);
+}
+
+.filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 2px var(--space-2) 2px var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    background: var(--color-bg);
+    color: var(--color-text);
+    text-decoration: none;
+    transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.filter-chip:hover {
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+}
+
+.filter-chip-key {
+    color: var(--color-text-tertiary);
+}
+
+.filter-chip-key::after {
+    content: ':';
+}
+
+.live-results {
+    transition: opacity var(--transition-fast);
+}
+
+.live-results.is-loading {
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+/* Invoice detail */
+.invoice-hero-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-4);
+}
+
+.invoice-hero-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0 0 4px;
+}
+
+.invoice-hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2) var(--space-3);
+    font-size: 0.8125rem;
+    color: var(--color-text-secondary);
+}
+
+.invoice-nav {
+    display: flex;
+    gap: var(--space-1);
+    white-space: nowrap;
+}
+
+.due-note {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--text-xs);
+    font-weight: 600;
+    padding: 2px var(--space-2);
+    border-radius: 999px;
+}
+
+.due-note.is-danger { background: var(--color-danger-subtle); color: var(--color-danger); }
+.due-note.is-warning { background: var(--color-warning-subtle); color: #92620A; }
+.due-note.is-info { background: var(--color-blue-subtle); color: var(--color-blue); }
+.due-note.is-success { background: var(--color-success-subtle); color: var(--color-success); }
+
+.invoice-amounts {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: var(--color-bg);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-3);
+}
+
+.invoice-amount-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+}
+
+.pay-progress {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--color-border);
+    overflow: hidden;
+}
+
+.pay-progress-bar {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--color-teal);
+    transition: width var(--transition-fast);
+}
+
+.pay-progress-bar.is-complete {
+    background: var(--color-success);
+}
+
+.pay-progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+    margin: var(--space-1) 0 var(--space-4);
+}
+
+.invoice-detail-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border);
+}
+
+.data-table tbody tr.row-voided td {
+    color: var(--color-text-tertiary);
+}
+
+.data-table tbody tr.row-voided .cell-money {
+    text-decoration: line-through;
+}
+
+.invoice-sidebar {
+    position: sticky;
+    top: var(--space-4);
+}
+
+.pay-preview {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-bg);
+    border: 1px dashed var(--color-border-strong);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-4);
+}
+
+.pay-preview-arrow {
+    color: var(--color-text-tertiary);
+}
+
+.quick-amounts {
+    display: flex;
+    gap: var(--space-1);
+    margin-top: var(--space-1);
+}
+
+.quick-amounts .btn {
+    font-size: var(--text-xs);
+    padding: 2px var(--space-2);
+}
+
+.paid-panel {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: var(--color-success-subtle);
+    color: var(--color-success);
+    border-radius: var(--radius-md);
+}
+
+.paid-panel strong {
+    display: block;
+    color: var(--color-text);
+}
+
+@media (max-width: 768px) {
+    .invoice-amounts {
+        grid-template-columns: 1fr;
+    }
+
+    .invoice-sidebar {
+        position: static;
+    }
+}
+
+/* Cartera: per-row collection progress + method breakdown chips */
+.mini-progress {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--color-border);
+    overflow: hidden;
+    min-width: 110px;
+}
+
+.mini-progress-bar {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--color-teal);
+}
+
+.mini-progress-bar.is-complete { background: var(--color-success); }
+.mini-progress-bar.is-danger { background: var(--color-danger); }
+
+.method-breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin: calc(-1 * var(--space-2)) 0 var(--space-4);
+}
+
+.method-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: var(--space-2);
+    padding: 4px var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+    font-size: var(--text-xs);
+    color: var(--color-text);
+    text-decoration: none;
+    transition: border-color var(--transition-fast);
+}
+
+.method-chip:hover {
+    border-color: var(--color-blue);
+    color: var(--color-text);
+}
+
+.method-chip-label {
+    color: var(--color-text-secondary);
 }
 
 .table-pagination-meta {
@@ -1439,6 +2116,7 @@ html.sidebar-collapsed .app-shell .sidebar-nav .nav-link {
 .badge-success { background: var(--color-success-subtle); color: var(--color-success); }
 .badge-danger { background: var(--color-danger-subtle); color: var(--color-danger); }
 .badge-info { background: var(--color-blue-subtle); color: var(--color-blue); }
+.badge-warning { background: var(--color-warning-subtle); color: #92620A; }
 
 /* ==========================================================================
    Empty / error states
@@ -1636,6 +2314,74 @@ html.sidebar-collapsed .app-shell .sidebar-nav .nav-link {
 
 .modal-form-body form > .d-flex:last-child {
     margin-top: var(--space-6);
+}
+
+/* Wide variant for long master-data forms (associates): opened by links
+   carrying data-modal-size="lg" — app.js toggles .is-wide on the dialog. */
+.modal-dialog-custom.is-wide .modal-panel-form {
+    max-width: 960px;
+}
+
+/* Sectioned forms (fieldset per block of the Cámara's master Excel) */
+.form-section {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-4) var(--space-5) var(--space-5);
+    margin: 0 0 var(--space-5);
+    min-width: 0;
+}
+
+.form-section-title {
+    float: none;
+    width: auto;
+    padding: 0 var(--space-2);
+    margin: 0 0 var(--space-3);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+}
+
+.form-section .field {
+    margin-bottom: 0;
+}
+
+/* Associate detail sheet: label/value pairs in a responsive grid */
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: var(--space-4) var(--space-6);
+}
+
+.detail-item dt {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+    margin-bottom: 2px;
+}
+
+.detail-item dd {
+    margin: 0;
+    font-size: 0.9375rem;
+    color: var(--color-text);
+    overflow-wrap: anywhere;
+}
+
+.detail-item.is-wide {
+    grid-column: 1 / -1;
+}
+
+.link-plain {
+    color: inherit;
+    text-decoration: none;
+}
+
+.link-plain:hover {
+    color: var(--color-blue);
+    text-decoration: underline;
 }
 
 .modal-form-loading {

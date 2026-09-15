@@ -5,10 +5,16 @@
 @section('content')
     <x-page-header title="Importar asociados desde Excel" />
 
-    <div class="card-surface" style="max-width: 560px">
+    <div class="card-surface" style="max-width: 720px">
         <p class="text-secondary" style="font-size: 0.875rem; margin-bottom: var(--space-5);">
-            Carga un archivo Excel (.xlsx, .xls) o CSV con tus asociados. La primera fila debe tener encabezados;
-            se reconocen: <strong>Nombre</strong> (obligatoria), Empresa, Contacto y Correo.
+            Carga un archivo Excel (.xlsx, .xls) o CSV con tus asociados. Se acepta directamente el formato del
+            padrón <em>"DATA DE ASOCIADOS"</em> (hoja activa; la primera fila debe tener los encabezados:
+            Estado, Sectorista, Cat., Monto a pagar, Fecha de ingreso, Tipo de persona, Fecha de aniversario, RUC,
+            <strong>Razón social</strong> (obligatoria), Nombre comercial, direcciones, clasificación, datos del
+            representante legal y del representante ante la CCH, y Observaciones). La grilla de aportes
+            mensuales (AÑO 2024 / 2025 / 2026: N° de comprobante en la fila del asociado y monto en la fila
+            de abajo) se importa como cuotas pagadas y aparece en el módulo de Pagos. Si un asociado ya existe
+            (mismo RUC) se actualiza y solo se agregan los meses que aún no tenía.
             Antes de importar nada podrás revisar una vista previa con los errores detectados.
         </p>
         <form method="POST" action="{{ route('associates.import.preview') }}" enctype="multipart/form-data" novalidate>

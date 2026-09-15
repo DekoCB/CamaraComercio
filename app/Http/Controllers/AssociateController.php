@@ -7,16 +7,33 @@ use App\Models\Associate;
 use App\Models\AuditLog;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class AssociateController extends Controller
 {
+    /**
+     * Toolbar filters besides the free-text search. Each maps to one
+     * associates.* column and is matched exactly (they come from a
+     * dropdown fed with the distinct values already stored).
+     */
+    private const COLUMN_FILTERS = ['status', 'sectorista', 'category', 'person_type', 'billing_district'];
+
     public function index(Request $request): View
     {
         $term = trim((string) $request->query('q', ''));
         $associateId = $request->query('associate_id');
 
+        $filters = ['q' => $term, 'associate_id' => $associateId];
+        foreach (self::COLUMN_FILTERS as $column) {
+            $value = trim((string) $request->query($column, ''));
+            $filters[$column] = $value !== '' ? $value : null;
+        }
+
         $associates = Associate::query()
+            // Direct link by id (kept for deep links even though the toolbar
+            // no longer lists every associate — searching by RUC is the way
+            // to isolate one of two associates sharing a name).
             ->when($associateId, fn ($query) => $query->where('id', $associateId))
             ->when($term !== '', function ($query) use ($term) {
                 $query->where(function ($q) use ($term) {
@@ -24,22 +41,46 @@ class AssociateController extends Controller
                         ->orWhere('ruc', 'like', "%{$term}%")
                         ->orWhere('company', 'like', "%{$term}%")
                         ->orWhere('contact_phone', 'like', "%{$term}%")
-                        ->orWhere('email', 'like', "%{$term}%");
+                        ->orWhere('email', 'like', "%{$term}%")
+                        ->orWhere('sectorista', 'like', "%{$term}%")
+                        ->orWhere('legal_rep_name', 'like', "%{$term}%")
+                        ->orWhere('cch_rep_name', 'like', "%{$term}%");
                 });
-            })
-            ->orderBy('name')
-            ->paginate(15)
-            ->withQueryString();
+            });
+
+        foreach (self::COLUMN_FILTERS as $column) {
+            if ($filters[$column] !== null) {
+                $associates->where($column, $filters[$column]);
+            }
+        }
+
+        $associates = $associates->orderBy('name')->paginate(15)->withQueryString();
+
+        // Dropdown options come from what is actually stored so the user
+        // never picks a value that returns nothing.
+        $distinct = fn (string $column) => Associate::query()
+            ->whereNotNull($column)->where($column, '!=', '')
+            ->distinct()->orderBy($column)->pluck($column)->all();
 
         return view('associates.index', [
             'associates' => $associates,
             'term' => $term,
-            // Selecting directly from the list is the reliable way to pick
-            // one associate when the name repeats (nothing enforces name
-            // uniqueness — see docs/OPEN_BUSINESS_DECISIONS.md pregunta 12),
-            // which typing alone can't disambiguate.
-            'allAssociates' => Associate::orderBy('name')->get(['id', 'name', 'company']),
-            'filters' => ['q' => $term, 'associate_id' => $associateId],
+            'filters' => $filters,
+            'filterOptions' => [
+                'status' => Associate::STATUSES,
+                'sectorista' => $distinct('sectorista'),
+                'category' => $distinct('category'),
+                'person_type' => Associate::PERSON_TYPES,
+                'billing_district' => $distinct('billing_district'),
+            ],
+        ]);
+    }
+
+    public function show(Associate $associate): View
+    {
+        return view('associates.show', [
+            'associate' => $associate,
+            'lastPaidPeriod' => $associate->lastPaidPeriod(),
         ]);
     }
 
@@ -60,7 +101,13 @@ class AssociateController extends Controller
 
     public function store(AssociateRequest $request): RedirectResponse
     {
-        $associate = Associate::create($request->validated() + ['is_active' => true]);
+        $data = $request->safe()->except(['image', 'remove_image']);
+
+        if ($request->hasFile('image')) {
+            $data['image_path'] = $request->file('image')->store('associates', 'public');
+        }
+
+        $associate = Associate::create($data + ['status' => Associate::STATUS_ACTIVO]);
 
         AuditLog::record('associate.create', 'associate', (string) $associate->id);
 
@@ -80,10 +127,48 @@ class AssociateController extends Controller
 
     public function update(AssociateRequest $request, Associate $associate): RedirectResponse
     {
-        $associate->update($request->validated() + ['is_active' => $request->boolean('is_active')]);
+        $data = $request->safe()->except(['image', 'remove_image']);
+
+        if ($request->boolean('remove_image') && $associate->image_path) {
+            Storage::disk('public')->delete($associate->image_path);
+            $data['image_path'] = null;
+        }
+
+        if ($request->hasFile('image')) {
+            if ($associate->image_path) {
+                Storage::disk('public')->delete($associate->image_path);
+            }
+            $data['image_path'] = $request->file('image')->store('associates', 'public');
+        }
+
+        $associate->update($data);
 
         AuditLog::record('associate.update', 'associate', (string) $associate->id);
 
         return redirect()->route('associates.index')->with('success', 'Asociado actualizado correctamente.');
+    }
+
+    public function destroy(Associate $associate): RedirectResponse
+    {
+        // invoices.associate_id is RESTRICT on delete: an associate with
+        // billing history is never removed (the Cámara would lose its
+        // collection records). "Desafiliado" is the way to retire them.
+        $invoiceCount = $associate->invoices()->count();
+        if ($invoiceCount > 0) {
+            AuditLog::record('associate.delete', 'associate', (string) $associate->id, 'failure', ['invoices' => $invoiceCount]);
+
+            return back()->with('error', "No se puede eliminar \"{$associate->name}\": tiene {$invoiceCount} factura(s) registrada(s). Cámbielo a estado Desafiliado si ya no pertenece a la Cámara.");
+        }
+
+        if ($associate->image_path) {
+            Storage::disk('public')->delete($associate->image_path);
+        }
+
+        $name = $associate->name;
+        $associate->delete();
+
+        AuditLog::record('associate.delete', 'associate', (string) $associate->id, 'success', ['name' => $name]);
+
+        return redirect()->route('associates.index')->with('success', "Asociado \"{$name}\" eliminado.");
     }
 }

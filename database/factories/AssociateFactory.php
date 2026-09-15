@@ -19,6 +19,8 @@ class AssociateFactory extends Factory
             'company' => fake()->companySuffix(),
             'contact_phone' => fake()->phoneNumber(),
             'email' => fake()->unique()->safeEmail(),
+            // `status` is intentionally left out: the model derives it from
+            // `is_active` (and vice-versa), so tests can override either.
             'is_active' => true,
         ];
     }

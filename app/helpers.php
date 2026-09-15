@@ -22,6 +22,23 @@ if (! function_exists('format_date')) {
     }
 }
 
+if (! function_exists('format_period')) {
+    /**
+     * "2026-08" → "Ago 2026". Invoices store the period as YYYY-MM (the
+     * sortable form); this is the human form the Pagos list shows.
+     */
+    function format_period(?string $period): string
+    {
+        if (! $period || ! preg_match('/^(\d{4})-(\d{2})$/', $period, $m)) {
+            return $period ?? '-';
+        }
+
+        $months = [1 => 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+        return ($months[(int) $m[2]] ?? $m[2]).' '.$m[1];
+    }
+}
+
 if (! function_exists('icon')) {
     /**
      * Inlines a Lucide icon SVG (vendored under public/assets/icons/, no

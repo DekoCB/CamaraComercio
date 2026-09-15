@@ -35,6 +35,7 @@ class Invoice extends Model
     protected $fillable = [
         'associate_id',
         'period',
+        'receipt_number',
         'amount',
         'paid_total',
         'issue_date',
@@ -61,6 +62,16 @@ class Invoice extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * Payments that still count — voided ones stay in the table for the
+     * audit trail but are excluded from paid_total and from what the
+     * Pagos list shows as "fecha de pago".
+     */
+    public function activePayments(): HasMany
+    {
+        return $this->hasMany(Payment::class)->whereNull('voided_at')->orderByDesc('paid_at');
     }
 
     public function creator(): BelongsTo
@@ -106,5 +117,20 @@ class Invoice extends Model
     public function scopeForPeriod(Builder $query, string $period): Builder
     {
         return $query->where('period', $period);
+    }
+
+    /**
+     * "No pagadas" in the Pagos module: anything with a balance, whether
+     * nothing or only part of it has been collected (PENDIENTE + PARCIAL,
+     * overdue or not).
+     */
+    public function scopeUnpaid(Builder $query): Builder
+    {
+        return $query->where('status', '!=', self::STATUS_PAGADA);
+    }
+
+    public function scopePaid(Builder $query): Builder
+    {
+        return $query->where('status', self::STATUS_PAGADA);
     }
 }

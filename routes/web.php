@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AssociateController;
+use App\Http\Controllers\BirthdayController;
 use App\Http\Controllers\AssociateImportController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
@@ -66,6 +67,8 @@ Route::middleware('auth')->group(function () {
     // create/edit require the associates.manage permission (checked
     // both by route middleware and by AssociateRequest::authorize()).
     Route::get('associates', [AssociateController::class, 'index'])->name('associates.index');
+    Route::get('associates/birthdays', [BirthdayController::class, 'index'])->name('associates.birthdays');
+    Route::get('associates/{associate}', [AssociateController::class, 'show'])->name('associates.show')->whereNumber('associate');
     Route::middleware('can:associates.manage')->group(function () {
         Route::get('associates/create', [AssociateController::class, 'create'])->name('associates.create');
         Route::post('associates', [AssociateController::class, 'store'])->name('associates.store');
@@ -80,6 +83,7 @@ Route::middleware('auth')->group(function () {
 
         Route::get('associates/{associate}/edit', [AssociateController::class, 'edit'])->name('associates.edit');
         Route::put('associates/{associate}', [AssociateController::class, 'update'])->name('associates.update');
+        Route::delete('associates/{associate}', [AssociateController::class, 'destroy'])->name('associates.destroy');
     });
 
     // Billing (EP-04). Consulting is billing.view; the batch-generation
@@ -97,6 +101,7 @@ Route::middleware('auth')->group(function () {
     });
     Route::middleware('can:billing.view')->group(function () {
         Route::get('invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+        Route::get('invoices/stats', [InvoiceController::class, 'stats'])->name('invoices.stats');
         Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
     });
 
@@ -120,6 +125,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('can:portfolio.view')->group(function () {
         Route::get('portfolio', [PortfolioController::class, 'index'])->name('portfolio.index');
         Route::get('portfolio/debtors', [PortfolioController::class, 'debtors'])->name('portfolio.debtors');
+        Route::get('portfolio/payments', [PortfolioController::class, 'payments'])->name('portfolio.payments');
         Route::get('associates/{associate}/statement', [PortfolioController::class, 'statement'])->name('associates.statement');
     });
 

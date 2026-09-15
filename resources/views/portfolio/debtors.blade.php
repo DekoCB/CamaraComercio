@@ -3,66 +3,42 @@
 @section('title', 'A quién falta cobrar')
 
 @section('content')
-    <x-page-header title="A quién falta cobrar" subtitle="Asociados con saldo pendiente, para priorizar el seguimiento de cobranza.">
-        <x-slot:actions>
-            <a href="{{ route('portfolio.index') }}" class="btn btn-secondary btn-sm">
-                {{ icon('chevron-left', 'icon', 16) }} Ver cartera completa
-            </a>
-        </x-slot:actions>
-    </x-page-header>
+    <x-page-header title="Seguimiento de cartera" subtitle="Asociados con saldo pendiente, ordenados por deuda, con su contacto a mano para la gestión de cobranza." />
+
+    @include('portfolio._tabs', ['active' => 'deudores'])
 
     <div class="table-card">
         <div class="table-toolbar">
-            <form class="search-input" method="GET" action="{{ route('portfolio.debtors') }}">
-                {{ icon('search', 'icon', 16) }}
-                <input type="search" name="q" class="form-control" placeholder="Buscar por nombre o empresa" value="{{ $term }}">
+            <form class="filter-bar filter-bar-grow" method="GET" action="{{ route('portfolio.debtors') }}" data-live-filter="#debtors-results" role="search">
+                <div class="search-input search-input-grow">
+                    {{ icon('search', 'icon', 16) }}
+                    <input type="search" name="q" class="form-control" autocomplete="off" placeholder="Buscar por razón social, nombre comercial o RUC" value="{{ $filters['q'] }}">
+                </div>
+                @foreach (['sectorista' => 'Sectorista', 'category' => 'Categoría'] as $key => $label)
+                    @if ($filterOptions[$key] !== [])
+                        <select name="{{ $key }}" class="form-select form-select-sm" aria-label="{{ $label }}">
+                            <option value="">{{ $label }}: todos</option>
+                            @foreach ($filterOptions[$key] as $option)
+                                <option value="{{ $option }}" {{ $filters[$key] === $option ? 'selected' : '' }}>{{ $option }}</option>
+                            @endforeach
+                        </select>
+                    @endif
+                @endforeach
+                <select name="sort" class="form-select form-select-sm" aria-label="Orden">
+                    <option value="balance" {{ $filters['sort'] === 'balance' ? 'selected' : '' }}>Orden: mayor deuda</option>
+                    <option value="name" {{ $filters['sort'] === 'name' ? 'selected' : '' }}>Orden: nombre</option>
+                </select>
+                <label class="form-check" style="font-size: 0.8125rem; display: inline-flex; align-items: center; gap: 6px; margin: 0;">
+                    <input type="checkbox" class="form-check-input" name="only_overdue" value="1" {{ $filters['only_overdue'] ? 'checked' : '' }} style="margin: 0;">
+                    Solo con facturas vencidas
+                </label>
+                <button type="submit" class="btn btn-secondary btn-sm">{{ icon('filter', 'icon', 15) }} Filtrar</button>
+                <a href="{{ route('portfolio.debtors') }}" class="btn btn-link btn-sm js-live-clear" {{ array_filter($filters, fn ($v) => $v !== null && $v !== '' && $v !== false && $v !== 'balance') ? '' : 'hidden' }}>Limpiar</a>
             </form>
         </div>
 
-        @if ($associates->isEmpty())
-            <x-empty-state icon="check-circle-2" title="Sin deuda pendiente" message="Ningún asociado tiene deuda pendiente en este momento." />
-        @else
-            <div class="table-wrap">
-                <table class="data-table">
-                    <thead>
-                    <tr>
-                        <th>Asociado</th>
-                        <th>Contacto</th>
-                        <th>Correo</th>
-                        <th class="is-numeric">Monto pendiente</th>
-                        <th>Debe desde</th>
-                        <th>Facturas pendientes</th>
-                        <th>Facturas vencidas</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    @foreach ($associates as $associate)
-                        @php $pending = (float) ($associate->total_invoiced ?? 0) - (float) ($associate->total_paid ?? 0); @endphp
-                        <tr>
-                            <td class="cell-primary">
-                                <a href="{{ route('associates.statement', $associate) }}">{{ $associate->name }}</a>
-                            </td>
-                            <td class="cell-muted">{{ $associate->contact_phone ?? '-' }}</td>
-                            <td class="cell-muted">{{ $associate->email ?? '-' }}</td>
-                            <td class="is-numeric cell-money" style="color: var(--color-danger);">{{ format_money($pending) }}</td>
-                            <td class="cell-muted">{{ $associate->oldest_pending_period ?? '-' }}</td>
-                            <td class="cell-muted">{{ $associate->pending_invoices_count }}</td>
-                            <td>
-                                @if ($associate->overdue_invoices_count > 0)
-                                    <span class="badge badge-status-VENCIDA">{{ $associate->overdue_invoices_count }}</span>
-                                @else
-                                    <span class="cell-muted">0</span>
-                                @endif
-                            </td>
-                        </tr>
-                    @endforeach
-                    </tbody>
-                </table>
-            </div>
-            <div class="table-footer">
-                <x-pagination-meta :paginator="$associates" noun="deudores" />
-                {{ $associates->onEachSide(1)->links() }}
-            </div>
-        @endif
+        <div id="debtors-results" class="live-results">
+            @include('portfolio._debtors_results')
+        </div>
     </div>
 @endsection

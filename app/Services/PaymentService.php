@@ -17,13 +17,13 @@ use InvalidArgumentException;
  */
 class PaymentService
 {
-    public function register(Invoice $invoice, float $amount, DateTimeInterface $paidAt, int $registeredBy, ?string $notes = null): Payment
+    public function register(Invoice $invoice, float $amount, DateTimeInterface $paidAt, int $registeredBy, ?string $notes = null, ?string $method = null): Payment
     {
         if ($amount <= 0) {
             throw new InvalidArgumentException('El monto del pago debe ser mayor a cero.');
         }
 
-        return DB::transaction(function () use ($invoice, $amount, $paidAt, $registeredBy, $notes) {
+        return DB::transaction(function () use ($invoice, $amount, $paidAt, $registeredBy, $notes, $method) {
             // Re-fetch with a row lock so two concurrent payment
             // registrations on the same invoice can't both read a stale
             // balance and jointly overpay it.
@@ -37,6 +37,7 @@ class PaymentService
                 'invoice_id' => $locked->id,
                 'amount' => $amount,
                 'paid_at' => $paidAt,
+                'method' => $method,
                 'registered_by' => $registeredBy,
                 'notes' => $notes,
             ]);

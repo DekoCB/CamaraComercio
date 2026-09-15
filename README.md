@@ -50,6 +50,13 @@ Justificación de cada decisión en [`docs/PROJECT_ANALYSIS.md`](docs/PROJECT_AN
 | `SESSION_DRIVER`, `SESSION_LIFETIME` | Configuración de sesión (por defecto `database`) |
 | `MAIL_MAILER` | `log` por defecto — los correos (p. ej. recuperación de contraseña) se escriben en `storage/logs/laravel.log` en vez de enviarse; el proveedor SMTP real queda pendiente de definición (ver `docs/BACKLOG.md`) |
 
+## Cumpleaños de socios (notificaciones automáticas)
+
+La página **Asociados → Cumpleaños** (`/associates/birthdays`) muestra los cumpleaños de los representantes (legal y ante la CCH) y los aniversarios de las empresas asociadas: hoy, próximos 30 días y navegador por mes. Cada día el sistema publica en la campana de notificaciones (pestaña "Cumpleaños") una entrada por cada fecha que corresponde. Lo hace de dos maneras, ambas idempotentes (`App\Services\BirthdayService`):
+
+1. **Automático sin configuración**: la primera página que cualquier usuario abre en el día dispara la publicación (con caché para que solo ocurra una vez por día).
+2. **Programador de Laravel** (`birthdays:notify`, diario a las 07:00): opcional, para que las notificaciones existan aunque nadie haya entrado aún. Requiere ejecutar `php artisan schedule:run` cada minuto — en Windows, una tarea del Programador de tareas con `C:\xampp\php\php.exe C:\xampp\htdocs\CamaraComercio\artisan schedule:run`. También se puede ejecutar a mano: `php artisan birthdays:notify [YYYY-MM-DD]`.
+
 ## Base de datos y migraciones
 
 Migraciones nativas de Laravel en `database/migrations/`. Comandos habituales:
@@ -59,6 +66,10 @@ php artisan migrate              # aplicar migraciones pendientes
 php artisan migrate:fresh --seed # recrear todo desde cero con datos de desarrollo
 php artisan db:seed              # solo sembrar (requiere el esquema ya migrado)
 ```
+
+### Datos masivos de demostración
+
+`php artisan db:seed --class=DemoMassiveSeeder` genera en unos segundos un juego de datos realista para todos los módulos: 320 asociados con la ficha completa (RUC, sectorista, categoría con su cuota, direcciones, representantes, fechas), facturación mensual desde enero 2024 (~10 000 facturas con N° de comprobante), ~11 000 pagos repartidos entre todos los métodos (con anulaciones y reposiciones), 5 usuarios "Encargado de Cobranzas" adicionales (`rosa`, `carmen`, `luis`, `maria`, `jorge` / `Demo#2026`) y cumpleaños en los próximos días. Es reproducible (semilla fija), respeta `paid_total` y los estados, y no se duplica si se vuelve a ejecutar. Para volver al estado mínimo: `php artisan migrate:fresh --seed`. Solo para desarrollo/UAT.
 
 Ver el modelo de datos completo en [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md).
 

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Associate;
 use App\Models\Invoice;
 use App\Models\Payment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -20,6 +21,7 @@ class PaymentTest extends TestCase
         $response = $this->actingAs($user)->post("/invoices/{$invoice->id}/payments", [
             'amount' => '500.00',
             'paid_at' => now()->toDateString(),
+            'method' => 'EFECTIVO',
         ]);
 
         $response->assertRedirect(route('invoices.show', $invoice));
@@ -39,6 +41,7 @@ class PaymentTest extends TestCase
         $this->actingAs($user)->post("/invoices/{$invoice->id}/payments", [
             'amount' => '200.00',
             'paid_at' => now()->toDateString(),
+            'method' => 'EFECTIVO',
         ]);
 
         $invoice->refresh();
@@ -52,9 +55,9 @@ class PaymentTest extends TestCase
         $invoice = Invoice::factory()->create(['amount' => 500, 'paid_total' => 0]);
         $user = $this->userWithPermissions(['payments.register']);
 
-        $this->actingAs($user)->post("/invoices/{$invoice->id}/payments", ['amount' => '200.00', 'paid_at' => now()->toDateString()]);
-        $this->actingAs($user)->post("/invoices/{$invoice->id}/payments", ['amount' => '200.00', 'paid_at' => now()->toDateString()]);
-        $this->actingAs($user)->post("/invoices/{$invoice->id}/payments", ['amount' => '100.00', 'paid_at' => now()->toDateString()]);
+        $this->actingAs($user)->post("/invoices/{$invoice->id}/payments", ['amount' => '200.00', 'paid_at' => now()->toDateString(), 'method' => 'EFECTIVO']);
+        $this->actingAs($user)->post("/invoices/{$invoice->id}/payments", ['amount' => '200.00', 'paid_at' => now()->toDateString(), 'method' => 'EFECTIVO']);
+        $this->actingAs($user)->post("/invoices/{$invoice->id}/payments", ['amount' => '100.00', 'paid_at' => now()->toDateString(), 'method' => 'EFECTIVO']);
 
         $invoice->refresh();
         $this->assertSame('500.00', $invoice->paid_total);
@@ -70,6 +73,7 @@ class PaymentTest extends TestCase
         $response = $this->actingAs($user)->post("/invoices/{$invoice->id}/payments", [
             'amount' => '600.00',
             'paid_at' => now()->toDateString(),
+            'method' => 'EFECTIVO',
         ]);
 
         $response->assertSessionHasErrors('amount');
@@ -86,6 +90,7 @@ class PaymentTest extends TestCase
         $response = $this->actingAs($user)->post("/invoices/{$invoice->id}/payments", [
             'amount' => '250.00',
             'paid_at' => now()->toDateString(),
+            'method' => 'EFECTIVO',
         ]);
 
         $response->assertSessionHasErrors('amount');
@@ -100,6 +105,7 @@ class PaymentTest extends TestCase
         $response = $this->actingAs($user)->post("/invoices/{$invoice->id}/payments", [
             'amount' => '0',
             'paid_at' => now()->toDateString(),
+            'method' => 'EFECTIVO',
         ]);
 
         $response->assertSessionHasErrors('amount');
@@ -113,6 +119,7 @@ class PaymentTest extends TestCase
         $response = $this->actingAs($user)->post("/invoices/{$invoice->id}/payments", [
             'amount' => '50.00',
             'paid_at' => now()->toDateString(),
+            'method' => 'EFECTIVO',
         ]);
 
         $response->assertForbidden();
@@ -139,7 +146,7 @@ class PaymentTest extends TestCase
         $invoice = Invoice::factory()->create();
         $user = $this->userWithPermissions(['billing.view']);
         $this->actingAs($this->userWithPermissions(['payments.register']))
-            ->post("/invoices/{$invoice->id}/payments", ['amount' => '10.00', 'paid_at' => now()->toDateString()]);
+            ->post("/invoices/{$invoice->id}/payments", ['amount' => '10.00', 'paid_at' => now()->toDateString(), 'method' => 'EFECTIVO']);
 
         $response = $this->actingAs($user)->get("/invoices/{$invoice->id}");
 
@@ -152,7 +159,7 @@ class PaymentTest extends TestCase
         $collector = $this->userWithPermissions(['payments.register']);
         $admin = $this->userWithPermissions(['payments.void']);
 
-        $this->actingAs($collector)->post("/invoices/{$invoice->id}/payments", ['amount' => '200.00', 'paid_at' => now()->toDateString()]);
+        $this->actingAs($collector)->post("/invoices/{$invoice->id}/payments", ['amount' => '200.00', 'paid_at' => now()->toDateString(), 'method' => 'EFECTIVO']);
         $payment = $invoice->fresh()->payments->first();
 
         $response = $this->actingAs($admin)->put("/payments/{$payment->id}/void", ['reason' => 'Monto ingresado por error']);
@@ -173,8 +180,8 @@ class PaymentTest extends TestCase
         $collector = $this->userWithPermissions(['payments.register']);
         $admin = $this->userWithPermissions(['payments.void']);
 
-        $this->actingAs($collector)->post("/invoices/{$invoice->id}/payments", ['amount' => '300.00', 'paid_at' => now()->toDateString()]);
-        $this->actingAs($collector)->post("/invoices/{$invoice->id}/payments", ['amount' => '200.00', 'paid_at' => now()->toDateString()]);
+        $this->actingAs($collector)->post("/invoices/{$invoice->id}/payments", ['amount' => '300.00', 'paid_at' => now()->toDateString(), 'method' => 'EFECTIVO']);
+        $this->actingAs($collector)->post("/invoices/{$invoice->id}/payments", ['amount' => '200.00', 'paid_at' => now()->toDateString(), 'method' => 'EFECTIVO']);
         $this->assertSame(Invoice::STATUS_PAGADA, $invoice->fresh()->status);
 
         $lastPayment = $invoice->fresh()->payments->sortByDesc('id')->first();
@@ -191,7 +198,7 @@ class PaymentTest extends TestCase
         $collector = $this->userWithPermissions(['payments.register']);
         $admin = $this->userWithPermissions(['payments.void']);
 
-        $this->actingAs($collector)->post("/invoices/{$invoice->id}/payments", ['amount' => '200.00', 'paid_at' => now()->toDateString()]);
+        $this->actingAs($collector)->post("/invoices/{$invoice->id}/payments", ['amount' => '200.00', 'paid_at' => now()->toDateString(), 'method' => 'EFECTIVO']);
         $payment = $invoice->fresh()->payments->first();
 
         $this->actingAs($admin)->put("/payments/{$payment->id}/void", ['reason' => 'Primera anulación']);
@@ -206,7 +213,7 @@ class PaymentTest extends TestCase
         $collector = $this->userWithPermissions(['payments.register']);
         $admin = $this->userWithPermissions(['payments.void']);
 
-        $this->actingAs($collector)->post("/invoices/{$invoice->id}/payments", ['amount' => '200.00', 'paid_at' => now()->toDateString()]);
+        $this->actingAs($collector)->post("/invoices/{$invoice->id}/payments", ['amount' => '200.00', 'paid_at' => now()->toDateString(), 'method' => 'EFECTIVO']);
         $payment = $invoice->fresh()->payments->first();
 
         $response = $this->actingAs($admin)->put("/payments/{$payment->id}/void", []);
@@ -220,7 +227,7 @@ class PaymentTest extends TestCase
         $invoice = Invoice::factory()->create(['amount' => 500, 'paid_total' => 0]);
         $collector = $this->userWithPermissions(['payments.register']);
 
-        $this->actingAs($collector)->post("/invoices/{$invoice->id}/payments", ['amount' => '200.00', 'paid_at' => now()->toDateString()]);
+        $this->actingAs($collector)->post("/invoices/{$invoice->id}/payments", ['amount' => '200.00', 'paid_at' => now()->toDateString(), 'method' => 'EFECTIVO']);
         $payment = $invoice->fresh()->payments->first();
 
         $response = $this->actingAs($collector)->put("/payments/{$payment->id}/void", ['reason' => 'Intento no autorizado']);
@@ -234,7 +241,7 @@ class PaymentTest extends TestCase
         $collector = $this->userWithPermissions(['payments.register']);
         $admin = $this->userWithPermissions(['payments.void', 'reports.view']);
 
-        $this->actingAs($collector)->post("/invoices/{$invoice->id}/payments", ['amount' => '200.00', 'paid_at' => now()->toDateString()]);
+        $this->actingAs($collector)->post("/invoices/{$invoice->id}/payments", ['amount' => '200.00', 'paid_at' => now()->toDateString(), 'method' => 'EFECTIVO']);
         $payment = $invoice->fresh()->payments->first();
         $this->actingAs($admin)->put("/payments/{$payment->id}/void", ['reason' => 'Error de digitación']);
 
@@ -251,6 +258,7 @@ class PaymentTest extends TestCase
             'invoice_id' => $invoice->id,
             'amount' => '200.00',
             'paid_at' => now()->toDateString(),
+            'method' => 'EFECTIVO',
         ]);
 
         $response->assertRedirect(route('payments.index'));
@@ -266,6 +274,7 @@ class PaymentTest extends TestCase
         $response = $this->actingAs($user)->post('/payments', [
             'amount' => '200.00',
             'paid_at' => now()->toDateString(),
+            'method' => 'EFECTIVO',
         ]);
 
         $response->assertSessionHasErrors('invoice_id');
@@ -285,6 +294,87 @@ class PaymentTest extends TestCase
         $this->assertFalse($invoices->contains('id', $paid->id));
     }
 
+    public function test_payments_index_lists_cuotas_and_filters_paid_versus_unpaid(): void
+    {
+        $paidAssociate = Associate::factory()->create(['name' => 'MINERA CENTRO S.A.C.', 'ruc' => '20130330054', 'sectorista' => 'CARMEN']);
+        $unpaidAssociate = Associate::factory()->create(['name' => 'Ferretería Central', 'ruc' => '20100000009', 'sectorista' => 'ROSA']);
+        $paid = Invoice::factory()->create([
+            'associate_id' => $paidAssociate->id, 'period' => '2026-08', 'receipt_number' => 'FE01-001236',
+            'amount' => 50, 'paid_total' => 50, 'status' => Invoice::STATUS_PAGADA,
+        ]);
+        Payment::factory()->create(['invoice_id' => $paid->id, 'amount' => 50, 'paid_at' => '2026-08-01']);
+        $unpaid = Invoice::factory()->create(['associate_id' => $unpaidAssociate->id, 'period' => '2026-08', 'amount' => 250, 'paid_total' => 0]);
+        $partial = Invoice::factory()->create(['associate_id' => $unpaidAssociate->id, 'period' => '2026-07', 'amount' => 250, 'paid_total' => 100, 'status' => Invoice::STATUS_PARCIAL]);
+        $user = $this->userWithPermissions(['payments.register', 'billing.view']);
+
+        $all = $this->actingAs($user)->get('/payments');
+        $all->assertOk()->assertSee('MINERA CENTRO S.A.C.')->assertSee('Ferretería Central')->assertSee('FE01-001236');
+        $this->assertSame(3, $all->viewData('summary')['total']);
+        $this->assertSame(1, $all->viewData('summary')['paid_count']);
+        $this->assertSame(2, $all->viewData('summary')['unpaid_count']);
+        $this->assertSame(400.0, $all->viewData('summary')['balance']);
+
+        $onlyPaid = $this->actingAs($user)->get('/payments?status=pagadas');
+        $this->assertSame([$paid->id], $onlyPaid->viewData('invoices')->pluck('id')->all());
+
+        $onlyUnpaid = $this->actingAs($user)->get('/payments?status=no_pagadas');
+        $this->assertEqualsCanonicalizing([$unpaid->id, $partial->id], $onlyUnpaid->viewData('invoices')->pluck('id')->all());
+
+        $onlyPartial = $this->actingAs($user)->get('/payments?status=parciales');
+        $this->assertSame([$partial->id], $onlyPartial->viewData('invoices')->pluck('id')->all());
+
+        $byMonth = $this->actingAs($user)->get('/payments?year=2026&month=7');
+        $this->assertSame([$partial->id], $byMonth->viewData('invoices')->pluck('id')->all());
+
+        $bySectorista = $this->actingAs($user)->get('/payments?sectorista=CARMEN');
+        $this->assertSame([$paid->id], $bySectorista->viewData('invoices')->pluck('id')->all());
+    }
+
+    public function test_payments_index_searches_associates_by_name_ruc_or_receipt_number(): void
+    {
+        $minera = Associate::factory()->create(['name' => 'MINERA CENTRO S.A.C.', 'ruc' => '20130330054', 'company' => 'MICENSAC']);
+        $other = Associate::factory()->create(['name' => 'Comercial Andina SAC', 'ruc' => '20100000001']);
+        $target = Invoice::factory()->create(['associate_id' => $minera->id, 'period' => '2026-08', 'receipt_number' => 'FE01-001236', 'amount' => 50]);
+        Invoice::factory()->create(['associate_id' => $other->id, 'period' => '2026-08', 'receipt_number' => 'F020-00000001', 'amount' => 50]);
+        $user = $this->userWithPermissions(['payments.register']);
+
+        foreach (['MINERA', '20130330054', 'MICENSAC', 'FE01-001236'] as $term) {
+            $response = $this->actingAs($user)->get('/payments?q='.$term);
+            $this->assertSame([$target->id], $response->viewData('invoices')->pluck('id')->all(), "search term: {$term}");
+        }
+
+        $this->assertCount(0, $this->actingAs($user)->get('/payments?q=inexistente')->viewData('invoices'));
+    }
+
+    public function test_payments_index_movements_tab_lists_payments_with_their_state(): void
+    {
+        $invoice = Invoice::factory()->create(['amount' => 100, 'paid_total' => 50, 'status' => Invoice::STATUS_PARCIAL]);
+        $valid = Payment::factory()->create(['invoice_id' => $invoice->id, 'amount' => 50, 'paid_at' => '2026-08-10']);
+        $voided = Payment::factory()->create(['invoice_id' => $invoice->id, 'amount' => 20, 'paid_at' => '2026-07-10', 'voided_at' => now(), 'void_reason' => 'Error']);
+        $user = $this->userWithPermissions(['payments.register']);
+
+        $all = $this->actingAs($user)->get('/payments?tab=movimientos');
+        $all->assertOk()->assertSee('Válido')->assertSee('Anulado');
+        $this->assertEqualsCanonicalizing([$valid->id, $voided->id], $all->viewData('payments')->pluck('id')->all());
+
+        $onlyValid = $this->actingAs($user)->get('/payments?tab=movimientos&state=validos');
+        $this->assertSame([$valid->id], $onlyValid->viewData('payments')->pluck('id')->all());
+
+        $byDate = $this->actingAs($user)->get('/payments?tab=movimientos&date_from=2026-08-01');
+        $this->assertSame([$valid->id], $byDate->viewData('payments')->pluck('id')->all());
+    }
+
+    public function test_quick_payment_form_preselects_the_invoice_from_the_cuotas_list(): void
+    {
+        $invoice = Invoice::factory()->create(['amount' => 500, 'paid_total' => 0]);
+        $user = $this->userWithPermissions(['payments.register']);
+
+        $response = $this->actingAs($user)->get('/payments/create?invoice_id='.$invoice->id);
+
+        $response->assertOk();
+        $this->assertSame($invoice->id, $response->viewData('selectedInvoiceId'));
+    }
+
     public function test_user_without_payments_register_permission_cannot_use_the_quick_payment_form(): void
     {
         $invoice = Invoice::factory()->create(['amount' => 500, 'paid_total' => 0]);
@@ -295,6 +385,7 @@ class PaymentTest extends TestCase
             'invoice_id' => $invoice->id,
             'amount' => '200.00',
             'paid_at' => now()->toDateString(),
+            'method' => 'EFECTIVO',
         ])->assertForbidden();
     }
 }

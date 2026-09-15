@@ -8,6 +8,7 @@ use App\Models\AuditLog;
 use App\Models\Invoice;
 use App\Models\Notification;
 use App\Services\InvoiceGenerationService;
+use App\Services\InvoiceStatsService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,29 +16,129 @@ use Illuminate\View\View;
 
 class InvoiceController extends Controller
 {
-    public function index(): View
+    public const STATUS_FILTERS = [
+        'no_pagadas' => 'No pagadas',
+        'pendientes' => 'Pendientes',
+        'parciales' => 'Pago parcial',
+        'pagadas' => 'Pagadas',
+        'vencidas' => 'Vencidas',
+    ];
+
+    public const MONTHS = [
+        1 => 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+    ];
+
+    public function index(Request $request): View
     {
+        $filters = $this->filtersFrom($request);
+        $term = $filters['q'];
+
         $invoices = Invoice::query()
             ->with('associate')
-            ->when(request('associate_id'), fn ($q) => $q->where('associate_id', request('associate_id')))
-            ->when(request('period'), fn ($q) => $q->forPeriod(request('period')))
-            ->when(request('status'), function ($q) {
-                if (request('status') === Invoice::STATUS_VENCIDA) {
-                    $q->overdue();
-                } else {
-                    $q->where('status', request('status'));
-                }
+            // Deep links from the associates list / dashboard keep working.
+            ->when($filters['associate_id'], fn ($q) => $q->where('associate_id', $filters['associate_id']))
+            ->when($filters['period'], fn ($q) => $q->forPeriod($filters['period']))
+            ->when($term !== '', fn ($q) => $q->where(function ($w) use ($term) {
+                $w->where('receipt_number', 'like', "%{$term}%")
+                    ->orWhereHas('associate', fn ($a) => $a->where('name', 'like', "%{$term}%")
+                        ->orWhere('ruc', 'like', "%{$term}%")
+                        ->orWhere('company', 'like', "%{$term}%"));
+            }))
+            ->when($filters['year'], fn ($q) => $q->where('period', 'like', $filters['year'].'-%'))
+            ->when($filters['month'], fn ($q) => $q->where('period', 'like', '%-'.str_pad((string) $filters['month'], 2, '0', STR_PAD_LEFT)))
+            ->when($filters['sectorista'] || $filters['category'], fn ($q) => $q->whereHas('associate', fn ($a) => $a
+                ->when($filters['sectorista'], fn ($a) => $a->where('sectorista', $filters['sectorista']))
+                ->when($filters['category'], fn ($a) => $a->where('category', $filters['category']))))
+            ->when($filters['status'], fn ($q) => match ($filters['status']) {
+                'no_pagadas' => $q->unpaid(),
+                'pendientes' => $q->where('status', Invoice::STATUS_PENDIENTE),
+                'parciales' => $q->where('status', Invoice::STATUS_PARCIAL),
+                'pagadas' => $q->paid(),
+                'vencidas' => $q->overdue(),
             })
             ->orderByDesc('period')
-            ->orderBy('associate_id')
+            ->orderBy(Associate::select('name')->whereColumn('associates.id', 'invoices.associate_id'))
             ->paginate(20)
             ->withQueryString();
 
-        return view('invoices.index', [
+        $distinct = fn (string $column) => Associate::query()
+            ->whereNotNull($column)->where($column, '!=', '')
+            ->distinct()->orderBy($column)->pluck($column)->all();
+
+        $data = [
             'invoices' => $invoices,
-            'associates' => Associate::orderBy('name')->get(['id', 'name']),
-            'filters' => request()->only(['associate_id', 'period', 'status']),
-        ]);
+            'filters' => $filters,
+            'statusFilters' => self::STATUS_FILTERS,
+            'months' => self::MONTHS,
+            'filterOptions' => [
+                'years' => Invoice::query()->selectRaw('DISTINCT SUBSTR(period, 1, 4) AS year')->orderByDesc('year')->pluck('year')->all(),
+                'sectorista' => $distinct('sectorista'),
+                'category' => $distinct('category'),
+            ],
+            'filteredAssociate' => $filters['associate_id'] ? Associate::find($filters['associate_id']) : null,
+        ];
+
+        // Live filtering (app.js data-live-filter): only the results block
+        // is re-rendered while the user types.
+        return $request->ajax() ? view('invoices._results', $data) : view('invoices.index', $data);
+    }
+
+    /**
+     * "Ver estadísticas": charts over the same billing data, with their
+     * own live filters (year defaults to the current one so the monthly
+     * chart opens on something meaningful).
+     */
+    public function stats(Request $request, InvoiceStatsService $stats): View
+    {
+        $filters = $this->filtersFrom($request);
+        if (! $request->has('year')) {
+            $filters['year'] = now()->format('Y');
+        }
+        $filters = array_intersect_key($filters, array_flip(['year', 'month', 'sectorista', 'category']));
+
+        $data = [
+            'filters' => $filters,
+            'stats' => $stats->build($filters),
+            'months' => self::MONTHS,
+            'filterOptions' => [
+                'years' => InvoiceStatsService::availableYears(),
+                'sectorista' => InvoiceStatsService::distinctAssociateValues('sectorista'),
+                'category' => InvoiceStatsService::distinctAssociateValues('category'),
+            ],
+        ];
+
+        return $request->ajax() ? view('invoices._stats', $data) : view('invoices.stats', $data);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function filtersFrom(Request $request): array
+    {
+        $text = fn (string $key) => trim((string) $request->query($key, '')) !== '' ? trim((string) $request->query($key)) : null;
+        $status = (string) $request->query('status', '');
+        // Legacy links used the raw column value (PENDIENTE, PAGADA…).
+        $status = match (strtoupper($status)) {
+            Invoice::STATUS_PENDIENTE => 'pendientes',
+            Invoice::STATUS_PARCIAL => 'parciales',
+            Invoice::STATUS_PAGADA => 'pagadas',
+            Invoice::STATUS_VENCIDA => 'vencidas',
+            default => $status,
+        };
+        $year = (string) $request->query('year', '');
+        $month = (string) $request->query('month', '');
+
+        return [
+            'q' => trim((string) $request->query('q', '')),
+            'associate_id' => $request->integer('associate_id') ?: null,
+            'period' => preg_match('/^\d{4}-\d{2}$/', (string) $request->query('period', '')) ? (string) $request->query('period') : null,
+            'status' => array_key_exists($status, self::STATUS_FILTERS) ? $status : null,
+            'year' => preg_match('/^\d{4}$/', $year) ? $year : null,
+            'month' => ctype_digit($month) && (int) $month >= 1 && (int) $month <= 12 ? (int) $month : null,
+            'sectorista' => $text('sectorista'),
+            'category' => $text('category'),
+        ];
     }
 
     public function create(Request $request): View
@@ -88,8 +189,29 @@ class InvoiceController extends Controller
 
     public function show(Invoice $invoice): View
     {
-        $invoice->load(['associate', 'payments.registeredBy', 'creator']);
+        $invoice->load(['associate', 'payments.registeredBy', 'payments.voidedBy', 'creator']);
 
-        return view('invoices.show', ['invoice' => $invoice]);
+        // Sibling cuotas of the same associate: previous/next navigation
+        // and a summary of what else they owe, so a collector calling
+        // about this invoice sees the whole picture.
+        $siblings = Invoice::query()
+            ->where('associate_id', $invoice->associate_id)
+            ->orderBy('period')
+            ->get(['id', 'period', 'amount', 'paid_total', 'status', 'due_date']);
+
+        $position = $siblings->search(fn (Invoice $i) => $i->id === $invoice->id);
+        $pending = $siblings->filter(fn (Invoice $i) => $i->id !== $invoice->id && $i->balance() > 0);
+
+        return view('invoices.show', [
+            'invoice' => $invoice,
+            'previousInvoice' => $position > 0 ? $siblings[$position - 1] : null,
+            'nextInvoice' => $position !== false && $position < $siblings->count() - 1 ? $siblings[$position + 1] : null,
+            'associateSummary' => [
+                'total' => $siblings->count(),
+                'pending_count' => $pending->count(),
+                'pending_balance' => $pending->sum(fn (Invoice $i) => $i->balance()),
+                'overdue_count' => $pending->filter(fn (Invoice $i) => $i->isOverdue())->count(),
+            ],
+        ]);
     }
 }
