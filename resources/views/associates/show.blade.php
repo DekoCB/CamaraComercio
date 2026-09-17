@@ -157,7 +157,7 @@
                 </div>
                 <button type="submit" class="btn btn-secondary">
                     <span class="spinner"></span>
-                    <span class="btn-label-idle">{{ icon('upload', 'icon', 16) }} Subir documento</span>
+                    <span class="btn-label-idle">{{ icon('upload', 'icon', 16) }} Convertir a PDF</span>
                 </button>
             </form>
             <div class="field-help" style="margin-top: -8px; margin-bottom: var(--space-3);">
