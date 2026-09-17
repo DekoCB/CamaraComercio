@@ -84,7 +84,7 @@
                             </thead>
                             <tbody>
                             @foreach ($invoices as $invoice)
-                                <tr>
+                                <tr class="{{ $invoice->isVoided() ? 'row-voided' : '' }}">
                                     <td class="cell-primary cell-nowrap">
                                         {{ format_period($invoice->period) }}
                                         <div class="cell-muted" style="font-size: var(--text-xs); font-weight: 400;">{{ $invoice->period }}{{ $invoice->receipt_number ? ' · '.$invoice->receipt_number : '' }}</div>

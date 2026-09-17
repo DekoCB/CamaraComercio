@@ -22,7 +22,7 @@ class DashboardService
         $previousMonthStart = now()->subMonthNoOverflow()->startOfMonth();
         $previousMonthEnd = now()->subMonthNoOverflow()->endOfMonth();
 
-        $billedThisPeriod = (float) Invoice::forPeriod($currentPeriod)->sum('amount');
+        $billedThisPeriod = (float) Invoice::forPeriod($currentPeriod)->whereNull('voided_at')->sum('amount');
         $collectedThisMonth = (float) Payment::active()->whereBetween('paid_at', [now()->startOfMonth(), now()->endOfMonth()])->sum('amount');
         $collectedLastMonth = (float) Payment::active()->whereBetween('paid_at', [$previousMonthStart, $previousMonthEnd])->sum('amount');
 
@@ -31,7 +31,7 @@ class DashboardService
             'billedThisPeriod' => $billedThisPeriod,
             'collectedThisMonth' => $collectedThisMonth,
             'collectedTrend' => $this->trend($collectedThisMonth, $collectedLastMonth),
-            'pendingBalance' => (float) Invoice::where('status', '!=', Invoice::STATUS_PAGADA)
+            'pendingBalance' => (float) Invoice::where('status', '!=', Invoice::STATUS_PAGADA)->whereNull('voided_at')
                 ->selectRaw('COALESCE(SUM('.Invoice::BALANCE_SQL.'), 0) as total')->value('total'),
             'overdueCount' => Invoice::overdue()->count(),
             'monthlyCollections' => $this->monthlyCollections(),
@@ -66,7 +66,7 @@ class DashboardService
     /** Percent of this year's invoiced amount already collected. */
     private function yearCollectionRate(): ?float
     {
-        $row = Invoice::query()->where('period', 'like', now()->format('Y').'-%')
+        $row = Invoice::query()->where('period', 'like', now()->format('Y').'-%')->whereNull('voided_at')
             ->selectRaw('COALESCE(SUM(amount), 0) AS billed, COALESCE(SUM(paid_total), 0) AS paid')->first();
 
         return (float) $row->billed > 0 ? round((float) $row->paid / (float) $row->billed * 100, 1) : null;
@@ -84,6 +84,7 @@ class DashboardService
         $months = collect(range(11, 0))->map(fn (int $i) => now()->subMonthsNoOverflow($i));
         $rows = Invoice::query()
             ->whereIn('period', $months->map(fn (Carbon $m) => $m->format('Y-m'))->all())
+            ->whereNull('voided_at')
             ->selectRaw('period, COALESCE(SUM(amount), 0) AS billed, COALESCE(SUM(paid_total), 0) AS paid')
             ->groupBy('period')->get()->keyBy('period');
 
@@ -106,6 +107,7 @@ class DashboardService
     {
         return Invoice::query()
             ->where('invoices.status', '!=', Invoice::STATUS_PAGADA)
+            ->whereNull('invoices.voided_at')
             ->join('associates', 'associates.id', '=', 'invoices.associate_id')
             ->selectRaw('associates.name AS name, COUNT(*) AS count, COALESCE(SUM('.Invoice::BALANCE_SQL.'), 0) AS balance')
             ->groupBy('associates.id', 'associates.name')
@@ -120,6 +122,7 @@ class DashboardService
     private function portfolioBySectorista(): array
     {
         return Invoice::query()
+            ->whereNull('invoices.voided_at')
             ->join('associates', 'associates.id', '=', 'invoices.associate_id')
             ->selectRaw('associates.sectorista AS sectorista, COUNT(DISTINCT associates.id) AS associates, COALESCE(SUM(paid_total), 0) AS paid, COALESCE(SUM('.Invoice::BALANCE_SQL.'), 0) AS balance')
             ->groupBy('associates.sectorista')
@@ -226,7 +229,7 @@ class DashboardService
 
             return [
                 'label' => ucfirst($month->translatedFormat('M y')),
-                'billed' => (float) Invoice::forPeriod($period)->sum('amount'),
+                'billed' => (float) Invoice::forPeriod($period)->whereNull('voided_at')->sum('amount'),
                 'collected' => (float) Payment::active()->whereBetween('paid_at', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])->sum('amount'),
             ];
         })->all();
@@ -244,9 +247,9 @@ class DashboardService
         $today = now()->toDateString();
 
         $paid = Invoice::where('status', Invoice::STATUS_PAGADA)->count();
-        $overdue = Invoice::where('status', '!=', Invoice::STATUS_PAGADA)->whereDate('due_date', '<', $today)->count();
-        $partial = Invoice::where('status', Invoice::STATUS_PARCIAL)->whereDate('due_date', '>=', $today)->count();
-        $pending = Invoice::where('status', Invoice::STATUS_PENDIENTE)->whereDate('due_date', '>=', $today)->count();
+        $overdue = Invoice::where('status', '!=', Invoice::STATUS_PAGADA)->whereNull('voided_at')->whereDate('due_date', '<', $today)->count();
+        $partial = Invoice::where('status', Invoice::STATUS_PARCIAL)->whereNull('voided_at')->whereDate('due_date', '>=', $today)->count();
+        $pending = Invoice::where('status', Invoice::STATUS_PENDIENTE)->whereNull('voided_at')->whereDate('due_date', '>=', $today)->count();
 
         return [
             'PAGADA' => $paid,

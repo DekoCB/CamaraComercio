@@ -35,6 +35,23 @@ class PaymentMethodTest extends TestCase
         ])->assertSessionHasErrors('method');
     }
 
+    public function test_registering_a_payment_stores_its_optional_operation_number(): void
+    {
+        $invoice = Invoice::factory()->create(['amount' => 200, 'paid_total' => 0]);
+        $user = $this->userWithPermissions(['payments.register']);
+
+        $this->actingAs($user)->post("/invoices/{$invoice->id}/payments", [
+            'amount' => '100.00', 'paid_at' => now()->toDateString(), 'method' => 'TRANSFERENCIA',
+            'operation_number' => 'OP-00123',
+        ])->assertRedirect();
+        $this->assertDatabaseHas('payments', ['invoice_id' => $invoice->id, 'operation_number' => 'OP-00123']);
+
+        $this->actingAs($user)->post("/invoices/{$invoice->id}/payments", [
+            'amount' => '50.00', 'paid_at' => now()->toDateString(), 'method' => 'EFECTIVO',
+        ])->assertRedirect();
+        $this->assertDatabaseHas('payments', ['invoice_id' => $invoice->id, 'amount' => 50, 'operation_number' => null]);
+    }
+
     public function test_both_payment_tabs_can_be_filtered_by_method(): void
     {
         $yape = Associate::factory()->create(['name' => 'Paga Con Yape SAC']);

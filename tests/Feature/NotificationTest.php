@@ -65,6 +65,19 @@ class NotificationTest extends TestCase
         ]);
     }
 
+    public function test_voiding_an_invoice_creates_a_notification(): void
+    {
+        $invoice = Invoice::factory()->create(['amount' => 500, 'paid_total' => 0]);
+        $admin = $this->userWithPermissions(['billing.void']);
+
+        $this->actingAs($admin)->put("/invoices/{$invoice->id}/void", ['reason' => 'Factura duplicada por error']);
+
+        $this->assertDatabaseHas('notifications', [
+            'type' => Notification::TYPE_INVOICE_VOIDED,
+            'entity_id' => (string) $invoice->id,
+        ]);
+    }
+
     public function test_importing_associates_does_not_create_a_notification(): void
     {
         $user = $this->userWithPermissions(['associates.manage']);

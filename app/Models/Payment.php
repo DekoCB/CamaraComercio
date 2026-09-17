@@ -30,6 +30,7 @@ class Payment extends Model
         'amount',
         'paid_at',
         'method',
+        'operation_number',
         'registered_by',
         'notes',
         'voided_at',
@@ -73,11 +74,15 @@ class Payment extends Model
 
     public function scopeActive($query)
     {
-        return $query->whereNull('voided_at');
+        // Qualified: invoices also has a voided_at column since factura
+        // anulación shipped, and this scope is routinely used after a
+        // join to invoices (e.g. ReportService::collections()), where an
+        // unqualified column would be ambiguous.
+        return $query->whereNull('payments.voided_at');
     }
 
     public function scopeVoided($query)
     {
-        return $query->whereNotNull('voided_at');
+        return $query->whereNotNull('payments.voided_at');
     }
 }

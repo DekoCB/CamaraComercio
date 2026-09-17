@@ -21,6 +21,13 @@ class Invoice extends Model
     public const STATUS_VENCIDA = 'VENCIDA';
 
     /**
+     * Like VENCIDA, never stored in the `status` column — computed from
+     * voided_at, the same way Payment tracks a void without touching its
+     * own status-like fields. Takes priority over every other status.
+     */
+    public const STATUS_ANULADA = 'ANULADA';
+
+    /**
      * The single source of truth for the balance formula, expressed as a
      * raw SQL fragment. balance() below is the same formula for a single
      * loaded record; this exists because SUM() aggregates in ReportService
@@ -42,6 +49,9 @@ class Invoice extends Model
         'due_date',
         'status',
         'created_by',
+        'voided_at',
+        'voided_by',
+        'void_reason',
     ];
 
     protected function casts(): array
@@ -51,12 +61,23 @@ class Invoice extends Model
             'paid_total' => 'decimal:2',
             'issue_date' => 'date',
             'due_date' => 'date',
+            'voided_at' => 'datetime',
         ];
     }
 
     public function associate(): BelongsTo
     {
         return $this->belongsTo(Associate::class);
+    }
+
+    public function voidedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'voided_by');
+    }
+
+    public function isVoided(): bool
+    {
+        return $this->voided_at !== null;
     }
 
     public function payments(): HasMany
@@ -96,6 +117,10 @@ class Invoice extends Model
      */
     public function effectiveStatus(): string
     {
+        if ($this->isVoided()) {
+            return self::STATUS_ANULADA;
+        }
+
         if ($this->status === self::STATUS_PAGADA) {
             return self::STATUS_PAGADA;
         }
@@ -105,12 +130,13 @@ class Invoice extends Model
 
     public function isOverdue(): bool
     {
-        return $this->status !== self::STATUS_PAGADA && $this->due_date->isPast();
+        return ! $this->isVoided() && $this->status !== self::STATUS_PAGADA && $this->due_date->isPast();
     }
 
     public function scopeOverdue(Builder $query): Builder
     {
-        return $query->where('status', '!=', self::STATUS_PAGADA)
+        return $query->whereNull('voided_at')
+            ->where('status', '!=', self::STATUS_PAGADA)
             ->whereDate('due_date', '<', now()->toDateString());
     }
 
@@ -119,14 +145,20 @@ class Invoice extends Model
         return $query->where('period', $period);
     }
 
+    public function scopeVoided(Builder $query): Builder
+    {
+        return $query->whereNotNull('voided_at');
+    }
+
     /**
      * "No pagadas" in the Pagos module: anything with a balance, whether
      * nothing or only part of it has been collected (PENDIENTE + PARCIAL,
-     * overdue or not).
+     * overdue or not) — anuladas no longer owe anything, so they're
+     * excluded just like pagadas.
      */
     public function scopeUnpaid(Builder $query): Builder
     {
-        return $query->where('status', '!=', self::STATUS_PAGADA);
+        return $query->whereNull('voided_at')->where('status', '!=', self::STATUS_PAGADA);
     }
 
     public function scopePaid(Builder $query): Builder

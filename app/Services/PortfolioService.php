@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use App\Models\Payment;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -33,16 +34,26 @@ class PortfolioService
      */
     public function debtSummary(array $filters = []): LengthAwarePaginator
     {
+        return $this->debtSummaryQuery($filters)->paginate(20)->withQueryString();
+    }
+
+    /** Same rows as debtSummary(), unpaginated — for Excel/PDF export. */
+    public function debtSummaryForExport(array $filters = []): Collection
+    {
+        return $this->debtSummaryQuery($filters)->get();
+    }
+
+    /** @param  array{q?: ?string, status?: ?string, sectorista?: ?string, category?: ?string}  $filters */
+    private function debtSummaryQuery(array $filters): Builder
+    {
         return $this->baseQuery($filters)
             ->when($filters['status'] ?? null, fn (Builder $q) => match ($filters['status']) {
-                'con_deuda' => $q->whereHas('invoices', fn (Builder $i) => $i->where('status', '!=', Invoice::STATUS_PAGADA)),
+                'con_deuda' => $q->whereHas('invoices', fn (Builder $i) => $i->where('status', '!=', Invoice::STATUS_PAGADA)->whereNull('voided_at')),
                 'con_vencidas' => $q->whereHas('invoices', fn (Builder $i) => $i->overdue()),
-                'al_dia' => $q->whereDoesntHave('invoices', fn (Builder $i) => $i->where('status', '!=', Invoice::STATUS_PAGADA)),
+                'al_dia' => $q->whereDoesntHave('invoices', fn (Builder $i) => $i->where('status', '!=', Invoice::STATUS_PAGADA)->whereNull('voided_at')),
                 default => $q,
             })
-            ->orderBy('name')
-            ->paginate(20)
-            ->withQueryString();
+            ->orderBy('name');
     }
 
     /**
@@ -59,6 +70,7 @@ class PortfolioService
 
         $row = Invoice::query()
             ->whereIn('associate_id', $associateIds)
+            ->whereNull('voided_at')
             ->selectRaw(
                 'COALESCE(SUM(amount), 0) AS billed, '
                 .'COALESCE(SUM(paid_total), 0) AS paid, '
@@ -100,19 +112,29 @@ class PortfolioService
      */
     public function debtors(array $filters = []): LengthAwarePaginator
     {
+        return $this->debtorsQuery($filters)->paginate(20)->withQueryString();
+    }
+
+    /** Same rows as debtors(), unpaginated — for Excel/PDF export. */
+    public function debtorsForExport(array $filters = []): Collection
+    {
+        return $this->debtorsQuery($filters)->get();
+    }
+
+    /** @param  array{q?: ?string, sectorista?: ?string, category?: ?string, only_overdue?: bool, sort?: ?string}  $filters */
+    private function debtorsQuery(array $filters): Builder
+    {
         return $this->baseQuery($filters)
-            ->withMin(['invoices as oldest_pending_period' => fn (Builder $q) => $q->where('status', '!=', Invoice::STATUS_PAGADA)], 'period')
-            ->whereHas('invoices', fn (Builder $q) => $q->where('status', '!=', Invoice::STATUS_PAGADA))
+            ->withMin(['invoices as oldest_pending_period' => fn (Builder $q) => $q->where('status', '!=', Invoice::STATUS_PAGADA)->whereNull('voided_at')], 'period')
+            ->whereHas('invoices', fn (Builder $q) => $q->where('status', '!=', Invoice::STATUS_PAGADA)->whereNull('voided_at'))
             ->when($filters['only_overdue'] ?? false, fn (Builder $q) => $q->whereHas('invoices', fn (Builder $i) => $i->overdue()))
             // Biggest debt first by default (a correlated subquery rather
             // than an alias so it orders the same on MySQL and SQLite).
             ->when(
                 ($filters['sort'] ?? 'balance') === 'balance',
-                fn (Builder $q) => $q->orderByDesc(DB::raw('(SELECT COALESCE(SUM('.Invoice::BALANCE_SQL.'), 0) FROM invoices WHERE invoices.associate_id = associates.id)')),
+                fn (Builder $q) => $q->orderByDesc(DB::raw('(SELECT COALESCE(SUM('.Invoice::BALANCE_SQL.'), 0) FROM invoices WHERE invoices.associate_id = associates.id AND invoices.voided_at IS NULL)')),
                 fn (Builder $q) => $q->orderBy('name')
-            )
-            ->paginate(20)
-            ->withQueryString();
+            );
     }
 
     /**
@@ -181,11 +203,15 @@ class PortfolioService
             ->sortByDesc('paid_at')
             ->values();
 
+        // Anuladas stay listed (shown struck through, same as voided
+        // payments) but don't count toward what's actually owed/invoiced.
+        $activeInvoices = $invoices->filter(fn (Invoice $invoice) => ! $invoice->isVoided());
+
         return [
-            'totalInvoiced' => (float) $invoices->sum('amount'),
-            'totalPaid' => (float) $invoices->sum('paid_total'),
-            'totalPending' => (float) $invoices->sum(fn (Invoice $invoice) => $invoice->balance()),
-            'overdueCount' => $invoices->filter(fn (Invoice $invoice) => $invoice->isOverdue())->count(),
+            'totalInvoiced' => (float) $activeInvoices->sum('amount'),
+            'totalPaid' => (float) $activeInvoices->sum('paid_total'),
+            'totalPending' => (float) $activeInvoices->sum(fn (Invoice $invoice) => $invoice->balance()),
+            'overdueCount' => $activeInvoices->filter(fn (Invoice $invoice) => $invoice->isOverdue())->count(),
             'invoices' => $invoices,
             'payments' => $payments,
             'years' => $associate->invoices()->selectRaw('DISTINCT SUBSTR(period, 1, 4) AS year')->orderByDesc('year')->pluck('year')->all(),
@@ -228,9 +254,9 @@ class PortfolioService
                 ->orWhere('ruc', 'like', "%{$term}%")))
             ->when($filters['sectorista'] ?? null, fn (Builder $q) => $q->where('sectorista', $filters['sectorista']))
             ->when($filters['category'] ?? null, fn (Builder $q) => $q->where('category', $filters['category']))
-            ->withSum('invoices as total_invoiced', 'amount')
-            ->withSum('invoices as total_paid', 'paid_total')
-            ->withCount(['invoices as pending_invoices_count' => fn (Builder $q) => $q->where('status', '!=', Invoice::STATUS_PAGADA)])
+            ->withSum(['invoices as total_invoiced' => fn (Builder $q) => $q->whereNull('voided_at')], 'amount')
+            ->withSum(['invoices as total_paid' => fn (Builder $q) => $q->whereNull('voided_at')], 'paid_total')
+            ->withCount(['invoices as pending_invoices_count' => fn (Builder $q) => $q->where('status', '!=', Invoice::STATUS_PAGADA)->whereNull('voided_at')])
             ->withCount(['invoices as overdue_invoices_count' => fn (Builder $q) => $q->overdue()]);
     }
 }

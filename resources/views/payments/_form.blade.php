@@ -68,6 +68,13 @@
             @enderror
         </div>
         <div class="field">
+            <label class="field-label" for="operation_number">N° de operación</label>
+            <input type="text" class="form-control @error('operation_number') is-invalid @enderror" id="operation_number" name="operation_number" maxlength="60" value="{{ old('operation_number') }}" placeholder="Transferencia, Yape, Plin...">
+            @error('operation_number')
+                <div class="field-error">{{ icon('alert-triangle', 'icon', 14) }} {{ $message }}</div>
+            @enderror
+        </div>
+        <div class="field">
             <label class="field-label" for="notes">Notas</label>
             <input type="text" class="form-control" id="notes" name="notes" maxlength="255" value="{{ old('notes') }}">
         </div>

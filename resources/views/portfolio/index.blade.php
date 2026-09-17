@@ -3,7 +3,18 @@
 @section('title', 'Cartera')
 
 @section('content')
-    <x-page-header title="Seguimiento de cartera" subtitle="Qué se ha facturado, qué se ha cobrado y qué falta por cobrar a cada asociado." />
+    <x-page-header title="Seguimiento de cartera" subtitle="Qué se ha facturado, qué se ha cobrado y qué falta por cobrar a cada asociado.">
+        <x-slot:actions>
+            @can('reports.export')
+                <a href="{{ route('portfolio.export', ['format' => 'excel'] + array_filter($filters)) }}" class="btn btn-secondary btn-sm js-export-link" data-export-toast="Preparando Excel…">
+                    {{ icon('file-spreadsheet', 'icon', 16) }} Excel
+                </a>
+                <a href="{{ route('portfolio.export', ['format' => 'pdf'] + array_filter($filters)) }}" class="btn btn-secondary btn-sm js-export-link" data-export-toast="Preparando PDF…">
+                    {{ icon('file-down', 'icon', 16) }} PDF
+                </a>
+            @endcan
+        </x-slot:actions>
+    </x-page-header>
 
     @include('portfolio._tabs', ['active' => 'cartera'])
 

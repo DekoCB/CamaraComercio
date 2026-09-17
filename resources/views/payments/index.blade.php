@@ -190,7 +190,7 @@
                                 $lastPayment = $invoice->activePayments->first();
                                 $balance = $invoice->balance();
                             @endphp
-                            <tr>
+                            <tr class="{{ $invoice->isVoided() ? 'row-voided' : '' }}">
                                 <td class="cell-primary cell-clamp">
                                     <a href="{{ route('associates.show', $invoice->associate) }}" class="link-plain">{{ $invoice->associate->name }}</a>
                                     @if ($invoice->associate->ruc)
@@ -225,7 +225,7 @@
                                             </a>
                                         @endcan
                                         @can('payments.register')
-                                            @if ($balance > 0)
+                                            @if ($balance > 0 && ! $invoice->isVoided())
                                                 <a href="{{ route('payments.create', ['invoice_id' => $invoice->id]) }}" class="btn btn-ghost btn-icon js-modal-link" title="Registrar pago" aria-label="Registrar pago" data-modal-title="Registrar pago — {{ $invoice->associate->name }} · {{ format_period($invoice->period) }}">
                                                     {{ icon('wallet', 'icon', 16) }}
                                                 </a>
@@ -273,7 +273,12 @@
                                 <td class="cell-muted cell-nowrap">{{ format_period($payment->invoice->period) }}</td>
                                 <td class="cell-muted cell-nowrap">{{ $payment->invoice->receipt_number ?? '-' }}</td>
                                 <td class="is-numeric cell-money" style="{{ $payment->isVoided() ? 'text-decoration: line-through; opacity: .6;' : '' }}">{{ format_money($payment->amount) }}</td>
-                                <td class="cell-muted cell-nowrap">{{ $payment->methodLabel() }}</td>
+                                <td class="cell-muted cell-nowrap">
+                                    {{ $payment->methodLabel() }}
+                                    @if ($payment->operation_number)
+                                        <div class="text-tertiary" style="font-size: var(--text-xs);">N° {{ $payment->operation_number }}</div>
+                                    @endif
+                                </td>
                                 <td class="cell-muted">{{ $payment->registeredBy->name ?? '-' }}</td>
                                 <td class="cell-muted cell-clamp" title="{{ $payment->notes }}">{{ $payment->notes ?? '-' }}</td>
                                 <td>

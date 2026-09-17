@@ -3,16 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\InvoiceGenerateRequest;
+use App\Http\Requests\InvoiceUpdateRequest;
+use App\Http\Requests\InvoiceVoidRequest;
 use App\Models\Associate;
 use App\Models\AuditLog;
 use App\Models\Invoice;
 use App\Models\Notification;
 use App\Services\InvoiceGenerationService;
+use App\Services\InvoiceService;
 use App\Services\InvoiceStatsService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use InvalidArgumentException;
 
 class InvoiceController extends Controller
 {
@@ -22,6 +26,7 @@ class InvoiceController extends Controller
         'parciales' => 'Pago parcial',
         'pagadas' => 'Pagadas',
         'vencidas' => 'Vencidas',
+        'anuladas' => 'Anuladas',
     ];
 
     public const MONTHS = [
@@ -52,10 +57,11 @@ class InvoiceController extends Controller
                 ->when($filters['category'], fn ($a) => $a->where('category', $filters['category']))))
             ->when($filters['status'], fn ($q) => match ($filters['status']) {
                 'no_pagadas' => $q->unpaid(),
-                'pendientes' => $q->where('status', Invoice::STATUS_PENDIENTE),
-                'parciales' => $q->where('status', Invoice::STATUS_PARCIAL),
+                'pendientes' => $q->where('status', Invoice::STATUS_PENDIENTE)->whereNull('voided_at'),
+                'parciales' => $q->where('status', Invoice::STATUS_PARCIAL)->whereNull('voided_at'),
                 'pagadas' => $q->paid(),
                 'vencidas' => $q->overdue(),
+                'anuladas' => $q->voided(),
             })
             ->orderByDesc('period')
             ->orderBy(Associate::select('name')->whereColumn('associates.id', 'invoices.associate_id'))
@@ -124,6 +130,7 @@ class InvoiceController extends Controller
             Invoice::STATUS_PARCIAL => 'parciales',
             Invoice::STATUS_PAGADA => 'pagadas',
             Invoice::STATUS_VENCIDA => 'vencidas',
+            Invoice::STATUS_ANULADA => 'anuladas',
             default => $status,
         };
         $year = (string) $request->query('year', '');
@@ -213,5 +220,64 @@ class InvoiceController extends Controller
                 'overdue_count' => $pending->filter(fn (Invoice $i) => $i->isOverdue())->count(),
             ],
         ]);
+    }
+
+    /**
+     * Only reachable for an invoice with no payments yet — the show view
+     * hides the "Editar" action otherwise, and InvoiceService re-checks
+     * the same rule before writing, so this can't be bypassed by URL.
+     */
+    public function edit(Invoice $invoice): View
+    {
+        $invoice->load('associate');
+
+        return view('invoices.edit', compact('invoice'));
+    }
+
+    public function update(InvoiceUpdateRequest $request, Invoice $invoice, InvoiceService $service): RedirectResponse
+    {
+        $data = $request->validated();
+
+        try {
+            $service->update($invoice, [
+                'receipt_number' => $data['receipt_number'] ?? null,
+                'amount' => (float) $data['amount'],
+                'issue_date' => CarbonImmutable::parse($data['issue_date']),
+                'due_date' => CarbonImmutable::parse($data['due_date']),
+            ]);
+        } catch (InvalidArgumentException $e) {
+            return back()->withErrors(['amount' => $e->getMessage()])->withInput();
+        }
+
+        AuditLog::record('invoice.update', 'invoice', (string) $invoice->id, 'success', $data);
+
+        return redirect()->route('invoices.show', $invoice)->with('success', 'Factura actualizada correctamente.');
+    }
+
+    public function void(InvoiceVoidRequest $request, Invoice $invoice, InvoiceService $service): RedirectResponse
+    {
+        $data = $request->validated();
+
+        try {
+            $service->void($invoice, $data['reason'], $request->user()->id);
+        } catch (InvalidArgumentException $e) {
+            return back()->withErrors(['reason' => $e->getMessage()]);
+        }
+
+        AuditLog::record('invoice.void', 'invoice', (string) $invoice->id, 'success', [
+            'reason' => $data['reason'],
+        ]);
+
+        $invoice->loadMissing('associate');
+        Notification::record(
+            type: Notification::TYPE_INVOICE_VOIDED,
+            title: "Factura anulada — {$invoice->associate->name}",
+            message: "{$invoice->period} — {$data['reason']}",
+            entityType: 'invoice',
+            entityId: (string) $invoice->id,
+            link: route('invoices.show', $invoice),
+        );
+
+        return redirect()->route('invoices.show', $invoice)->with('success', 'Factura anulada correctamente.');
     }
 }

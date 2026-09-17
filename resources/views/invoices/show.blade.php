@@ -40,6 +40,18 @@
         </x-slot:actions>
     </x-page-header>
 
+    @if ($invoice->isVoided())
+        <div class="voided-panel mb-3">
+            {{ icon('x-circle', 'icon', 24) }}
+            <div>
+                <strong>Factura anulada</strong>
+                <div class="cell-muted" style="font-size: var(--text-xs);">
+                    {{ format_date($invoice->voided_at) }}{{ $invoice->voidedBy ? ' · '.$invoice->voidedBy->name : '' }} · Motivo: {{ $invoice->void_reason }}
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="row g-3">
         <div class="col-lg-8">
             {{-- Resumen de la factura --}}
@@ -149,7 +161,12 @@
                                         <div class="cell-muted" style="font-size: var(--text-xs);">{{ $payment->paid_at->format('H:i') }}</div>
                                     </td>
                                     <td class="is-numeric cell-money cell-nowrap">{{ format_money($payment->amount) }}</td>
-                                    <td class="cell-nowrap"><span class="badge badge-info">{{ $payment->methodLabel() }}</span></td>
+                                    <td class="cell-nowrap">
+                                        <span class="badge badge-info">{{ $payment->methodLabel() }}</span>
+                                        @if ($payment->operation_number)
+                                            <div class="cell-muted" style="font-size: var(--text-xs);">N° {{ $payment->operation_number }}</div>
+                                        @endif
+                                    </td>
                                     <td class="cell-muted">{{ $payment->registeredBy->name ?? '-' }}</td>
                                     <td class="cell-muted cell-clamp">{{ $payment->notes ?? '-' }}</td>
                                     <td>
@@ -220,10 +237,55 @@
 
         <div class="col-lg-4">
             <div class="invoice-sidebar">
+                @canany(['billing.edit', 'billing.void'])
+                    @php $canManageInvoice = ! $invoice->isVoided() && (float) $invoice->paid_total === 0.0; @endphp
+                    @if ($canManageInvoice)
+                        <div class="card-surface mb-3">
+                            <h2 class="text-h3" style="margin-bottom: var(--space-3);">Gestionar factura</h2>
+                            <div class="d-flex gap-2 flex-wrap">
+                                @can('billing.edit')
+                                    <a href="{{ route('invoices.edit', $invoice) }}" class="btn btn-secondary btn-sm">
+                                        {{ icon('pencil', 'icon', 15) }} Editar factura
+                                    </a>
+                                @endcan
+                                @can('billing.void')
+                                    <details class="void-payment-details">
+                                        <summary class="btn btn-ghost btn-ghost-danger btn-sm" style="cursor: pointer; display: inline-flex;">
+                                            {{ icon('x-circle', 'icon', 15) }} Anular factura
+                                        </summary>
+                                        <form method="POST" action="{{ route('invoices.void', $invoice) }}" class="mt-2"
+                                              data-confirm="¿Anular esta factura? Esta acción no se puede deshacer." data-confirm-title="Anular factura">
+                                            @csrf
+                                            @method('PUT')
+                                            <input type="text" class="form-control" name="reason" maxlength="255" required placeholder="Motivo de la anulación">
+                                            <button type="submit" class="btn btn-danger btn-sm mt-2">Confirmar anulación</button>
+                                        </form>
+                                    </details>
+                                @endcan
+                            </div>
+                        </div>
+                    @elseif (! $invoice->isVoided())
+                        <div class="card-surface mb-3">
+                            <h2 class="text-h3" style="margin-bottom: var(--space-2);">Gestionar factura</h2>
+                            <p class="cell-muted" style="font-size: var(--text-xs); margin: 0;">
+                                No se puede editar ni anular: ya tiene pagos registrados. Anule los pagos primero si necesita corregirla.
+                            </p>
+                        </div>
+                    @endif
+                @endcanany
+
                 @can('payments.register')
                     <div class="card-surface mb-3">
                         <h2 class="text-h3" style="margin-bottom: var(--space-4);">Registrar pago</h2>
-                        @if ($balance <= 0)
+                        @if ($invoice->isVoided())
+                            <div class="voided-panel">
+                                {{ icon('x-circle', 'icon', 28) }}
+                                <div>
+                                    <strong>Factura anulada</strong>
+                                    <div class="cell-muted" style="font-size: var(--text-xs);">No se pueden registrar pagos en una factura anulada.</div>
+                                </div>
+                            </div>
+                        @elseif ($balance <= 0)
                             <div class="paid-panel">
                                 {{ icon('check-circle-2', 'icon', 28) }}
                                 <div>
@@ -286,8 +348,15 @@
                                     </div>
                                 </div>
                                 <div class="field">
+                                    <label class="field-label" for="operation_number">N° de operación</label>
+                                    <input type="text" class="form-control @error('operation_number') is-invalid @enderror" id="operation_number" name="operation_number" maxlength="60" value="{{ old('operation_number') }}" placeholder="Transferencia, Yape, Plin...">
+                                    @error('operation_number')
+                                        <div class="field-error">{{ icon('alert-triangle', 'icon', 14) }} {{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="field">
                                     <label class="field-label" for="notes">Notas</label>
-                                    <input type="text" class="form-control" id="notes" name="notes" maxlength="255" value="{{ old('notes') }}" placeholder="N° de operación, observaciones…">
+                                    <input type="text" class="form-control" id="notes" name="notes" maxlength="255" value="{{ old('notes') }}" placeholder="Observaciones…">
                                 </div>
                                 <button type="submit" class="btn btn-primary" style="width: 100%;">
                                     <span class="spinner"></span>

@@ -4,11 +4,11 @@ use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AssociateController;
-use App\Http\Controllers\BirthdayController;
 use App\Http\Controllers\AssociateImportController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\BirthdayController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceImportController;
@@ -104,6 +104,15 @@ Route::middleware('auth')->group(function () {
         Route::get('invoices/stats', [InvoiceController::class, 'stats'])->name('invoices.stats');
         Route::get('invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
     });
+    // Edit/void a single invoice — only while it has no payments yet (see
+    // InvoiceService), same "no borrado físico" rule as payments.void.
+    Route::middleware('can:billing.edit')->group(function () {
+        Route::get('invoices/{invoice}/edit', [InvoiceController::class, 'edit'])->name('invoices.edit');
+        Route::put('invoices/{invoice}', [InvoiceController::class, 'update'])->name('invoices.update');
+    });
+    Route::middleware('can:billing.void')->group(function () {
+        Route::put('invoices/{invoice}/void', [InvoiceController::class, 'void'])->name('invoices.void');
+    });
 
     // Payments (EP-05).
     Route::middleware('can:payments.register')->group(function () {
@@ -128,6 +137,12 @@ Route::middleware('auth')->group(function () {
         Route::get('portfolio/payments', [PortfolioController::class, 'payments'])->name('portfolio.payments');
         Route::get('associates/{associate}/statement', [PortfolioController::class, 'statement'])->name('associates.statement');
     });
+    // Cartera exports need reports.export on top of portfolio.view — same
+    // "seeing on screen" vs. "extracting the data" split as Reportes.
+    Route::middleware(['can:portfolio.view', 'can:reports.export'])->group(function () {
+        Route::get('portfolio/export/{format}', [PortfolioController::class, 'exportIndex'])->name('portfolio.export');
+        Route::get('portfolio/debtors/export/{format}', [PortfolioController::class, 'exportDebtors'])->name('portfolio.debtors.export');
+    });
 
     // Reports / reportes (EP-07). Exporting requires reports.export in
     // addition to reports.view (checked separately so a role can see
@@ -136,10 +151,12 @@ Route::middleware('auth')->group(function () {
         Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
         Route::get('reports/collections', [ReportController::class, 'collections'])->name('reports.collections');
         Route::get('reports/debt', [ReportController::class, 'debt'])->name('reports.debt');
+        Route::get('reports/collectors', [ReportController::class, 'collectors'])->name('reports.collectors');
     });
     Route::middleware('can:reports.export')->group(function () {
         Route::get('reports/collections/export/{format}', [ReportController::class, 'exportCollections'])->name('reports.collections.export');
         Route::get('reports/debt/export/{format}', [ReportController::class, 'exportDebt'])->name('reports.debt.export');
+        Route::get('reports/collectors/export/{format}', [ReportController::class, 'exportCollectors'])->name('reports.collectors.export');
     });
 
     // Administration (EP-02) — each sub-area gated by its own permission,

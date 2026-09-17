@@ -1975,6 +1975,22 @@ html.sidebar-collapsed .app-shell .sidebar-nav .nav-link {
     color: var(--color-text);
 }
 
+.voided-panel {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: var(--color-bg);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+}
+
+.voided-panel strong {
+    display: block;
+    color: var(--color-text);
+}
+
 @media (max-width: 768px) {
     .invoice-amounts {
         grid-template-columns: 1fr;
@@ -2111,6 +2127,7 @@ html.sidebar-collapsed .app-shell .sidebar-nav .nav-link {
 .badge-status-PARCIAL { background: var(--color-warning-subtle); color: #92620A; }
 .badge-status-PAGADA { background: var(--color-success-subtle); color: var(--color-success); }
 .badge-status-VENCIDA { background: var(--color-danger-subtle); color: var(--color-danger); }
+.badge-status-ANULADA { background: var(--color-bg); color: var(--color-text-secondary); border: 1px solid var(--color-border); text-decoration: line-through; }
 
 .badge-neutral { background: var(--color-bg); color: var(--color-text-secondary); border: 1px solid var(--color-border); }
 .badge-success { background: var(--color-success-subtle); color: var(--color-success); }

@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Associate;
 use App\Models\Payment;
+use App\Services\ExportService;
 use App\Services\PortfolioService;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PortfolioController extends Controller
 {
@@ -15,7 +18,10 @@ class PortfolioController extends Controller
         'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
     ];
 
-    public function __construct(private readonly PortfolioService $portfolio) {}
+    public function __construct(
+        private readonly PortfolioService $portfolio,
+        private readonly ExportService $export,
+    ) {}
 
     /** Cartera por asociado: totals per associate + portfolio KPIs. */
     public function index(Request $request): View
@@ -77,6 +83,55 @@ class PortfolioController extends Controller
         ];
 
         return $request->ajax() ? view('portfolio._debtors_results', $data) : view('portfolio.debtors', $data);
+    }
+
+    /** Cartera por asociado, exported with whatever filters are active. */
+    public function exportIndex(Request $request, string $format): StreamedResponse|Response
+    {
+        $filters = $this->filtersFrom($request, ['q', 'status', 'sectorista', 'category']);
+        if ($filters['status'] !== null && ! array_key_exists($filters['status'], PortfolioService::STATUS_FILTERS)) {
+            $filters['status'] = null;
+        }
+        $associates = $this->portfolio->debtSummaryForExport($filters);
+
+        $headers = ['Asociado', 'RUC', 'Sectorista', 'Facturado', 'Pagado', 'Pendiente', 'Cuotas pendientes', 'Cuotas vencidas'];
+        $rows = $associates->map(function (Associate $a) {
+            $invoiced = (float) ($a->total_invoiced ?? 0);
+            $paid = (float) ($a->total_paid ?? 0);
+
+            return [$a->name, $a->ruc ?? '-', $a->sectorista ?? '-', number_format($invoiced, 2), number_format($paid, 2), number_format($invoiced - $paid, 2), $a->pending_invoices_count, $a->overdue_invoices_count];
+        })->all();
+        $totalPending = $associates->sum(fn (Associate $a) => (float) ($a->total_invoiced ?? 0) - (float) ($a->total_paid ?? 0));
+        $totals = ['Total', '', '', number_format($associates->sum(fn (Associate $a) => (float) ($a->total_invoiced ?? 0)), 2), number_format($associates->sum(fn (Associate $a) => (float) ($a->total_paid ?? 0)), 2), number_format($totalPending, 2), '', ''];
+
+        if ($format === 'pdf') {
+            return $this->export->toPdf('cartera-asociados', 'portfolio.pdf.index', ['associates' => $associates]);
+        }
+
+        return $this->export->toExcel('cartera-asociados', 'Cartera por asociado', null, $headers, $rows, $totals);
+    }
+
+    /** A quién falta cobrar, exported with whatever filters are active. */
+    public function exportDebtors(Request $request, string $format): StreamedResponse|Response
+    {
+        $filters = $this->filtersFrom($request, ['q', 'sectorista', 'category', 'sort']);
+        $filters['only_overdue'] = $request->boolean('only_overdue');
+        $associates = $this->portfolio->debtorsForExport($filters);
+
+        $headers = ['Asociado', 'Teléfono', 'Email', 'Sectorista', 'Monto pendiente', 'Debe desde', 'Cuotas pendientes', 'Cuotas vencidas'];
+        $rows = $associates->map(function (Associate $a) {
+            $pending = (float) ($a->total_invoiced ?? 0) - (float) ($a->total_paid ?? 0);
+
+            return [$a->name, $a->legal_rep_phone ?: $a->contact_phone ?: '-', $a->email ?: $a->legal_rep_email ?: '-', $a->sectorista ?? '-', number_format($pending, 2), $a->oldest_pending_period ?? '-', $a->pending_invoices_count, $a->overdue_invoices_count];
+        })->all();
+        $totalPending = $associates->sum(fn (Associate $a) => (float) ($a->total_invoiced ?? 0) - (float) ($a->total_paid ?? 0));
+        $totals = ['Total', '', '', '', number_format($totalPending, 2), '', '', ''];
+
+        if ($format === 'pdf') {
+            return $this->export->toPdf('cartera-deudores', 'portfolio.pdf.debtors', ['associates' => $associates]);
+        }
+
+        return $this->export->toExcel('cartera-deudores', 'A quién falta cobrar', null, $headers, $rows, $totals);
     }
 
     public function statement(Request $request, Associate $associate): View

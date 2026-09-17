@@ -97,6 +97,18 @@ Cierra el hallazgo `XLS-04` de `docs/REQUIREMENTS_GAP_ANALYSIS.md`, marcado desd
 
 Feed compartido de notificaciones (tabla propia `notifications`, no el sistema nativo de Laravel — no encaja con "todos ven las mismas filas"). Se generan en dos eventos que ya existían: facturación masiva generada y pago anulado — siempre que el evento haya creado al menos un registro (un tercer tipo, importación de Excel completada, se implementó y se quitó el mismo día a pedido explícito del usuario: las importaciones no deben notificar). Panel en el topbar con contador de no-leídas, pestañas por categoría (filtrado en el cliente, sin pedidos extra) y "marcar todo como leído". El estilo visual se guió por una captura de otro proyecto del usuario (con integración SUNAT); el contenido es enteramente propio de este sistema — se confirmó explícitamente con el usuario antes de implementar, para no mezclar dominios de negocio de dos proyectos distintos. Ver `docs/PROJECT_ANALYSIS.md` sección 10.25. 131/131 tests sin regresiones (7 nuevos).
 
+## Criterios de aceptación — Parte 1 de la retroalimentación del cliente (2026-09-17)
+
+Implementación de todo lo identificado como faltante en los primeros 10 minutos de la demo grabada del cliente (`acta1.txt`/`acta2.txt`, analizados primero sin tocar código, luego autorizados explícitamente: "Dale prioridad a la parte 1, implementa lo que aun no hay de ahi"). Ver `docs/PROJECT_ANALYSIS.md` sección 10.26 para el detalle completo. Resumen:
+
+- **4 roles nuevos** (Gerencia, Logística, Marketing, Gestión de Asociados) en `RolesPermissionsModulesSeeder`, alcance de permisos/módulos documentado en el propio seeder y ajustable sin tocar código desde Administración → Roles.
+- **N° de operación** opcional en pagos (`payments.operation_number`), en ambos formularios de registro y en las tres tablas de historial.
+- **Editar y anular facturas** — mismo patrón de "sin borrado físico" que `payments.void` (pregunta 21 de `OPEN_BUSINESS_DECISIONS.md`): solo con `paid_total == 0`, nuevo estado computado `ANULADA` (nunca persistido, igual que `VENCIDA`), excluida de todo lo que antes la contaba como facturado/pendiente en dashboard/reportes/cartera/estadísticas. Permisos `billing.edit`/`billing.void`.
+- **Reporte de cobranza con rango de fechas** (`date_from`/`date_to` opcional, retrocompatible con el período único existente) y **reporte nuevo de productividad por cobrador** (pagos agrupados por `registered_by`, con export Excel/PDF).
+- **Exportación de Cartera** (Excel/PDF) en "Cartera por asociado" y "A quién falta cobrar", ambas antes sin exportación — gateada por `reports.export` además de `portfolio.view`.
+
+184/184 tests sin regresiones (14 nuevos), Pint limpio. Parte 2 de la retroalimentación (documentos escaneados, portal de autoservicio, beneficios/auditorio, integración contable) explícitamente no iniciada, a la espera de nueva instrucción.
+
 ## Ejemplo de criterio de aceptación (HU-09)
 
 ```

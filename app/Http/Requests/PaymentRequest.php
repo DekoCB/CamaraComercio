@@ -19,6 +19,7 @@ class PaymentRequest extends FormRequest
             'amount' => ['required', 'numeric', 'min:0.01', 'max:999999.99'],
             'paid_at' => ['required', 'date', 'before_or_equal:today'],
             'method' => ['required', Rule::in(array_keys(Payment::METHODS))],
+            'operation_number' => ['nullable', 'string', 'max:60'],
             'notes' => ['nullable', 'string', 'max:255'],
         ];
     }

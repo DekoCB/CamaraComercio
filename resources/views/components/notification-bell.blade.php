@@ -3,7 +3,7 @@
 @php
     $categories = [
         'all' => 'Todas',
-        \App\Models\Notification::TYPE_INVOICE_GENERATED => 'Facturación',
+        \App\Models\Notification::TYPE_INVOICE_GENERATED.','.\App\Models\Notification::TYPE_INVOICE_VOIDED => 'Facturación',
         \App\Models\Notification::TYPE_PAYMENT_VOIDED => 'Pagos',
         \App\Models\Notification::TYPE_ASSOCIATE_BIRTHDAY => 'Cumpleaños',
     ];
@@ -31,7 +31,7 @@
             @foreach ($categories as $type => $label)
                 <button type="button" class="notification-tab {{ $type === 'all' ? 'is-active' : '' }}" data-filter="{{ $type }}">
                     {{ $label }}
-                    <span>{{ $type === 'all' ? $notifications->count() : $notifications->where('type', $type)->count() }}</span>
+                    <span>{{ $type === 'all' ? $notifications->count() : $notifications->whereIn('type', explode(',', $type))->count() }}</span>
                 </button>
             @endforeach
         </div>

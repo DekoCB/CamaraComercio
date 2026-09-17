@@ -3,7 +3,21 @@
 @section('title', 'A quién falta cobrar')
 
 @section('content')
-    <x-page-header title="Seguimiento de cartera" subtitle="Asociados con saldo pendiente, ordenados por deuda, con su contacto a mano para la gestión de cobranza." />
+    @php
+        $debtorExportFilters = array_filter($filters, fn ($v) => $v !== null && $v !== '' && $v !== false);
+    @endphp
+    <x-page-header title="Seguimiento de cartera" subtitle="Asociados con saldo pendiente, ordenados por deuda, con su contacto a mano para la gestión de cobranza.">
+        <x-slot:actions>
+            @can('reports.export')
+                <a href="{{ route('portfolio.debtors.export', ['format' => 'excel'] + $debtorExportFilters) }}" class="btn btn-secondary btn-sm js-export-link" data-export-toast="Preparando Excel…">
+                    {{ icon('file-spreadsheet', 'icon', 16) }} Excel
+                </a>
+                <a href="{{ route('portfolio.debtors.export', ['format' => 'pdf'] + $debtorExportFilters) }}" class="btn btn-secondary btn-sm js-export-link" data-export-toast="Preparando PDF…">
+                    {{ icon('file-down', 'icon', 16) }} PDF
+                </a>
+            @endcan
+        </x-slot:actions>
+    </x-page-header>
 
     @include('portfolio._tabs', ['active' => 'deudores'])
 

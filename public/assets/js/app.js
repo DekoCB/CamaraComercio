@@ -86,8 +86,9 @@
             });
 
             var filter = tab.dataset.filter;
+            var filterTypes = filter === 'all' ? null : filter.split(',');
             Array.prototype.forEach.call(notificationList.querySelectorAll('.notification-item'), function (item) {
-                item.hidden = filter !== 'all' && item.dataset.type !== filter;
+                item.hidden = filterTypes !== null && filterTypes.indexOf(item.dataset.type) === -1;
             });
         });
     }
@@ -1293,6 +1294,7 @@
                 target.innerHTML = html;
                 if (pushUrl) {
                     window.history.replaceState(null, '', url);
+                    updateExportLinks(url);
                 }
                 target.dispatchEvent(new CustomEvent('live-filter:loaded', { bubbles: true }));
                 if (clearLink) {
@@ -1389,6 +1391,25 @@
                 }
             });
             syncEnhancedSelects(form);
+        }
+
+        // Export buttons (Excel/PDF) live outside the AJAX-refreshed
+        // target, in the page header — keep their query string (all
+        // params but their own `format`) matching the active filters.
+        function updateExportLinks(newUrl) {
+            var newParams = new URL(newUrl, window.location.href).searchParams;
+            document.querySelectorAll('.js-export-link').forEach(function (link) {
+                var linkUrl = new URL(link.href, window.location.href);
+                Array.from(linkUrl.searchParams.keys()).forEach(function (key) {
+                    if (key !== 'format') {
+                        linkUrl.searchParams.delete(key);
+                    }
+                });
+                newParams.forEach(function (value, key) {
+                    linkUrl.searchParams.set(key, value);
+                });
+                link.href = linkUrl.toString();
+            });
         }
     }
 

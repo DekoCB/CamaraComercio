@@ -72,7 +72,12 @@
                     <td class="cell-nowrap">{{ format_period($payment->invoice->period) }}</td>
                     <td class="cell-muted cell-nowrap">{{ $payment->invoice->receipt_number ?? '-' }}</td>
                     <td class="is-numeric cell-money cell-nowrap">{{ format_money($payment->amount) }}</td>
-                    <td class="cell-nowrap"><span class="badge badge-info">{{ $payment->methodLabel() }}</span></td>
+                    <td class="cell-nowrap">
+                        <span class="badge badge-info">{{ $payment->methodLabel() }}</span>
+                        @if ($payment->operation_number)
+                            <div class="cell-muted" style="font-size: var(--text-xs);">N° {{ $payment->operation_number }}</div>
+                        @endif
+                    </td>
                     <td class="cell-muted cell-nowrap">{{ $payment->registeredBy->name ?? '-' }}</td>
                     <td class="cell-muted cell-email" title="{{ $payment->isVoided() ? $payment->void_reason : $payment->notes }}">{{ $payment->isVoided() ? ($payment->void_reason ?: '-') : ($payment->notes ?? '-') }}</td>
                     <td>

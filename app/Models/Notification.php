@@ -16,6 +16,8 @@ class Notification extends Model
 
     public const TYPE_PAYMENT_VOIDED = 'payment.voided';
 
+    public const TYPE_INVOICE_VOIDED = 'invoice.voided';
+
     public const TYPE_ASSOCIATE_BIRTHDAY = 'associate.birthday';
 
     protected $fillable = [

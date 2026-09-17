@@ -15,7 +15,7 @@
     </style>
 </head>
 <body>
-    <h1>Cobranza del período</h1>
+    <h1>Productividad por cobrador</h1>
     <div class="meta">
         Generado: {{ now()->format('d/m/Y H:i') }} —
         @if ($isRange)
@@ -27,33 +27,30 @@
 
     <table class="kpis">
         <tr>
-            <td><strong>Facturado del período:</strong> {{ format_money($totalInvoiced) }}</td>
-            <td><strong>Cobrado del mes:</strong> {{ format_money($totalCollected) }}</td>
-        </tr>
-        <tr>
+            <td><strong>Total cobrado:</strong> {{ format_money($totalCollected) }}</td>
             <td><strong>Pagos registrados:</strong> {{ $paymentsCount }}</td>
-            <td><strong>Asociados que pagaron:</strong> {{ $payingAssociatesCount }}</td>
+            <td><strong>Cobradores con movimientos:</strong> {{ $collectorsCount }}</td>
         </tr>
     </table>
 
     <table>
         <thead>
         <tr>
-            <th>Fecha</th>
-            <th>Asociado</th>
-            <th>Período factura</th>
-            <th>Monto</th>
-            <th>Registrado por</th>
+            <th>Cobrador</th>
+            <th>Pagos</th>
+            <th>Total cobrado</th>
+            <th>Promedio por pago</th>
+            <th>% del total</th>
         </tr>
         </thead>
         <tbody>
-        @forelse ($payments as $payment)
+        @forelse ($byCollector as $row)
             <tr>
-                <td>{{ format_date($payment->paid_at) }}</td>
-                <td>{{ $payment->invoice->associate->name }}</td>
-                <td>{{ $payment->invoice->period }}</td>
-                <td>{{ format_money($payment->amount) }}</td>
-                <td>{{ $payment->registeredBy->name ?? '-' }}</td>
+                <td>{{ $row['name'] }}</td>
+                <td>{{ $row['count'] }}</td>
+                <td>{{ format_money($row['total']) }}</td>
+                <td>{{ format_money($row['average']) }}</td>
+                <td>{{ $row['share'] }}%</td>
             </tr>
         @empty
             <tr><td colspan="5">No se registraron pagos en este período.</td></tr>
@@ -61,8 +58,8 @@
         </tbody>
         <tfoot>
         <tr class="totals">
-            <td colspan="3">Total cobrado</td>
-            <td colspan="2">{{ format_money($totalCollected) }}</td>
+            <td colspan="2">Total</td>
+            <td colspan="3">{{ format_money($totalCollected) }}</td>
         </tr>
         </tfoot>
     </table>

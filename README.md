@@ -131,6 +131,7 @@ Ver el plan de sprints completo en [`docs/PROJECT_ANALYSIS.md`](docs/PROJECT_ANA
 - **Primer despliegue a producción, Hostinger hosting compartido (14 sep 2026):** ✅ Completado — dominio real, base de datos y usuarios de producción configurados. Detalle en `docs/PROJECT_ANALYSIS.md` sección 10.23.
 - **Importación de facturas y pagos desde Excel (14 sep 2026):** ✅ Completado — mismo patrón cargar/previsualizar/confirmar que la importación de asociados; ninguno de los dos crea el registro padre (asociado o factura) si no existe de antemano. Cierra el hallazgo `XLS-04` de `docs/REQUIREMENTS_GAP_ANALYSIS.md`. Detalle en `docs/PROJECT_ANALYSIS.md` sección 10.24.
 - **Campana de notificaciones (14 sep 2026):** ✅ Completado — feed compartido en el topbar con contador de no leídas, pestañas por categoría y "marcar todo como leído"; se genera al facturar en masa, anular un pago o completar una importación de Excel. Detalle en `docs/PROJECT_ANALYSIS.md` sección 10.25.
+- **Parte 1 de la retroalimentación del cliente (17 sep 2026):** ✅ Completado — 4 roles nuevos (Gerencia, Logística, Marketing, Gestión de Asociados), N° de operación en pagos, editar/anular facturas (sin borrado físico, mismo patrón que anular pagos), reporte de cobranza por rango de fechas, reporte de productividad por cobrador, y exportación Excel/PDF de Cartera. Parte 2 (documentos escaneados, portal del asociado, beneficios/auditorio, integración contable) pendiente de nueva instrucción. Detalle en `docs/PROJECT_ANALYSIS.md` sección 10.26.
 
 ## Documentación
 

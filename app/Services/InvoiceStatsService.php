@@ -24,6 +24,7 @@ class InvoiceStatsService
     public function build(array $filters): array
     {
         $base = fn (): Builder => Invoice::query()
+            ->whereNull('voided_at')
             ->when($filters['year'] ?? null, fn ($q) => $q->where('period', 'like', $filters['year'].'-%'))
             ->when($filters['month'] ?? null, fn ($q) => $q->where('period', 'like', '%-'.str_pad((string) $filters['month'], 2, '0', STR_PAD_LEFT)))
             ->when(($filters['sectorista'] ?? null) || ($filters['category'] ?? null), fn ($q) => $q->whereHas('associate', fn ($a) => $a

@@ -53,7 +53,7 @@
             </thead>
             <tbody>
             @foreach ($invoices as $invoice)
-                <tr>
+                <tr class="{{ $invoice->isVoided() ? 'row-voided' : '' }}">
                     <td class="cell-primary cell-clamp">
                         <a href="{{ route('associates.show', $invoice->associate) }}" class="link-plain">{{ $invoice->associate->name }}</a>
                         @if ($invoice->associate->ruc)
@@ -76,7 +76,7 @@
                                 {{ icon('eye', 'icon', 16) }}
                             </a>
                             @can('payments.register')
-                                @if ($invoice->balance() > 0)
+                                @if ($invoice->balance() > 0 && ! $invoice->isVoided())
                                     <a href="{{ route('payments.create', ['invoice_id' => $invoice->id]) }}" class="btn btn-ghost btn-icon js-modal-link" title="Registrar pago" aria-label="Registrar pago"
                                        data-modal-title="Registrar pago — {{ $invoice->associate->name }} · {{ format_period($invoice->period) }}">
                                         {{ icon('wallet', 'icon', 16) }}

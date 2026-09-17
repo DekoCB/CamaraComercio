@@ -25,5 +25,16 @@
                 <a href="{{ route('reports.debt') }}" class="btn btn-primary">Ver reporte</a>
             </div>
         </div>
+        <div class="col-md-6">
+            <div class="card-surface h-100">
+                <div class="kpi-icon icon-navy" style="margin-bottom: var(--space-4);">{{ icon('users', 'icon', 18) }}</div>
+                <h2 class="text-h3" style="margin-bottom: var(--space-2);">Productividad por cobrador</h2>
+                <p class="text-secondary" style="font-size: 0.875rem; margin-bottom: var(--space-4);">Cuánto cobró cada usuario, cantidad de pagos y promedio, en un período o rango de fechas.</p>
+                <form method="GET" action="{{ route('reports.collectors') }}" class="d-flex gap-2">
+                    <input type="month" name="period" class="form-control" style="max-width: 160px" value="{{ $defaultPeriod }}">
+                    <button type="submit" class="btn btn-primary">Ver reporte</button>
+                </form>
+            </div>
+        </div>
     </div>
 @endsection

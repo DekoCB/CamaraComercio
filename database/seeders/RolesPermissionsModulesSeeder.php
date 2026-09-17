@@ -23,6 +23,8 @@ class RolesPermissionsModulesSeeder extends Seeder
             'associates.manage' => 'Registrar y actualizar asociados',
             'billing.generate' => 'Generar la facturación mensual',
             'billing.view' => 'Consultar facturas',
+            'billing.edit' => 'Editar facturas sin pagos registrados',
+            'billing.void' => 'Anular facturas emitidas por error',
             'payments.register' => 'Registrar pagos (totales y parciales)',
             'payments.void' => 'Anular pagos registrados por error',
             'portfolio.view' => 'Consultar cartera, morosidad y estado de cuenta',
@@ -61,12 +63,55 @@ class RolesPermissionsModulesSeeder extends Seeder
             ['description' => 'Gestiona asociados, facturación, pagos, cartera y reportes.']
         );
         $collectorRole->permissions()->sync($permissions->only([
-            'associates.manage', 'billing.generate', 'billing.view', 'payments.register',
+            'associates.manage', 'billing.generate', 'billing.view', 'billing.edit', 'billing.void', 'payments.register',
             'portfolio.view', 'reports.view', 'reports.export',
         ])->pluck('id'));
         $collectorRole->modules()->sync($modules->only([
             'dashboard', 'associates', 'billing', 'payments', 'portfolio', 'reports',
         ])->pluck('id'));
+
+        // Los 4 roles pedidos por el cliente en la demo del 15-sep — acta2.txt
+        // punto [10:41]: "el administrador tiene acceso total; roles como
+        // logística no pueden ver ni modificar facturación ni la base de
+        // datos". Gerencia es lectura/operación amplia salvo Administración
+        // (mismo criterio que Encargado de Cobranzas, más reportes); los
+        // otros tres quedan deliberadamente acotados al mínimo que el acta
+        // describe — cualquier ajuste fino de permisos/módulos se hace
+        // después desde Administración → Roles, sin tocar código.
+        $managementRole = Role::updateOrCreate(
+            ['name' => 'Gerencia'],
+            ['description' => 'Visión completa de la operación (asociados, facturación, pagos, cartera, reportes), sin administración del sistema.']
+        );
+        $managementRole->permissions()->sync($permissions->only([
+            'associates.manage', 'billing.generate', 'billing.view', 'billing.edit', 'billing.void', 'payments.register',
+            'portfolio.view', 'reports.view', 'reports.export',
+        ])->pluck('id'));
+        $managementRole->modules()->sync($modules->only([
+            'dashboard', 'associates', 'billing', 'payments', 'portfolio', 'reports',
+        ])->pluck('id'));
+
+        $logisticsRole = Role::updateOrCreate(
+            ['name' => 'Logística'],
+            ['description' => 'Acceso de referencia al padrón de asociados — sin facturación, pagos ni administración.']
+        );
+        $logisticsRole->permissions()->sync([]);
+        $logisticsRole->modules()->sync($modules->only(['dashboard', 'associates'])->pluck('id'));
+
+        $associateManagementRole = Role::updateOrCreate(
+            ['name' => 'Gestión de Asociados'],
+            ['description' => 'Alta, edición e importación del padrón de asociados, y su situación en cartera.']
+        );
+        $associateManagementRole->permissions()->sync($permissions->only([
+            'associates.manage', 'portfolio.view',
+        ])->pluck('id'));
+        $associateManagementRole->modules()->sync($modules->only(['dashboard', 'associates', 'portfolio'])->pluck('id'));
+
+        $marketingRole = Role::updateOrCreate(
+            ['name' => 'Marketing'],
+            ['description' => 'Datos de contacto y cumpleaños/aniversarios de asociados — sin facturación, pagos ni administración.']
+        );
+        $marketingRole->permissions()->sync([]);
+        $marketingRole->modules()->sync($modules->only(['dashboard', 'associates'])->pluck('id'));
 
         User::updateOrCreate(
             ['email' => 'admin@camaracomercio.test'],

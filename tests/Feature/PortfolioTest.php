@@ -115,4 +115,36 @@ class PortfolioTest extends TestCase
         $this->actingAs($user)->get('/portfolio/debtors')->assertForbidden();
         $this->actingAs($user)->get("/associates/{$associate->id}/statement")->assertForbidden();
     }
+
+    public function test_portfolio_export_requires_reports_export_permission_even_with_portfolio_view(): void
+    {
+        $user = $this->userWithPermissions(['portfolio.view']);
+
+        $this->actingAs($user)->get('/portfolio/export/excel')->assertForbidden();
+        $this->actingAs($user)->get('/portfolio/debtors/export/pdf')->assertForbidden();
+    }
+
+    public function test_portfolio_excel_export_returns_spreadsheet_content_type(): void
+    {
+        $associate = Associate::factory()->create(['name' => 'Exportable SAC']);
+        Invoice::factory()->for($associate)->create(['amount' => 300, 'paid_total' => 100, 'status' => Invoice::STATUS_PARCIAL]);
+        $user = $this->userWithPermissions(['portfolio.view', 'reports.export']);
+
+        $response = $this->actingAs($user)->get('/portfolio/export/excel');
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    }
+
+    public function test_debtors_pdf_export_returns_pdf_content_type(): void
+    {
+        $associate = Associate::factory()->create(['name' => 'Deudor Exportable']);
+        Invoice::factory()->for($associate)->create(['amount' => 300, 'paid_total' => 0, 'status' => Invoice::STATUS_PENDIENTE]);
+        $user = $this->userWithPermissions(['portfolio.view', 'reports.export']);
+
+        $response = $this->actingAs($user)->get('/portfolio/debtors/export/pdf');
+
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/pdf');
+    }
 }

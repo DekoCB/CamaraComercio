@@ -102,7 +102,7 @@ class PaymentController extends Controller
                 ->when($filters['status'], fn ($q) => match ($filters['status']) {
                     'pagadas' => $q->paid(),
                     'no_pagadas' => $q->unpaid(),
-                    'parciales' => $q->where('status', Invoice::STATUS_PARCIAL),
+                    'parciales' => $q->where('status', Invoice::STATUS_PARCIAL)->whereNull('voided_at'),
                     'vencidas' => $q->overdue(),
                 });
 
@@ -160,6 +160,7 @@ class PaymentController extends Controller
         $invoices = Invoice::query()
             ->with('associate')
             ->whereRaw(Invoice::BALANCE_SQL.' > 0')
+            ->whereNull('voided_at')
             ->orderBy('due_date')
             ->get();
 
@@ -188,6 +189,7 @@ class PaymentController extends Controller
                 registeredBy: $request->user()->id,
                 notes: $data['notes'] ?? null,
                 method: $data['method'],
+                operationNumber: $data['operation_number'] ?? null,
             );
         } catch (InvalidArgumentException $e) {
             return back()->withErrors(['amount' => $e->getMessage()])->withInput();
@@ -213,6 +215,7 @@ class PaymentController extends Controller
                 registeredBy: $request->user()->id,
                 notes: $data['notes'] ?? null,
                 method: $data['method'],
+                operationNumber: $data['operation_number'] ?? null,
             );
         } catch (InvalidArgumentException $e) {
             return back()->withErrors(['amount' => $e->getMessage()])->withInput();

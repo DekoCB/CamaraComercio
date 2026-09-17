@@ -17,17 +17,21 @@ use InvalidArgumentException;
  */
 class PaymentService
 {
-    public function register(Invoice $invoice, float $amount, DateTimeInterface $paidAt, int $registeredBy, ?string $notes = null, ?string $method = null): Payment
+    public function register(Invoice $invoice, float $amount, DateTimeInterface $paidAt, int $registeredBy, ?string $notes = null, ?string $method = null, ?string $operationNumber = null): Payment
     {
         if ($amount <= 0) {
             throw new InvalidArgumentException('El monto del pago debe ser mayor a cero.');
         }
 
-        return DB::transaction(function () use ($invoice, $amount, $paidAt, $registeredBy, $notes, $method) {
+        return DB::transaction(function () use ($invoice, $amount, $paidAt, $registeredBy, $notes, $method, $operationNumber) {
             // Re-fetch with a row lock so two concurrent payment
             // registrations on the same invoice can't both read a stale
             // balance and jointly overpay it.
             $locked = Invoice::whereKey($invoice->id)->lockForUpdate()->firstOrFail();
+
+            if ($locked->isVoided()) {
+                throw new InvalidArgumentException('No se puede registrar un pago en una factura anulada.');
+            }
 
             if ($amount > $locked->balance()) {
                 throw new InvalidArgumentException('El pago no puede ser mayor al saldo pendiente de la factura.');
@@ -38,6 +42,7 @@ class PaymentService
                 'amount' => $amount,
                 'paid_at' => $paidAt,
                 'method' => $method,
+                'operation_number' => $operationNumber,
                 'registered_by' => $registeredBy,
                 'notes' => $notes,
             ]);

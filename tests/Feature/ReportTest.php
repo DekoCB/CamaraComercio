@@ -52,6 +52,25 @@ class ReportTest extends TestCase
         $response->assertSeeInOrder(['Asociados que pagaron', '1']);
     }
 
+    public function test_collections_report_supports_a_date_range_spanning_multiple_months(): void
+    {
+        $associate = Associate::factory()->create();
+        $invoiceAug = Invoice::factory()->for($associate)->create(['period' => '2026-08', 'amount' => 300]);
+        $invoiceSep = Invoice::factory()->for($associate)->create(['period' => '2026-09', 'amount' => 200]);
+
+        Payment::factory()->for($invoiceAug)->create(['amount' => 100, 'paid_at' => '2026-08-20']);
+        Payment::factory()->for($invoiceSep)->create(['amount' => 50, 'paid_at' => '2026-09-05']);
+        Payment::factory()->for($invoiceAug)->create(['amount' => 999, 'paid_at' => '2026-07-01']);
+
+        $user = $this->userWithPermissions(['reports.view']);
+
+        $response = $this->actingAs($user)->get('/reports/collections?date_from=2026-08-15&date_to=2026-09-10');
+
+        $response->assertOk()
+            ->assertSee('S/ 150.00') // collected: 100 + 50, excludes the July payment
+            ->assertSee('S/ 500.00'); // invoiced across both periods touched: 300 + 200
+    }
+
     public function test_debt_report_shows_pending_total_and_distribution(): void
     {
         $associate = Associate::factory()->create();
@@ -69,6 +88,28 @@ class ReportTest extends TestCase
             ->assertSee('PARCIAL');
     }
 
+    public function test_collector_productivity_report_groups_payments_by_who_registered_them(): void
+    {
+        $collectorA = tap($this->userWithPermissions(['payments.register']))->update(['name' => 'Cobrador A']);
+        $collectorB = tap($this->userWithPermissions(['payments.register']))->update(['name' => 'Cobrador B']);
+        $associate = Associate::factory()->create();
+        $invoice = Invoice::factory()->for($associate)->create(['period' => '2026-08', 'amount' => 500]);
+
+        Payment::factory()->for($invoice)->create(['amount' => 100, 'paid_at' => '2026-08-05', 'registered_by' => $collectorA->id]);
+        Payment::factory()->for($invoice)->create(['amount' => 50, 'paid_at' => '2026-08-10', 'registered_by' => $collectorA->id]);
+        Payment::factory()->for($invoice)->create(['amount' => 200, 'paid_at' => '2026-08-15', 'registered_by' => $collectorB->id]);
+        Payment::factory()->for($invoice)->create(['amount' => 999, 'paid_at' => '2026-09-01', 'registered_by' => $collectorB->id]);
+
+        $user = $this->userWithPermissions(['reports.view']);
+
+        $response = $this->actingAs($user)->get('/reports/collectors?period=2026-08');
+
+        $response->assertOk()
+            ->assertSeeInOrder(['Cobrador B', 'Cobrador A']) // biggest total first
+            ->assertSee('S/ 350.00') // total collected in August: 100 + 50 + 200
+            ->assertDontSee('999.00'); // September payment excluded
+    }
+
     public function test_report_routes_require_reports_view_permission(): void
     {
         $user = $this->userWithPermissions(['portfolio.view']);
@@ -76,6 +117,7 @@ class ReportTest extends TestCase
         $this->actingAs($user)->get('/reports')->assertForbidden();
         $this->actingAs($user)->get('/reports/collections')->assertForbidden();
         $this->actingAs($user)->get('/reports/debt')->assertForbidden();
+        $this->actingAs($user)->get('/reports/collectors')->assertForbidden();
     }
 
     public function test_export_requires_reports_export_permission_even_with_reports_view(): void
@@ -84,6 +126,7 @@ class ReportTest extends TestCase
 
         $this->actingAs($user)->get('/reports/collections/export/excel')->assertForbidden();
         $this->actingAs($user)->get('/reports/debt/export/pdf')->assertForbidden();
+        $this->actingAs($user)->get('/reports/collectors/export/excel')->assertForbidden();
     }
 
     public function test_excel_export_returns_spreadsheet_content_type(): void
