@@ -2653,126 +2653,253 @@ html.sidebar-collapsed .app-shell .sidebar-nav .nav-link {
 }
 
 /* ==========================================================================
-   Guest layout (login / password reset)
+   Guest layout (login / password reset) — fixed dark panel + full-bleed
+   photo, deliberately not theme-toggled (same reasoning the old branding
+   panel already had: this is the one screen with a single, committed
+   look). Every rule under .guest-form-card is scoped to this shell only,
+   so the shared .form-control/.btn-primary/etc. styling used by the rest
+   of the app is untouched.
    ========================================================================== */
 
 .guest-shell {
     min-height: 100vh;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: min(460px, 40vw) 1fr;
 }
 
-.guest-branding {
-    background: linear-gradient(160deg, var(--color-navy) 0%, #0B1D38 100%);
-    color: #fff;
+.guest-form-side {
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    padding: var(--space-16);
+    background: linear-gradient(165deg, var(--color-navy) 0%, var(--color-navy-active) 100%);
+    color: var(--color-text-on-navy);
+    padding: var(--space-8) var(--space-10);
     position: relative;
     overflow: hidden;
     animation: guest-fade-left 450ms ease-out both;
 }
 
-.guest-branding::before {
+.guest-form-side::before {
     content: "";
     position: absolute;
-    width: 480px;
-    height: 480px;
+    width: 420px;
+    height: 420px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(37, 99, 235, 0.25) 0%, transparent 70%);
-    top: -120px;
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.22) 0%, transparent 70%);
+    top: -100px;
     right: -160px;
 }
 
-.guest-branding::after {
+.guest-form-side::after {
     content: "";
     position: absolute;
-    width: 360px;
-    height: 360px;
+    width: 320px;
+    height: 320px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(20, 184, 166, 0.18) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(20, 184, 166, 0.16) 0%, transparent 70%);
     bottom: -100px;
     left: -100px;
 }
 
-.guest-branding-content {
+.guest-brand {
     position: relative;
     z-index: 1;
-    max-width: 420px;
-}
-
-.guest-branding .brand-mark {
-    width: 52px;
-    height: 52px;
-    margin-bottom: var(--space-6);
-}
-
-.guest-branding h1 {
-    font-size: 1.75rem;
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: var(--space-2);
-}
-
-.guest-branding p {
-    color: var(--color-text-on-navy-muted);
-    font-size: var(--text-body-lg);
-    line-height: 1.6;
-}
-
-.guest-branding-features {
-    margin-top: var(--space-10);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-}
-
-.guest-branding-features .feature {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: var(--space-3);
-    color: rgba(248, 250, 252, 0.85);
-    font-size: 0.875rem;
+    color: var(--color-text-on-navy);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1.0625rem;
+    letter-spacing: -0.01em;
+    flex-shrink: 0;
 }
 
-.guest-branding-features .feature .icon-wrap {
-    width: 32px;
-    height: 32px;
-    border-radius: var(--radius-sm);
-    background: rgba(255, 255, 255, 0.08);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+.guest-brand:hover {
+    color: var(--color-text-on-navy);
+}
+
+.guest-brand .brand-mark {
+    width: 34px;
+    height: 34px;
     color: var(--color-teal);
 }
 
-.guest-form-side {
+.guest-form-middle {
+    position: relative;
+    z-index: 1;
+    flex: 1;
     display: flex;
-    align-items: center;
+    flex-direction: column;
     justify-content: center;
-    padding: var(--space-6);
-    background: var(--color-bg);
-    animation: guest-fade-up 500ms ease-out both;
-    animation-delay: 80ms;
+    min-height: 0;
+    padding-block: var(--space-8);
 }
 
 .guest-form-card {
     width: 100%;
-    max-width: 380px;
+    max-width: 360px;
+    animation: guest-fade-up 500ms ease-out both;
+    animation-delay: 80ms;
 }
 
 .guest-form-card .form-title {
-    font-size: var(--text-h2);
+    font-size: 1.75rem;
     font-weight: 700;
-    margin-bottom: var(--space-1);
+    color: var(--color-text-on-navy);
+    margin-bottom: var(--space-2);
+    letter-spacing: -0.01em;
+    text-wrap: balance;
 }
 
 .guest-form-card .form-subtitle {
-    color: var(--color-text-secondary);
-    margin-bottom: var(--space-6);
+    color: var(--color-text-on-navy-muted);
+    margin-bottom: var(--space-7);
     font-size: var(--text-body);
+    line-height: 1.55;
+}
+
+.guest-form-card .field-label {
+    color: var(--color-text-on-navy-muted);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.guest-form-card .form-control,
+.guest-form-card .form-select {
+    background: rgba(248, 250, 252, 0.05);
+    border-color: rgba(248, 250, 252, 0.16);
+    color: var(--color-text-on-navy);
+}
+
+/* The closed <select> inherits the dark styling above, but its open
+   options list is rendered by the OS/browser, not by this stylesheet —
+   Chromium and Firefox both honor background-color/color set directly
+   on <option>, so this is set explicitly rather than relying on
+   inheritance (which left the popup on native white with barely-visible
+   light text). Safari ignores this and falls back to its own native
+   list, which is a fine degradation, not a broken one. */
+.guest-form-card .form-select option {
+    background: var(--color-navy-active);
+    color: var(--color-text-on-navy);
+}
+
+.guest-form-card .form-control::placeholder {
+    color: rgba(148, 166, 194, 0.65);
+}
+
+.guest-form-card .form-control:focus,
+.guest-form-card .form-select:focus {
+    background: rgba(248, 250, 252, 0.08);
+    color: var(--color-text-on-navy);
+    border-color: var(--color-blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.28);
+}
+
+.guest-form-card .form-control.is-invalid,
+.guest-form-card .form-select.is-invalid {
+    border-color: #F87171;
+}
+
+.guest-form-card .field-error {
+    color: #FCA5A5;
+}
+
+.guest-form-card .field-help {
+    color: var(--color-text-on-navy-muted);
+}
+
+.guest-form-card .password-toggle {
+    color: var(--color-text-on-navy-muted);
+}
+
+.guest-form-card .password-toggle:hover {
+    color: var(--color-text-on-navy);
+}
+
+.guest-form-card .form-check-input {
+    accent-color: var(--color-blue);
+}
+
+.guest-form-card .form-check label {
+    color: var(--color-text-on-navy-muted);
+}
+
+.guest-form-card .btn-primary {
+    background: transparent;
+    border: 1.5px solid var(--color-blue);
+    color: var(--color-text-on-navy);
+    text-transform: uppercase;
+    font-size: 0.8125rem;
+    letter-spacing: 0.04em;
+    font-weight: 700;
+    padding: var(--space-3) var(--space-5);
+}
+
+.guest-form-card .btn-primary:hover:not(:disabled) {
+    background: rgba(37, 99, 235, 0.16);
+    border-color: var(--color-blue-hover);
+    color: var(--color-text-on-navy);
+}
+
+.guest-form-card .btn-primary .spinner {
+    border-color: rgba(248, 250, 252, 0.3);
+    border-top-color: var(--color-text-on-navy);
+}
+
+.guest-form-card a {
+    color: var(--color-blue);
+    font-weight: 500;
+}
+
+.guest-form-card a:hover {
+    color: var(--color-blue-hover);
+}
+
+.guest-alert {
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-sm);
+    font-size: 0.8125rem;
+    margin-bottom: var(--space-5);
+    line-height: 1.5;
+}
+
+.guest-alert ul {
+    margin: 0;
+    padding-left: 1.1em;
+}
+
+.guest-alert-ok {
+    background: rgba(20, 184, 166, 0.14);
+    color: #5EEAD4;
+    border: 1px solid rgba(20, 184, 166, 0.32);
+}
+
+.guest-alert-error {
+    background: rgba(220, 38, 38, 0.14);
+    color: #FCA5A5;
+    border: 1px solid rgba(220, 38, 38, 0.32);
+}
+
+.guest-form-footer {
+    position: relative;
+    z-index: 1;
+    color: var(--color-text-on-navy-muted);
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+
+.guest-photo-side {
+    position: relative;
+    background: url('../../images/fondo-login.jpg') center 85%/cover no-repeat;
+}
+
+.guest-photo-side::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, var(--color-navy-active) 0%, rgba(11, 29, 56, 0) 14%);
 }
 
 @keyframes guest-fade-left {
@@ -3025,12 +3152,16 @@ html.sidebar-collapsed .app-shell .sidebar-nav .nav-link {
         grid-template-columns: 1fr;
     }
 
-    .guest-branding {
+    .guest-photo-side {
         display: none;
     }
 
     .guest-form-side {
-        padding: var(--space-4);
+        padding: var(--space-6) var(--space-5);
+    }
+
+    .guest-form-middle {
+        padding-block: var(--space-6);
     }
 }
 

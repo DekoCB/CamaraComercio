@@ -23,47 +23,36 @@
 </head>
 <body>
 <div class="guest-shell">
-    <div class="guest-branding">
-        <div class="guest-branding-content">
-            <x-brand-mark :size="52" />
-            <h1>Cámara de Comercio</h1>
-            <p>Plataforma para gestionar la facturación y cobranza mensual de los asociados, con control claro de la deuda pendiente.</p>
-            <div class="guest-branding-features">
-                <div class="feature">
-                    <span class="icon-wrap">{{ icon('file-text', 'icon', 16) }}</span>
-                    <span>Facturación mensual centralizada</span>
-                </div>
-                <div class="feature">
-                    <span class="icon-wrap">{{ icon('wallet', 'icon', 16) }}</span>
-                    <span>Pagos totales y parciales con saldo en tiempo real</span>
-                </div>
-                <div class="feature">
-                    <span class="icon-wrap">{{ icon('trending-up', 'icon', 16) }}</span>
-                    <span>Cartera y morosidad siempre visibles</span>
-                </div>
+    <div class="guest-form-side">
+        <a href="{{ route('login') }}" class="guest-brand">
+            <x-brand-mark :size="34" />
+            <span>Cámara de Comercio</span>
+        </a>
+
+        <div class="guest-form-middle">
+            <div class="guest-form-card">
+                @if (session('status'))
+                    <div class="guest-alert guest-alert-ok">{{ session('status') }}</div>
+                @endif
+                @if ($errors->any())
+                    <div class="guest-alert guest-alert-error">
+                        <ul>
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+                @yield('content')
             </div>
+        </div>
+
+        <div class="guest-form-footer">
+            <span>&copy; {{ now()->year }} Cámara de Comercio</span>
         </div>
     </div>
 
-    <div class="guest-form-side">
-        <div class="guest-form-card">
-            @if (session('status'))
-                <div class="badge badge-success" style="display: flex; padding: var(--space-3); border-radius: var(--radius-sm); margin-bottom: var(--space-5); font-size: 0.8125rem; white-space: normal; text-align: left;">
-                    {{ session('status') }}
-                </div>
-            @endif
-            @if ($errors->any())
-                <div class="badge badge-danger" style="display: flex; padding: var(--space-3); border-radius: var(--radius-sm); margin-bottom: var(--space-5); font-size: 0.8125rem; white-space: normal; text-align: left;">
-                    <ul class="mb-0 ps-3" style="list-style: disc;">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-            @yield('content')
-        </div>
-    </div>
+    <div class="guest-photo-side" role="img" aria-label="Plaza y catedral de Huancayo"></div>
 </div>
 <script src="{{ asset('assets/vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
 <script src="{{ asset('assets/js/password-toggle.js') }}?v={{ filemtime(public_path('assets/js/password-toggle.js')) }}"></script>
