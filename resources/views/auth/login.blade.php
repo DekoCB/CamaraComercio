@@ -8,6 +8,18 @@
     <form method="POST" action="{{ route('login') }}" novalidate>
         @csrf
         <div class="field">
+            <label class="field-label" for="role_id">Rol</label>
+            <select class="form-select @error('role_id') is-invalid @enderror" id="role_id" name="role_id" required>
+                <option value="">Selecciona el rol con el que vas a ingresar…</option>
+                @foreach ($roles as $role)
+                    <option value="{{ $role->id }}" {{ (string) old('role_id') === (string) $role->id ? 'selected' : '' }}>{{ $role->name }}</option>
+                @endforeach
+            </select>
+            @error('role_id')
+                <div class="field-error">{{ icon('alert-triangle', 'icon', 14) }} {{ $message }}</div>
+            @enderror
+        </div>
+        <div class="field">
             <label class="field-label" for="email">Usuario o correo electrónico</label>
             <input type="text" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ old('email') }}" autocomplete="username" required autofocus>
             @error('email')

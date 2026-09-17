@@ -51,7 +51,7 @@ class PasswordResetTest extends TestCase
 
         $response->assertRedirect('/login');
 
-        $this->post('/login', ['email' => $user->email, 'password' => 'ClaveNueva#456'])
+        $this->post('/login', ['email' => $user->email, 'password' => 'ClaveNueva#456', 'role_id' => $role->id])
             ->assertRedirect('/dashboard');
     }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\AuditLog;
+use App\Models\Role;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -18,7 +19,7 @@ class AuthenticatedSessionController extends Controller
             return redirect()->route('dashboard');
         }
 
-        return view('auth.login');
+        return view('auth.login', ['roles' => Role::orderBy('name')->get()]);
     }
 
     public function store(LoginRequest $request): RedirectResponse
@@ -38,7 +39,7 @@ class AuthenticatedSessionController extends Controller
 
             return back()->withErrors([
                 'email' => 'Usuario o contraseña incorrectos.',
-            ])->onlyInput('email');
+            ])->onlyInput('email', 'role_id');
         }
 
         if (! Auth::user()->is_active) {
@@ -46,7 +47,21 @@ class AuthenticatedSessionController extends Controller
 
             return back()->withErrors([
                 'email' => 'Usuario o contraseña incorrectos.',
-            ])->onlyInput('email');
+            ])->onlyInput('email', 'role_id');
+        }
+
+        // The role picked on the login form must match the account's own
+        // role — otherwise the credentials are valid but for the wrong
+        // "hat", which fails the same way as a wrong password (same
+        // generic message, same audit trail) so the login form can't be
+        // used to probe which role an account actually has.
+        if ((int) Auth::user()->role_id !== $request->integer('role_id')) {
+            AuditLog::record('auth.login', 'user', (string) Auth::id(), 'failure', ['reason' => 'role_mismatch']);
+            Auth::logout();
+
+            return back()->withErrors([
+                'email' => 'Usuario o contraseña incorrectos.',
+            ])->onlyInput('email', 'role_id');
         }
 
         $request->session()->regenerate();
