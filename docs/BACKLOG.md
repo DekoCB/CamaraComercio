@@ -109,6 +109,17 @@ Implementación de todo lo identificado como faltante en los primeros 10 minutos
 
 184/184 tests sin regresiones (14 nuevos), Pint limpio. Parte 2 de la retroalimentación (documentos escaneados, portal de autoservicio, beneficios/auditorio, integración contable) explícitamente no iniciada, a la espera de nueva instrucción.
 
+## Criterios de aceptación — Parte 2 de la retroalimentación del cliente (2026-09-18)
+
+Implementación de lo accionable de la parte 2 (`acta2.txt`, minutos 10:00–fin), autorizada explícitamente ("Ahora si continua con la parte 2"). Ver `docs/PROJECT_ANALYSIS.md` sección 10.27 para el detalle completo, incluida la justificación de qué quedó fuera. Resumen:
+
+- **Documentación escaneada por asociado** — tabla/tipo cerrado (Título de propiedad, Licencia, Convenio, Otro), toda subida normalizada a un PDF (`AssociateDocumentService`, conversión imagen→PDF vía Dompdf cuando el original no es ya un PDF). Requiere `associates.manage` para subir/eliminar; verla es tan abierto como ya lo es la ficha del asociado.
+- **Logo/foto del asociado** — límite subido de 2 MB a 10 MB, confirmado con el usuario antes de implementar (el acta pedía literalmente "menor a 1 GB", pero eso es un riesgo real de cuota de disco en el hosting compartido).
+- **Control de beneficios** — catálogo (`benefits`) + registro de uso (`benefit_usages`) con cupo anual configurable por beneficio; solo se sembró "Uso de auditorio" (el único ejemplo concreto del cliente), sin pantalla de administración del catálogo todavía (fuera del pedido concreto).
+- **Explícitamente no iniciado:** portal de autoservicio del asociado (el cliente lo enmarcó como "a futuro"), integración de asientos contables/"contasis" (bloqueado en un video del cliente), poblar Reportes → Deuda pendiente con datos reales (el reporte ya funciona, falta el Excel del cliente).
+
+197/197 tests sin regresiones (13 nuevos), Pint limpio.
+
 ## Ejemplo de criterio de aceptación (HU-09)
 
 ```

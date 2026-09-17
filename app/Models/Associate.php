@@ -113,6 +113,16 @@ class Associate extends Model
         return $this->hasMany(Invoice::class);
     }
 
+    public function documents(): HasMany
+    {
+        return $this->hasMany(AssociateDocument::class);
+    }
+
+    public function benefitUsages(): HasMany
+    {
+        return $this->hasMany(BenefitUsage::class);
+    }
+
     public function imageUrl(): ?string
     {
         return $this->image_path ? Storage::disk('public')->url($this->image_path) : null;

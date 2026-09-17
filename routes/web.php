@@ -4,10 +4,12 @@ use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AssociateController;
+use App\Http\Controllers\AssociateDocumentController;
 use App\Http\Controllers\AssociateImportController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\BenefitUsageController;
 use App\Http\Controllers\BirthdayController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
@@ -84,6 +86,15 @@ Route::middleware('auth')->group(function () {
         Route::get('associates/{associate}/edit', [AssociateController::class, 'edit'])->name('associates.edit');
         Route::put('associates/{associate}', [AssociateController::class, 'update'])->name('associates.update');
         Route::delete('associates/{associate}', [AssociateController::class, 'destroy'])->name('associates.destroy');
+
+        // Documentación escaneada (acta2.txt [11:39]) y beneficios
+        // (acta2.txt [~15:30]) — subir/anular quedan bajo el mismo
+        // permiso que el resto de la gestión del padrón de asociados.
+        Route::post('associates/{associate}/documents', [AssociateDocumentController::class, 'store'])->name('associates.documents.store');
+        Route::delete('associates/documents/{document}', [AssociateDocumentController::class, 'destroy'])->name('associates.documents.destroy');
+
+        Route::post('associates/{associate}/benefit-usages', [BenefitUsageController::class, 'store'])->name('associates.benefitUsages.store');
+        Route::delete('benefit-usages/{benefitUsage}', [BenefitUsageController::class, 'destroy'])->name('associates.benefitUsages.destroy');
     });
 
     // Billing (EP-04). Consulting is billing.view; the batch-generation

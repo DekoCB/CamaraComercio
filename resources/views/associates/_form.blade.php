@@ -139,7 +139,7 @@
                         </div>
                     @endif
                     <input type="file" class="form-control @error('image') is-invalid @enderror" id="image" name="image" accept="image/*">
-                    <div class="field-help">JPG o PNG, máximo 2 MB.</div>
+                    <div class="field-help">JPG o PNG, máximo 10 MB.</div>
                     @error('image')
                         <div class="field-error">{{ icon('alert-triangle', 'icon', 14) }} {{ $message }}</div>
                     @enderror

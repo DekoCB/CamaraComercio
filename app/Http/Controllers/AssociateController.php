@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\AssociateRequest;
 use App\Models\Associate;
+use App\Models\AssociateDocument;
 use App\Models\AuditLog;
+use App\Models\Benefit;
+use App\Services\BenefitService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -76,11 +79,20 @@ class AssociateController extends Controller
         ]);
     }
 
-    public function show(Associate $associate): View
+    public function show(Associate $associate, BenefitService $benefitService): View
     {
+        $benefits = Benefit::where('is_active', true)->orderBy('name')->get();
+
         return view('associates.show', [
             'associate' => $associate,
             'lastPaidPeriod' => $associate->lastPaidPeriod(),
+            'documentTypes' => AssociateDocument::TYPES,
+            'documents' => $associate->documents()->with('uploadedBy')->latest()->get(),
+            'benefits' => $benefits,
+            'benefitUsage' => $benefits->mapWithKeys(fn (Benefit $b) => [
+                $b->id => $benefitService->usageThisYear($associate, $b),
+            ]),
+            'benefitUsages' => $associate->benefitUsages()->with(['benefit', 'registeredBy'])->orderByDesc('used_at')->get(),
         ]);
     }
 

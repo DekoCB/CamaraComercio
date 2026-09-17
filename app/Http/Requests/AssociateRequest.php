@@ -81,7 +81,7 @@ class AssociateRequest extends FormRequest
             'cch_rep_phone' => ['nullable', 'string', 'max:40'],
             'cch_rep_email' => ['nullable', 'email', 'max:190'],
 
-            'image' => ['nullable', 'image', 'max:2048'],
+            'image' => ['nullable', 'image', 'max:10240'],
             'remove_image' => ['sometimes', 'boolean'],
             'notes' => ['nullable', 'string', 'max:5000'],
         ];
@@ -132,7 +132,7 @@ class AssociateRequest extends FormRequest
             'email.email' => 'El correo de la empresa no es válido.',
             'email.unique' => 'Ya existe un asociado con ese correo.',
             'image.image' => 'La imagen debe ser un archivo de imagen (JPG, PNG, etc.).',
-            'image.max' => 'La imagen no debe superar los 2 MB.',
+            'image.max' => 'La imagen no debe superar los 10 MB.',
         ];
     }
 }
