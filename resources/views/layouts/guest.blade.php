@@ -25,13 +25,9 @@
 <body>
 <div class="guest-shell">
     <div class="guest-form-side">
-        <a href="{{ route('login') }}" class="guest-brand">
-            <x-brand-mark :size="34" />
-            <span>Cámara de Comercio</span>
-        </a>
-
         <div class="guest-form-middle">
             <div class="guest-form-card">
+                <img src="{{ asset('images/logo.png') }}" alt="Cámara de Comercio de Huancayo" class="guest-logo">
                 @if (session('status'))
                     <div class="guest-alert guest-alert-ok">{{ session('status') }}</div>
                 @endif

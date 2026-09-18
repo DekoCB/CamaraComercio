@@ -2693,27 +2693,12 @@ html.sidebar-collapsed .app-shell .sidebar-nav .nav-link {
     left: -100px;
 }
 
-.guest-brand {
-    position: relative;
-    z-index: 1;
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-3);
-    color: var(--color-text-on-navy);
-    text-decoration: none;
-    font-weight: 700;
-    font-size: 1.0625rem;
-    letter-spacing: -0.01em;
-    flex-shrink: 0;
-}
-
-.guest-brand:hover {
-    color: var(--color-text-on-navy);
-}
-
-.guest-brand .brand-mark {
-    width: 34px;
-    height: 34px;
+.guest-logo {
+    display: block;
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
+    margin: 0 auto var(--space-7);
 }
 
 .guest-form-middle {
