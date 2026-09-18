@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AssociateController;
 use App\Http\Controllers\AssociateDocumentController;
 use App\Http\Controllers\AssociateImportController;
+use App\Http\Controllers\AssociateInscriptionController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
@@ -92,6 +93,12 @@ Route::middleware('auth')->group(function () {
         // permiso que el resto de la gestión del padrón de asociados.
         Route::post('associates/{associate}/documents', [AssociateDocumentController::class, 'store'])->name('associates.documents.store');
         Route::delete('associates/documents/{document}', [AssociateDocumentController::class, 'destroy'])->name('associates.documents.destroy');
+
+        // Plantilla rellenable de la Ficha de Inscripción: abre pre-llenada
+        // con los datos ya guardados del asociado; guardar actualiza esos
+        // mismos datos y genera el PDF (AssociateInscriptionService).
+        Route::get('associates/{associate}/ficha-inscripcion', [AssociateInscriptionController::class, 'edit'])->name('associates.inscripcion.edit');
+        Route::put('associates/{associate}/ficha-inscripcion', [AssociateInscriptionController::class, 'update'])->name('associates.inscripcion.update');
 
         Route::post('associates/{associate}/benefit-usages', [BenefitUsageController::class, 'store'])->name('associates.benefitUsages.store');
         Route::delete('benefit-usages/{benefitUsage}', [BenefitUsageController::class, 'destroy'])->name('associates.benefitUsages.destroy');

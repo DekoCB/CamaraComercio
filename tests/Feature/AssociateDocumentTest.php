@@ -21,14 +21,14 @@ class AssociateDocumentTest extends TestCase
         $user = $this->userWithPermissions(['associates.manage']);
 
         $response = $this->actingAs($user)->post("/associates/{$associate->id}/documents", [
-            'type' => AssociateDocument::TYPE_LICENCIA,
+            'type' => AssociateDocument::TYPE_LICENCIA_FUNCIONAMIENTO,
             'file' => UploadedFile::fake()->create('licencia.pdf', 200, 'application/pdf'),
         ]);
 
         $response->assertRedirect();
         $this->assertDatabaseHas('associate_documents', [
             'associate_id' => $associate->id,
-            'type' => AssociateDocument::TYPE_LICENCIA,
+            'type' => AssociateDocument::TYPE_LICENCIA_FUNCIONAMIENTO,
             'original_name' => 'licencia.pdf',
         ]);
         $document = AssociateDocument::first();
@@ -43,7 +43,7 @@ class AssociateDocumentTest extends TestCase
         $user = $this->userWithPermissions(['associates.manage']);
 
         $response = $this->actingAs($user)->post("/associates/{$associate->id}/documents", [
-            'type' => AssociateDocument::TYPE_TITULO_PROPIEDAD,
+            'type' => AssociateDocument::TYPE_FICHA_RUC,
             'file' => UploadedFile::fake()->image('titulo.jpg'),
         ]);
 
@@ -76,7 +76,7 @@ class AssociateDocumentTest extends TestCase
         $user = $this->userWithPermissions(['associates.manage']);
 
         $response = $this->actingAs($user)->post("/associates/{$associate->id}/documents", [
-            'type' => AssociateDocument::TYPE_OTRO,
+            'type' => AssociateDocument::TYPE_COPIA_PRIMER_PAGO,
             'file' => UploadedFile::fake()->create('grande.pdf', 10241, 'application/pdf'),
         ]);
 
@@ -89,7 +89,7 @@ class AssociateDocumentTest extends TestCase
         $associate = Associate::factory()->create();
         $user = $this->userWithPermissions(['associates.manage']);
         $this->actingAs($user)->post("/associates/{$associate->id}/documents", [
-            'type' => AssociateDocument::TYPE_CONVENIO,
+            'type' => AssociateDocument::TYPE_VIGENCIA_PODER,
             'file' => UploadedFile::fake()->create('convenio.pdf', 100, 'application/pdf'),
         ]);
         $document = AssociateDocument::first();
@@ -108,13 +108,13 @@ class AssociateDocumentTest extends TestCase
         $user = $this->userWithPermissions([]);
 
         $this->actingAs($user)->post("/associates/{$associate->id}/documents", [
-            'type' => AssociateDocument::TYPE_OTRO,
+            'type' => AssociateDocument::TYPE_COPIA_PRIMER_PAGO,
             'file' => UploadedFile::fake()->create('doc.pdf', 100, 'application/pdf'),
         ])->assertForbidden();
 
         $document = AssociateDocument::create([
             'associate_id' => $associate->id,
-            'type' => AssociateDocument::TYPE_OTRO,
+            'type' => AssociateDocument::TYPE_COPIA_PRIMER_PAGO,
             'original_name' => 'doc.pdf',
             'file_path' => 'associates/1/documents/doc.pdf',
             'size' => 100,
@@ -128,7 +128,7 @@ class AssociateDocumentTest extends TestCase
         $associate = Associate::factory()->create(['name' => 'Con Documentos SAC']);
         AssociateDocument::create([
             'associate_id' => $associate->id,
-            'type' => AssociateDocument::TYPE_LICENCIA,
+            'type' => AssociateDocument::TYPE_LICENCIA_FUNCIONAMIENTO,
             'original_name' => 'mi-licencia.pdf',
             'file_path' => 'associates/x/documents/mi-licencia.pdf',
             'size' => 12345,
@@ -137,6 +137,6 @@ class AssociateDocumentTest extends TestCase
 
         $response = $this->actingAs($user)->get("/associates/{$associate->id}");
 
-        $response->assertOk()->assertSee('mi-licencia.pdf')->assertSee('Licencia de funcionamiento');
+        $response->assertOk()->assertSee('mi-licencia.pdf')->assertSee('Licencia de Funcionamiento');
     }
 }

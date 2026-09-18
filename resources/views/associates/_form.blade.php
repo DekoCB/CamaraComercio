@@ -15,13 +15,16 @@
             ['category', 'Categoría', 'text', ['maxlength' => 10, 'col' => 4]],
             ['monthly_fee', 'Monto a pagar (S/)', 'number', ['step' => '0.01', 'min' => '0', 'help' => 'Cuota mensual propia. Si se deja vacío se usa el monto indicado al generar facturas.', 'col' => 4]],
             ['joined_at', 'Fecha de ingreso', 'date', ['col' => 4]],
+            ['activities_started_at', 'Fecha de inicio de actividades', 'date', ['col' => 4]],
             ['anniversary_date', 'Fecha de aniversario', 'date', ['col' => 4]],
             ['email', 'Correo de la empresa', 'email', ['col' => 6]],
             ['contact_phone', 'Teléfono de la empresa', 'text', ['col' => 6]],
+            ['website', 'Página web', 'text', ['col' => 12]],
         ],
         'Direcciones' => [
             ['billing_address', 'Dirección de facturación', 'text', ['col' => 8]],
             ['billing_district', 'Distrito', 'text', ['col' => 4]],
+            ['billing_province', 'Provincia', 'text', ['col' => 6]],
             ['mailing_address', 'Dirección de correspondencia', 'text', ['col' => 8]],
             ['mailing_district', 'Distrito de correspondencia', 'text', ['col' => 4]],
         ],
@@ -30,13 +33,19 @@
             ['activity_type', 'Según su actividad', 'text', ['suggestions' => Associate::ACTIVITY_TYPES, 'col' => 6]],
             ['sector_committee', 'Comité sectorial', 'text', ['col' => 6]],
             ['ciiu', 'CIIU', 'text', ['col' => 6]],
+            ['profession', 'Profesión', 'text', ['col' => 6]],
             ['sub_sector', 'Sub sector', 'textarea', ['rows' => 2, 'col' => 12]],
+            ['public_registry_entry', 'Registros Públicos — Partida Elect. N°', 'text', ['col' => 6]],
+            ['public_registry_title', 'Registros Públicos — Título', 'text', ['col' => 6]],
+            ['main_activity', 'Actividad principal', 'select', ['options' => Associate::ACTIVITY_OPTIONS, 'placeholder' => true, 'col' => 6, 'help' => 'Para la Ficha de Inscripción — marque solo una.']],
+            ['complementary_activities', 'Actividades complementarias', 'checkboxes', ['options' => Associate::ACTIVITY_OPTIONS, 'col' => 6, 'help' => 'Puede marcar más de una.']],
         ],
         'Representante legal' => [
             ['legal_rep_name', 'Nombre completo', 'text', ['col' => 8]],
             ['legal_rep_dni', 'DNI N°', 'text', ['maxlength' => 20, 'col' => 4]],
             ['legal_rep_gender', 'Género', 'select', ['options' => Associate::GENDERS, 'placeholder' => true, 'col' => 4]],
             ['legal_rep_birthday', 'Cumpleaños', 'date', ['col' => 4]],
+            ['legal_rep_position', 'Cargo', 'text', ['col' => 4]],
             ['legal_rep_phone', 'Celular', 'text', ['col' => 4]],
             ['legal_rep_email', 'Correo', 'email', ['col' => 12]],
         ],
@@ -45,6 +54,7 @@
             ['cch_rep_dni', 'DNI N°', 'text', ['maxlength' => 20, 'col' => 4]],
             ['cch_rep_gender', 'Género', 'select', ['options' => Associate::GENDERS, 'placeholder' => true, 'col' => 4]],
             ['cch_rep_birthday', 'Cumpleaños', 'date', ['col' => 4]],
+            ['cch_rep_position', 'Cargo', 'text', ['col' => 4]],
             ['cch_rep_phone', 'Celular', 'text', ['col' => 4]],
             ['cch_rep_email', 'Correo', 'email', ['col' => 12]],
         ],
@@ -52,6 +62,9 @@
 
     $value = function (string $field, string $type) use ($associate) {
         $current = $associate?->{$field};
+        if ($type === 'checkboxes') {
+            return old($field, $current ?? []);
+        }
         if ($type === 'date' && $current) {
             $current = $current->format('Y-m-d');
         }
@@ -92,6 +105,16 @@
                             @elseif ($type === 'textarea')
                                 <textarea class="form-control @error($field) is-invalid @enderror" id="{{ $field }}" name="{{ $field }}"
                                           rows="{{ $extra['rows'] ?? 3 }}">{{ $value($field, $type) }}</textarea>
+                            @elseif ($type === 'checkboxes')
+                                @php $selected = (array) $value($field, $type); @endphp
+                                <div class="d-flex gap-3 flex-wrap" style="padding-top: 6px;">
+                                    @foreach ($extra['options'] as $option)
+                                        <label class="form-check" style="font-size: 0.875rem;">
+                                            <input type="checkbox" class="form-check-input" name="{{ $field }}[]" value="{{ $option }}" {{ in_array($option, $selected, true) ? 'checked' : '' }}>
+                                            {{ $option }}
+                                        </label>
+                                    @endforeach
+                                </div>
                             @else
                                 <input type="{{ $type }}" class="form-control @error($field) is-invalid @enderror" id="{{ $field }}" name="{{ $field }}"
                                        value="{{ $value($field, $type) }}"

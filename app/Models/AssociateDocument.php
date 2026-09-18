@@ -17,19 +17,31 @@ class AssociateDocument extends Model
 {
     use HasFactory;
 
-    public const TYPE_TITULO_PROPIEDAD = 'TITULO_PROPIEDAD';
+    public const TYPE_FICHA_INSCRIPCION = 'FICHA_INSCRIPCION';
 
-    public const TYPE_LICENCIA = 'LICENCIA';
+    public const TYPE_DECLARACION_JURADA = 'DECLARACION_JURADA';
 
-    public const TYPE_CONVENIO = 'CONVENIO';
+    public const TYPE_COPIA_DNI = 'COPIA_DNI';
 
-    public const TYPE_OTRO = 'OTRO';
+    public const TYPE_FICHA_RUC = 'FICHA_RUC';
+
+    public const TYPE_LICENCIA_FUNCIONAMIENTO = 'LICENCIA_FUNCIONAMIENTO';
+
+    public const TYPE_VIGENCIA_PODER = 'VIGENCIA_PODER';
+
+    public const TYPE_TRES_ULTIMOS_PVP = 'TRES_ULTIMOS_PVP';
+
+    public const TYPE_COPIA_PRIMER_PAGO = 'COPIA_PRIMER_PAGO';
 
     public const TYPES = [
-        self::TYPE_TITULO_PROPIEDAD => 'Título de propiedad',
-        self::TYPE_LICENCIA => 'Licencia de funcionamiento',
-        self::TYPE_CONVENIO => 'Convenio',
-        self::TYPE_OTRO => 'Otro',
+        self::TYPE_FICHA_INSCRIPCION => 'Ficha de Inscripción',
+        self::TYPE_DECLARACION_JURADA => 'Declaración Jurada',
+        self::TYPE_COPIA_DNI => 'Copia de DNI',
+        self::TYPE_FICHA_RUC => 'Ficha RUC',
+        self::TYPE_LICENCIA_FUNCIONAMIENTO => 'Licencia de Funcionamiento',
+        self::TYPE_VIGENCIA_PODER => 'Vigencia de Poder',
+        self::TYPE_TRES_ULTIMOS_PVP => '3 últimos PVP',
+        self::TYPE_COPIA_PRIMER_PAGO => 'Copia de primer Pago',
     ];
 
     protected $fillable = [

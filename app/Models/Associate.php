@@ -38,6 +38,14 @@ class Associate extends Model
 
     public const GENDERS = ['MASCULINO', 'FEMENINO'];
 
+    /**
+     * "Actividad Principal"/"Actividades Complementarias" en la Ficha de
+     * Inscripción — mismo catálogo cerrado de 6 opciones para ambas.
+     */
+    public const ACTIVITY_OPTIONS = [
+        'FABRICANTE', 'PRODUCTOR', 'COMERCIALIZADOR', 'IMPORTADOR', 'EXPORTADOR', 'SERVICIOS',
+    ];
+
     protected $fillable = [
         'name',
         'status',
@@ -66,15 +74,25 @@ class Associate extends Model
         'legal_rep_birthday',
         'legal_rep_phone',
         'legal_rep_email',
+        'legal_rep_position',
         'cch_rep_name',
         'cch_rep_dni',
         'cch_rep_gender',
         'cch_rep_birthday',
         'cch_rep_phone',
         'cch_rep_email',
+        'cch_rep_position',
         'image_path',
         'notes',
         'is_active',
+        'activities_started_at',
+        'billing_province',
+        'website',
+        'profession',
+        'public_registry_entry',
+        'public_registry_title',
+        'main_activity',
+        'complementary_activities',
     ];
 
     protected function casts(): array
@@ -86,6 +104,8 @@ class Associate extends Model
             'anniversary_date' => 'date',
             'legal_rep_birthday' => 'date',
             'cch_rep_birthday' => 'date',
+            'activities_started_at' => 'date',
+            'complementary_activities' => 'array',
         ];
     }
 
@@ -121,6 +141,16 @@ class Associate extends Model
     public function benefitUsages(): HasMany
     {
         return $this->hasMany(BenefitUsage::class);
+    }
+
+    public function executives(): HasMany
+    {
+        return $this->hasMany(AssociateExecutive::class);
+    }
+
+    public function products(): HasMany
+    {
+        return $this->hasMany(AssociateProduct::class);
     }
 
     public function imageUrl(): ?string

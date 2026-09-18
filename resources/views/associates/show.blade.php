@@ -27,13 +27,16 @@
             ['Monto a pagar', $fmtMoney($associate->monthly_fee)],
             ['Último mes pagado', $fmtPeriod($lastPaidPeriod)],
             ['Fecha de ingreso', $fmtDate($associate->joined_at)],
+            ['Fecha de inicio de actividades', $fmtDate($associate->activities_started_at)],
             ['Fecha de aniversario', $fmtDate($associate->anniversary_date)],
             ['Correo de la empresa', $associate->email],
             ['Teléfono de la empresa', $associate->contact_phone],
+            ['Página web', $associate->website],
         ],
         'Direcciones' => [
             ['Dirección de facturación', $associate->billing_address],
             ['Distrito', $associate->billing_district],
+            ['Provincia', $associate->billing_province],
             ['Dirección de correspondencia', $associate->mailing_address],
             ['Distrito de correspondencia', $associate->mailing_district],
         ],
@@ -42,13 +45,19 @@
             ['Según su actividad', $associate->activity_type],
             ['Comité sectorial', $associate->sector_committee],
             ['CIIU', $associate->ciiu],
+            ['Profesión', $associate->profession],
             ['Sub sector', $associate->sub_sector, 'wide'],
+            ['Registros Públicos — Partida Elect. N°', $associate->public_registry_entry],
+            ['Registros Públicos — Título', $associate->public_registry_title],
+            ['Actividad principal', $associate->main_activity],
+            ['Actividades complementarias', $associate->complementary_activities ? implode(', ', $associate->complementary_activities) : null, 'wide'],
         ],
         'Representante legal' => [
             ['Nombre completo', $associate->legal_rep_name],
             ['DNI N°', $associate->legal_rep_dni],
             ['Género', $associate->legal_rep_gender],
             ['Cumpleaños', $fmtDate($associate->legal_rep_birthday)],
+            ['Cargo', $associate->legal_rep_position],
             ['Celular', $associate->legal_rep_phone],
             ['Correo', $associate->legal_rep_email],
         ],
@@ -57,6 +66,7 @@
             ['DNI N°', $associate->cch_rep_dni],
             ['Género', $associate->cch_rep_gender],
             ['Cumpleaños', $fmtDate($associate->cch_rep_birthday)],
+            ['Cargo', $associate->cch_rep_position],
             ['Celular', $associate->cch_rep_phone],
             ['Correo', $associate->cch_rep_email],
         ],
@@ -136,11 +146,16 @@
         <p style="margin: 0; white-space: pre-line;">{{ $associate->notes ?: '-' }}</p>
     </div>
 
-    {{-- Documentación escaneada (título de propiedad, licencia, convenios...) --}}
+    {{-- Documentación escaneada, más las plantillas rellenables --}}
     <div class="card-surface mb-3">
         <h3 class="form-section-title" style="padding: 0;">Documentos</h3>
 
         @can('associates.manage')
+            <div class="mb-3">
+                <a href="{{ route('associates.inscripcion.edit', $associate) }}" class="btn btn-secondary btn-sm">
+                    {{ icon('file-text', 'icon', 15) }} Generar Ficha de Inscripción
+                </a>
+            </div>
             <form method="POST" action="{{ route('associates.documents.store', $associate) }}" enctype="multipart/form-data" class="d-flex gap-2 align-items-end flex-wrap mb-3" novalidate>
                 @csrf
                 <div class="field" style="margin-bottom: 0;">
