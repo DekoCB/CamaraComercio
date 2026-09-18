@@ -2695,10 +2695,10 @@ html.sidebar-collapsed .app-shell .sidebar-nav .nav-link {
 
 .guest-logo {
     display: block;
-    width: 120px;
-    height: 120px;
+    width: 180px;
+    height: 180px;
     object-fit: contain;
-    margin: 0 auto var(--space-7);
+    margin: 0 auto var(--space-8);
 }
 
 .guest-form-middle {
