@@ -46,6 +46,14 @@ class Associate extends Model
         'FABRICANTE', 'PRODUCTOR', 'COMERCIALIZADOR', 'IMPORTADOR', 'EXPORTADOR', 'SERVICIOS',
     ];
 
+    /**
+     * "En mi calidad de aspirante / asociado" en la Declaración Jurada —
+     * a diferencia de `status` (ACTIVO/SUSPENDIDO/DESAFILIADO), esto no
+     * se guarda en el asociado: es una elección de ese documento puntual,
+     * no un estado permanente.
+     */
+    public const MEMBERSHIP_DECLARATION_OPTIONS = ['ASPIRANTE', 'ASOCIADO'];
+
     protected $fillable = [
         'name',
         'status',
@@ -87,6 +95,7 @@ class Associate extends Model
         'is_active',
         'activities_started_at',
         'billing_province',
+        'billing_department',
         'website',
         'profession',
         'public_registry_entry',

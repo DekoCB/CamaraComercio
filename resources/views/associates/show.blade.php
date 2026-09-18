@@ -37,6 +37,7 @@
             ['Dirección de facturación', $associate->billing_address],
             ['Distrito', $associate->billing_district],
             ['Provincia', $associate->billing_province],
+            ['Departamento', $associate->billing_department],
             ['Dirección de correspondencia', $associate->mailing_address],
             ['Distrito de correspondencia', $associate->mailing_district],
         ],
@@ -151,9 +152,12 @@
         <h3 class="form-section-title" style="padding: 0;">Documentos</h3>
 
         @can('associates.manage')
-            <div class="mb-3">
+            <div class="mb-3 d-flex gap-2 flex-wrap">
                 <a href="{{ route('associates.inscripcion.edit', $associate) }}" class="btn btn-secondary btn-sm">
                     {{ icon('file-text', 'icon', 15) }} Generar Ficha de Inscripción
+                </a>
+                <a href="{{ route('associates.declaracion.edit', $associate) }}" class="btn btn-secondary btn-sm">
+                    {{ icon('file-text', 'icon', 15) }} Generar Declaración Jurada
                 </a>
             </div>
             <form method="POST" action="{{ route('associates.documents.store', $associate) }}" enctype="multipart/form-data" class="d-flex gap-2 align-items-end flex-wrap mb-3" novalidate>

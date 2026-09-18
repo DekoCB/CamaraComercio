@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AssociateController;
+use App\Http\Controllers\AssociateDeclarationController;
 use App\Http\Controllers\AssociateDocumentController;
 use App\Http\Controllers\AssociateImportController;
 use App\Http\Controllers\AssociateInscriptionController;
@@ -99,6 +100,12 @@ Route::middleware('auth')->group(function () {
         // mismos datos y genera el PDF (AssociateInscriptionService).
         Route::get('associates/{associate}/ficha-inscripcion', [AssociateInscriptionController::class, 'edit'])->name('associates.inscripcion.edit');
         Route::put('associates/{associate}/ficha-inscripcion', [AssociateInscriptionController::class, 'update'])->name('associates.inscripcion.update');
+
+        // Declaración Jurada: a diferencia de la ficha, requiere firma
+        // física — el PDF se genera para imprimir y firmar, con firma y
+        // huella digital escaneadas como campos opcionales.
+        Route::get('associates/{associate}/declaracion-jurada', [AssociateDeclarationController::class, 'edit'])->name('associates.declaracion.edit');
+        Route::put('associates/{associate}/declaracion-jurada', [AssociateDeclarationController::class, 'update'])->name('associates.declaracion.update');
 
         Route::post('associates/{associate}/benefit-usages', [BenefitUsageController::class, 'store'])->name('associates.benefitUsages.store');
         Route::delete('benefit-usages/{benefitUsage}', [BenefitUsageController::class, 'destroy'])->name('associates.benefitUsages.destroy');

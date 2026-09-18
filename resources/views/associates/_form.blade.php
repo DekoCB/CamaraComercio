@@ -24,7 +24,8 @@
         'Direcciones' => [
             ['billing_address', 'Dirección de facturación', 'text', ['col' => 8]],
             ['billing_district', 'Distrito', 'text', ['col' => 4]],
-            ['billing_province', 'Provincia', 'text', ['col' => 6]],
+            ['billing_province', 'Provincia', 'text', ['col' => 4]],
+            ['billing_department', 'Departamento', 'text', ['col' => 4]],
             ['mailing_address', 'Dirección de correspondencia', 'text', ['col' => 8]],
             ['mailing_district', 'Distrito de correspondencia', 'text', ['col' => 4]],
         ],
