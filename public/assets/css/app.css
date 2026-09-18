@@ -167,16 +167,9 @@ textarea:focus-visible,
 .brand-mark {
     width: 36px;
     height: 36px;
-    border-radius: var(--radius-sm);
-    background: linear-gradient(155deg, var(--color-blue) 0%, var(--color-navy) 65%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    object-fit: contain;
     flex-shrink: 0;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
 }
-
-.brand-mark .icon { color: #fff; }
 
 .sidebar-brand-text {
     display: flex;
@@ -2721,7 +2714,6 @@ html.sidebar-collapsed .app-shell .sidebar-nav .nav-link {
 .guest-brand .brand-mark {
     width: 34px;
     height: 34px;
-    color: var(--color-teal);
 }
 
 .guest-form-middle {

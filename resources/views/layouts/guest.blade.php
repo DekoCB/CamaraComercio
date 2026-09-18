@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Sistema de Facturación') · Cámara de Comercio</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
     <script>
         // Keeps the guest screens (login, etc.) in whatever theme the user
         // last chose inside the app — applied before first paint, same as
