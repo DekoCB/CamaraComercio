@@ -33,6 +33,17 @@ class AssociateDocument extends Model
 
     public const TYPE_COPIA_PRIMER_PAGO = 'COPIA_PRIMER_PAGO';
 
+    public const TYPE_TITULO_PROPIEDAD = 'TITULO_PROPIEDAD';
+
+    public const TYPE_CONVENIOS = 'CONVENIOS';
+
+    public const TYPE_OTROS = 'OTROS';
+
+    /**
+     * Solo los dos primeros tienen plantilla generable
+     * (AssociateInscriptionService / AssociateDeclarationService); el
+     * resto siempre fue, y sigue siendo, solo para subir el escaneado.
+     */
     public const TYPES = [
         self::TYPE_FICHA_INSCRIPCION => 'Ficha de Inscripción',
         self::TYPE_DECLARACION_JURADA => 'Declaración Jurada',
@@ -42,6 +53,9 @@ class AssociateDocument extends Model
         self::TYPE_VIGENCIA_PODER => 'Vigencia de Poder',
         self::TYPE_TRES_ULTIMOS_PVP => '3 últimos PVP',
         self::TYPE_COPIA_PRIMER_PAGO => 'Copia de primer Pago',
+        self::TYPE_TITULO_PROPIEDAD => 'Título de Propiedad',
+        self::TYPE_CONVENIOS => 'Convenios',
+        self::TYPE_OTROS => 'Otros',
     ];
 
     protected $fillable = [
