@@ -11,9 +11,11 @@ use Illuminate\Support\Facades\Hash;
 
 /**
  * Development baseline (section 34 of the functional spec): roles,
- * permissions, modules, and the two starter accounts (Administrador,
- * Encargado de Cobranzas). Every write is an updateOrCreate/firstOrCreate,
- * so this seeder is safe to re-run.
+ * permissions, modules, and one starter account per role — so every
+ * role has a real login to demo or test with, now that the login form
+ * requires picking a role that matches the account (see
+ * AuthenticatedSessionController::store()). Every write is an
+ * updateOrCreate/firstOrCreate, so this seeder is safe to re-run.
  */
 class RolesPermissionsModulesSeeder extends Seeder
 {
@@ -135,8 +137,56 @@ class RolesPermissionsModulesSeeder extends Seeder
             ]
         );
 
+        User::updateOrCreate(
+            ['email' => 'gerencia@camaracomercio.test'],
+            [
+                'name' => 'Gerencia',
+                'password' => Hash::make('Gerencia#2026Local'),
+                'role_id' => $managementRole->id,
+                'is_active' => true,
+                'email_verified_at' => now(),
+            ]
+        );
+
+        User::updateOrCreate(
+            ['email' => 'logistica@camaracomercio.test'],
+            [
+                'name' => 'Logística',
+                'password' => Hash::make('Logistica#2026Local'),
+                'role_id' => $logisticsRole->id,
+                'is_active' => true,
+                'email_verified_at' => now(),
+            ]
+        );
+
+        User::updateOrCreate(
+            ['email' => 'asociados@camaracomercio.test'],
+            [
+                'name' => 'Gestión de Asociados',
+                'password' => Hash::make('Asociados#2026Local'),
+                'role_id' => $associateManagementRole->id,
+                'is_active' => true,
+                'email_verified_at' => now(),
+            ]
+        );
+
+        User::updateOrCreate(
+            ['email' => 'marketing@camaracomercio.test'],
+            [
+                'name' => 'Marketing',
+                'password' => Hash::make('Marketing#2026Local'),
+                'role_id' => $marketingRole->id,
+                'is_active' => true,
+                'email_verified_at' => now(),
+            ]
+        );
+
         $this->command->info('Roles, permisos, módulos y usuarios de desarrollo listos:');
-        $this->command->info('  Administrador:          admin@camaracomercio.test / Admin#2026Local');
+        $this->command->info('  Administrador:           admin@camaracomercio.test / Admin#2026Local');
         $this->command->info('  Encargado de cobranzas:  cobranzas@camaracomercio.test / Cobranzas#2026Local');
+        $this->command->info('  Gerencia:                gerencia@camaracomercio.test / Gerencia#2026Local');
+        $this->command->info('  Logística:               logistica@camaracomercio.test / Logistica#2026Local');
+        $this->command->info('  Gestión de Asociados:    asociados@camaracomercio.test / Asociados#2026Local');
+        $this->command->info('  Marketing:               marketing@camaracomercio.test / Marketing#2026Local');
     }
 }
