@@ -6,41 +6,63 @@
     'prefix' => 'S/ ',
 ])
 @php
-    $w = 500;
-    $h = 220;
-    $marginLeft = 8;
-    $marginRight = 8;
-    $marginTop = $title ? 26 : 10;
-    $marginBottom = 32;
+    $w = 520;
+    $h = 240;
+    $marginLeft = 46;
+    $marginRight = 12;
+    $marginTop = $title ? 30 : 14;
+    $marginBottom = 34;
     $plotW = $w - $marginLeft - $marginRight;
     $plotH = $h - $marginTop - $marginBottom;
     $n = count($values);
-    $max = $n > 0 ? max(1, max($values)) : 1;
-    $barSlot = $n > 0 ? $plotW / $n : $plotW;
-    $barW = $barSlot * 0.55;
+    $rawMax = $n > 0 ? max(0, max($values)) : 0;
 
-    /**
-     * Dompdf does not lay out inline <svg> markup as part of the HTML box
-     * tree (there is no SVG frame reflower for it) — only its image
-     * renderer understands SVG, via <img src="..."> pointing at an SVG
-     * file or data URI (Adapter\CPDF::image() -> addSvgFromFile()). So
-     * the chart is built as a standalone SVG string here and embedded as
-     * a base64 data URI image, not written inline.
-     */
+    // A "nice" axis top (next 1/2/5/10 × 10^n above the data) so gridlines
+    // land on round numbers instead of the tallest bar's exact value.
+    $niceStep = function (float $max, int $targetTicks = 4): float {
+        if ($max <= 0) {
+            return 1;
+        }
+        $rough = $max / $targetTicks;
+        $magnitude = 10 ** floor(log10($rough));
+        $residual = $rough / $magnitude;
+        $niceResidual = $residual <= 1 ? 1 : ($residual <= 2 ? 2 : ($residual <= 5 ? 5 : 10));
+
+        return $niceResidual * $magnitude;
+    };
+    $step = $niceStep($rawMax);
+    $ticks = max(1, (int) ceil(($rawMax ?: $step) / $step));
+    $axisTop = $step * $ticks;
+
+    $barSlot = $n > 0 ? $plotW / $n : $plotW;
+    $barW = min($barSlot * 0.55, 64);
+    $valueY = fn (float $v) => $marginTop + $plotH - ($axisTop > 0 ? ($v / $axisTop) * $plotH : 0);
+@endphp
+@php
     $svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '.$w.' '.$h.'" width="'.$w.'" height="'.$h.'">';
+    $svg .= '<rect x="'.$marginLeft.'" y="'.$marginTop.'" width="'.$plotW.'" height="'.$plotH.'" fill="#fafbfc" />';
     if ($title) {
-        $svg .= '<text x="'.($w / 2).'" y="14" text-anchor="middle" font-size="12" font-weight="bold" fill="#22303f">'.e($title).'</text>';
+        $svg .= '<text x="'.($w / 2).'" y="16" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#22303f">'.e($title).'</text>';
     }
-    $svg .= '<line x1="'.$marginLeft.'" y1="'.($marginTop + $plotH).'" x2="'.($w - $marginRight).'" y2="'.($marginTop + $plotH).'" stroke="#dee2e6" stroke-width="1" />';
+    for ($t = 0; $t <= $ticks; $t++) {
+        $gridValue = $t * $step;
+        $y = $valueY($gridValue);
+        $svg .= '<line x1="'.$marginLeft.'" y1="'.$y.'" x2="'.($w - $marginRight).'" y2="'.$y.'" stroke="#e7ebef" stroke-width="1" />';
+        $svg .= '<text x="'.($marginLeft - 6).'" y="'.($y + 3).'" text-anchor="end" font-size="8" fill="#8a94a1">'.e(number_format($gridValue, 0)).'</text>';
+    }
+    $svg .= '<line x1="'.$marginLeft.'" y1="'.($marginTop + $plotH).'" x2="'.($w - $marginRight).'" y2="'.($marginTop + $plotH).'" stroke="#c3cbd3" stroke-width="1" />';
+
     foreach ($values as $i => $v) {
-        $barH = $max > 0 ? ((float) $v / $max) * $plotH : 0;
+        $barH = $marginTop + $plotH - $valueY((float) $v);
         $x = $marginLeft + $i * $barSlot + ($barSlot - $barW) / 2;
-        $y = $marginTop + $plotH - $barH;
+        $y = $valueY((float) $v);
         $color = $colors[$i % count($colors)];
-        $svg .= '<rect x="'.$x.'" y="'.$y.'" width="'.$barW.'" height="'.$barH.'" fill="'.$color.'" />';
-        $svg .= '<text x="'.($x + $barW / 2).'" y="'.($y - 4).'" text-anchor="middle" font-size="9" fill="#22303f">'.e($prefix.number_format((float) $v, 0)).'</text>';
-        $svg .= '<text x="'.($x + $barW / 2).'" y="'.($marginTop + $plotH + 14).'" text-anchor="middle" font-size="9" fill="#6c7a89">'.e(\Illuminate\Support\Str::limit($categories[$i] ?? '', 14)).'</text>';
+        $svg .= '<rect x="'.$x.'" y="'.$y.'" width="'.$barW.'" height="'.max(0, $barH).'" rx="2" fill="'.$color.'" />';
+        $svg .= '<text x="'.($x + $barW / 2).'" y="'.($y - 5).'" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#22303f">'.e($prefix.number_format((float) $v, 0)).'</text>';
+        $svg .= '<text x="'.($x + $barW / 2).'" y="'.($marginTop + $plotH + 15).'" text-anchor="middle" font-size="9" fill="#5b6570">'.e(\Illuminate\Support\Str::limit($categories[$i] ?? '', 14)).'</text>';
     }
     $svg .= '</svg>';
 @endphp
-<img src="data:image/svg+xml;base64,{{ base64_encode($svg) }}" width="{{ $w }}" height="{{ $h }}" alt="{{ $title }}">
+<div style="text-align: center;">
+    <img src="data:image/svg+xml;base64,{{ base64_encode($svg) }}" width="{{ $w }}" height="{{ $h }}" alt="{{ $title }}">
+</div>

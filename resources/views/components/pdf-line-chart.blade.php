@@ -6,31 +6,51 @@
     'prefix' => 'S/ ',
 ])
 @php
-    $w = 500;
-    $h = 240;
-    $marginLeft = 8;
-    $marginRight = 8;
-    $marginTop = $title ? 26 : 10;
+    $w = 520;
+    $h = 260;
+    $marginLeft = 46;
+    $marginRight = 12;
+    $marginTop = $title ? 30 : 14;
     $marginBottom = 32;
-    $marginLegend = 16;
+    $marginLegend = 20;
     $plotW = $w - $marginLeft - $marginRight;
     $plotH = $h - $marginTop - $marginBottom - $marginLegend;
     $n = count($categories);
     $allValues = array_merge(...array_values($series ?: [[]]));
-    $max = $allValues !== [] ? max(1, max($allValues)) : 1;
+    $rawMax = $allValues !== [] ? max(0, max($allValues)) : 0;
+
+    $niceStep = function (float $max, int $targetTicks = 4): float {
+        if ($max <= 0) {
+            return 1;
+        }
+        $rough = $max / $targetTicks;
+        $magnitude = 10 ** floor(log10($rough));
+        $residual = $rough / $magnitude;
+        $niceResidual = $residual <= 1 ? 1 : ($residual <= 2 ? 2 : ($residual <= 5 ? 5 : 10));
+
+        return $niceResidual * $magnitude;
+    };
+    $step = $niceStep($rawMax);
+    $ticks = max(1, (int) ceil(($rawMax ?: $step) / $step));
+    $axisTop = $step * $ticks;
+
     $stepX = $n > 1 ? $plotW / ($n - 1) : 0;
     $pointX = fn (int $i) => $marginLeft + ($n > 1 ? $i * $stepX : $plotW / 2);
-    $pointY = fn (float $v) => $marginTop + $plotH - ($max > 0 ? ($v / $max) * $plotH : 0);
-
-    // Same reasoning as the other pdf-*-chart components: Dompdf only
-    // understands SVG through its image renderer (Adapter\CPDF::image()
-    // -> addSvgFromFile()), not inline <svg> markup in the HTML flow, so
-    // this is built as a string and embedded as a base64 data URI.
+    $pointY = fn (float $v) => $marginTop + $plotH - ($axisTop > 0 ? ($v / $axisTop) * $plotH : 0);
+@endphp
+@php
     $svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '.$w.' '.$h.'" width="'.$w.'" height="'.$h.'">';
+    $svg .= '<rect x="'.$marginLeft.'" y="'.$marginTop.'" width="'.$plotW.'" height="'.$plotH.'" fill="#fafbfc" />';
     if ($title) {
-        $svg .= '<text x="'.($w / 2).'" y="14" text-anchor="middle" font-size="12" font-weight="bold" fill="#22303f">'.e($title).'</text>';
+        $svg .= '<text x="'.($w / 2).'" y="16" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#22303f">'.e($title).'</text>';
     }
-    $svg .= '<line x1="'.$marginLeft.'" y1="'.($marginTop + $plotH).'" x2="'.($w - $marginRight).'" y2="'.($marginTop + $plotH).'" stroke="#dee2e6" stroke-width="1" />';
+    for ($t = 0; $t <= $ticks; $t++) {
+        $gridValue = $t * $step;
+        $y = $pointY($gridValue);
+        $svg .= '<line x1="'.$marginLeft.'" y1="'.$y.'" x2="'.($w - $marginRight).'" y2="'.$y.'" stroke="#e7ebef" stroke-width="1" />';
+        $svg .= '<text x="'.($marginLeft - 6).'" y="'.($y + 3).'" text-anchor="end" font-size="8" fill="#8a94a1">'.e(number_format($gridValue, 0)).'</text>';
+    }
+    $svg .= '<line x1="'.$marginLeft.'" y1="'.($marginTop + $plotH).'" x2="'.($w - $marginRight).'" y2="'.($marginTop + $plotH).'" stroke="#c3cbd3" stroke-width="1" />';
 
     $seriesIndex = 0;
     foreach ($series as $label => $values) {
@@ -40,27 +60,34 @@
         foreach ($values as $i => $v) {
             $points[] = $pointX($i).','.$pointY((float) $v);
         }
-        $svg .= '<polyline points="'.implode(' ', $points).'" fill="none" stroke="'.$color.'" stroke-width="2" />';
+        $svg .= '<polyline points="'.implode(' ', $points).'" fill="none" stroke="'.$color.'" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round" />';
         foreach ($values as $i => $v) {
-            $svg .= '<circle cx="'.$pointX($i).'" cy="'.$pointY((float) $v).'" r="2.5" fill="'.$color.'" />';
+            $svg .= '<circle cx="'.$pointX($i).'" cy="'.$pointY((float) $v).'" r="3" fill="#ffffff" stroke="'.$color.'" stroke-width="2" />';
         }
         $seriesIndex++;
     }
 
     foreach ($categories as $i => $category) {
-        $svg .= '<text x="'.$pointX($i).'" y="'.($marginTop + $plotH + 14).'" text-anchor="middle" font-size="8" fill="#6c7a89">'.e($category).'</text>';
+        $svg .= '<text x="'.$pointX($i).'" y="'.($marginTop + $plotH + 15).'" text-anchor="middle" font-size="8.5" fill="#5b6570">'.e($category).'</text>';
     }
 
-    $legendX = $marginLeft;
+    $legendWidths = [];
+    foreach ($series as $label => $values) {
+        $legendWidths[] = 18 + strlen((string) $label) * 5.5;
+    }
+    $legendTotalWidth = array_sum($legendWidths);
+    $legendX = $marginLeft + max(0, ($plotW - $legendTotalWidth) / 2);
     $seriesIndex = 0;
     foreach ($series as $label => $values) {
         $color = $colors[$seriesIndex % count($colors)];
-        $svg .= '<rect x="'.$legendX.'" y="'.($h - $marginLegend + 4).'" width="9" height="9" fill="'.$color.'" />';
-        $svg .= '<text x="'.($legendX + 13).'" y="'.($h - $marginLegend + 12).'" font-size="9" fill="#22303f">'.e($label).'</text>';
-        $legendX += 16 + strlen((string) $label) * 5.5;
+        $svg .= '<rect x="'.$legendX.'" y="'.($h - $marginLegend + 5).'" width="9" height="9" rx="2" fill="'.$color.'" />';
+        $svg .= '<text x="'.($legendX + 13).'" y="'.($h - $marginLegend + 13).'" font-size="9" fill="#22303f">'.e($label).'</text>';
+        $legendX += $legendWidths[$seriesIndex];
         $seriesIndex++;
     }
 
     $svg .= '</svg>';
 @endphp
-<img src="data:image/svg+xml;base64,{{ base64_encode($svg) }}" width="{{ $w }}" height="{{ $h }}" alt="{{ $title }}">
+<div style="text-align: center;">
+    <img src="data:image/svg+xml;base64,{{ base64_encode($svg) }}" width="{{ $w }}" height="{{ $h }}" alt="{{ $title }}">
+</div>
