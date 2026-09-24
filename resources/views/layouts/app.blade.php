@@ -56,6 +56,13 @@
                     {{ icon('users') }}<span>Asociados</span>
                 </a>
             @endmodule
+            @module('rentals')
+                @can('rentals.view')
+                    <a href="{{ route('rentals.index') }}" class="nav-link {{ request()->routeIs('rentals.*') ? 'active' : '' }}" title="Alquileres">
+                        {{ icon('building-2') }}<span>Alquileres</span>
+                    </a>
+                @endcan
+            @endmodule
             @module('billing')
                 @can('billing.view')
                     <a href="{{ route('invoices.index') }}" class="nav-link {{ request()->routeIs('invoices.*') ? 'active' : '' }}" title="Facturación">

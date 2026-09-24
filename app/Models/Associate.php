@@ -162,6 +162,11 @@ class Associate extends Model
         return $this->hasMany(AssociateProduct::class);
     }
 
+    public function rentals(): HasMany
+    {
+        return $this->hasMany(Rental::class);
+    }
+
     public function imageUrl(): ?string
     {
         return $this->image_path ? Storage::disk('public')->url($this->image_path) : null;

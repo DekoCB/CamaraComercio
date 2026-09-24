@@ -21,6 +21,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymentImportController;
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RentalController;
 use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -109,6 +110,34 @@ Route::middleware('auth')->group(function () {
 
         Route::post('associates/{associate}/benefit-usages', [BenefitUsageController::class, 'store'])->name('associates.benefitUsages.store');
         Route::delete('benefit-usages/{benefitUsage}', [BenefitUsageController::class, 'destroy'])->name('associates.benefitUsages.destroy');
+    });
+
+    // Alquiler de espacios (nuevo módulo, sept-2026). Igual que Reportes,
+    // ver está separado de administrar: rentals.view alcanza para la
+    // lista, el calendario y el PDF; rentals.manage habilita crear,
+    // editar, confirmar, facturar y cancelar. "calendar" y "create" deben
+    // registrarse antes de {rental} por la misma razón que en Facturación.
+    Route::middleware('can:rentals.view')->group(function () {
+        Route::get('rentals', [RentalController::class, 'index'])->name('rentals.index');
+        Route::get('rentals/calendar', [RentalController::class, 'calendar'])->name('rentals.calendar');
+    });
+    // "create" is a static path one segment deep like {rental} itself, so
+    // it has to be registered before that wildcard below — same reasoning
+    // as the "generate"/"import" statics in Facturación.
+    Route::middleware('can:rentals.manage')->group(function () {
+        Route::get('rentals/create', [RentalController::class, 'create'])->name('rentals.create');
+        Route::post('rentals', [RentalController::class, 'store'])->name('rentals.store');
+    });
+    Route::middleware('can:rentals.view')->group(function () {
+        Route::get('rentals/{rental}', [RentalController::class, 'show'])->name('rentals.show');
+        Route::get('rentals/{rental}/pdf', [RentalController::class, 'pdf'])->name('rentals.pdf');
+    });
+    Route::middleware('can:rentals.manage')->group(function () {
+        Route::get('rentals/{rental}/edit', [RentalController::class, 'edit'])->name('rentals.edit');
+        Route::put('rentals/{rental}', [RentalController::class, 'update'])->name('rentals.update');
+        Route::put('rentals/{rental}/confirm', [RentalController::class, 'confirm'])->name('rentals.confirm');
+        Route::put('rentals/{rental}/bill', [RentalController::class, 'bill'])->name('rentals.bill');
+        Route::put('rentals/{rental}/cancel', [RentalController::class, 'cancel'])->name('rentals.cancel');
     });
 
     // Billing (EP-04). Consulting is billing.view; the batch-generation

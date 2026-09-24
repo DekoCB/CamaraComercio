@@ -1610,6 +1610,25 @@ html.sidebar-collapsed .app-shell .sidebar-nav .nav-link {
 .calendar-legend-dot.is-cch { background: var(--color-text-tertiary); }
 .calendar-legend-dot.is-anniversary { background: var(--color-success); }
 
+/* Rentals calendar (rentals.calendar): same dot/event modifier pattern as
+   the birthday calendar above, colored to match .badge-status-COTIZADA
+   /CONFIRMADA/FACTURADA instead of reusing is-legal/is-cch/is-anniversary,
+   which mean something else there. */
+.calendar-legend-dot.is-cotizada,
+.calendar-event.is-cotizada { background: var(--color-info-subtle); }
+.calendar-legend-dot.is-confirmada,
+.calendar-event.is-confirmada { background: var(--color-warning-subtle); }
+.calendar-legend-dot.is-facturada,
+.calendar-event.is-facturada { background: var(--color-success-subtle); }
+
+.calendar-legend-dot.is-cotizada { background: var(--color-info); }
+.calendar-legend-dot.is-confirmada { background: #92620A; }
+.calendar-legend-dot.is-facturada { background: var(--color-success); }
+
+.calendar-event.is-cotizada { border-left-color: var(--color-info); }
+.calendar-event.is-confirmada { border-left-color: #92620A; }
+.calendar-event.is-facturada { border-left-color: var(--color-success); }
+
 .calendar-grid {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -2121,6 +2140,11 @@ html.sidebar-collapsed .app-shell .sidebar-nav .nav-link {
 .badge-status-PAGADA { background: var(--color-success-subtle); color: var(--color-success); }
 .badge-status-VENCIDA { background: var(--color-danger-subtle); color: var(--color-danger); }
 .badge-status-ANULADA { background: var(--color-bg); color: var(--color-text-secondary); border: 1px solid var(--color-border); text-decoration: line-through; }
+
+.badge-status-COTIZADA { background: var(--color-info-subtle); color: var(--color-info); }
+.badge-status-CONFIRMADA { background: var(--color-warning-subtle); color: #92620A; }
+.badge-status-FACTURADA { background: var(--color-success-subtle); color: var(--color-success); }
+.badge-status-CANCELADA { background: var(--color-bg); color: var(--color-text-secondary); border: 1px solid var(--color-border); text-decoration: line-through; }
 
 .badge-neutral { background: var(--color-bg); color: var(--color-text-secondary); border: 1px solid var(--color-border); }
 .badge-success { background: var(--color-success-subtle); color: var(--color-success); }

@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Module;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\Space;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -32,6 +33,8 @@ class RolesPermissionsModulesSeeder extends Seeder
             'portfolio.view' => 'Consultar cartera, morosidad y estado de cuenta',
             'reports.view' => 'Ver reportes de cobranza y deuda',
             'reports.export' => 'Exportar reportes a Excel/PDF',
+            'rentals.view' => 'Ver alquileres de espacios y el calendario de reservas',
+            'rentals.manage' => 'Crear, confirmar, facturar y cancelar alquileres de espacios',
             'admin.users' => 'Gestionar usuarios',
             'admin.roles' => 'Gestionar roles, permisos y accesos a módulos',
             'admin.modules' => 'Gestionar módulos del sistema',
@@ -40,11 +43,12 @@ class RolesPermissionsModulesSeeder extends Seeder
         $modules = collect([
             'dashboard' => ['Dashboard', 'bi-speedometer2', '/dashboard', 1],
             'associates' => ['Asociados', 'bi-people', '/associates', 2],
-            'billing' => ['Facturación', 'bi-receipt', '/invoices', 3],
-            'payments' => ['Pagos', 'bi-cash-coin', '/payments', 4],
-            'portfolio' => ['Cartera', 'bi-graph-up', '/portfolio', 5],
-            'reports' => ['Reportes', 'bi-bar-chart', '/reports', 6],
-            'administration' => ['Administración', 'bi-gear', '/admin/users', 7],
+            'rentals' => ['Alquileres', 'bi-building', '/rentals', 3],
+            'billing' => ['Facturación', 'bi-receipt', '/invoices', 4],
+            'payments' => ['Pagos', 'bi-cash-coin', '/payments', 5],
+            'portfolio' => ['Cartera', 'bi-graph-up', '/portfolio', 6],
+            'reports' => ['Reportes', 'bi-bar-chart', '/reports', 7],
+            'administration' => ['Administración', 'bi-gear', '/admin/users', 8],
         ])->map(fn (array $attrs, string $code) => Module::updateOrCreate(['code' => $code], [
             'name' => $attrs[0],
             'icon' => $attrs[1],
@@ -86,10 +90,10 @@ class RolesPermissionsModulesSeeder extends Seeder
         );
         $managementRole->permissions()->sync($permissions->only([
             'associates.manage', 'billing.generate', 'billing.view', 'billing.edit', 'billing.void', 'payments.register',
-            'portfolio.view', 'reports.view', 'reports.export',
+            'portfolio.view', 'reports.view', 'reports.export', 'rentals.view',
         ])->pluck('id'));
         $managementRole->modules()->sync($modules->only([
-            'dashboard', 'associates', 'billing', 'payments', 'portfolio', 'reports',
+            'dashboard', 'associates', 'rentals', 'billing', 'payments', 'portfolio', 'reports',
         ])->pluck('id'));
 
         $logisticsRole = Role::updateOrCreate(
@@ -104,9 +108,9 @@ class RolesPermissionsModulesSeeder extends Seeder
             ['description' => 'Alta, edición e importación del padrón de asociados, y su situación en cartera.']
         );
         $associateManagementRole->permissions()->sync($permissions->only([
-            'associates.manage', 'portfolio.view',
+            'associates.manage', 'portfolio.view', 'rentals.view', 'rentals.manage',
         ])->pluck('id'));
-        $associateManagementRole->modules()->sync($modules->only(['dashboard', 'associates', 'portfolio'])->pluck('id'));
+        $associateManagementRole->modules()->sync($modules->only(['dashboard', 'associates', 'rentals', 'portfolio'])->pluck('id'));
 
         $marketingRole = Role::updateOrCreate(
             ['name' => 'Marketing'],
@@ -180,6 +184,16 @@ class RolesPermissionsModulesSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
+
+        // Catálogo de espacios alquilables (nuevo módulo Alquileres): mismo
+        // criterio que el beneficio "uso gratuito del auditorio" — un
+        // espacio real conocido, sembrado una vez; no hay pantalla de
+        // administración todavía, así que agregar otro espacio implica
+        // esta misma vía (una fila nueva aquí), no una migración.
+        Space::updateOrCreate(['name' => 'Auditorio'], [
+            'description' => 'Auditorio principal de la Cámara de Comercio de Huancayo.',
+            'is_active' => true,
+        ]);
 
         $this->command->info('Roles, permisos, módulos y usuarios de desarrollo listos:');
         $this->command->info('  Administrador:           admin@camaracomercio.test / Admin#2026Local');
