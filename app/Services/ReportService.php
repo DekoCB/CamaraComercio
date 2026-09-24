@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Models\Protest;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
@@ -172,6 +173,54 @@ class ReportService
             'paymentsCount' => $paymentsCount,
             'collectorsCount' => count($byCollector),
             'byCollector' => $byCollector,
+        ];
+    }
+
+    /**
+     * "Registro de Protestos y Moras" — cuántos se registraron en el
+     * período (registered_at, no created_at, para que un registro
+     * cargado tarde igual cuente en el mes al que corresponde), con el
+     * mismo desglose por tipo/vía que Protest::TYPES/CHANNELS. "Cantidad
+     * producida al mes" del acta del cliente — ver ProtestService para
+     * el resumen del mes en curso que usa el propio módulo de Protestos.
+     */
+    public function protests(string $period, ?string $dateFrom = null, ?string $dateTo = null): array
+    {
+        $isRange = $dateFrom !== null && $dateTo !== null;
+        [$rangeStart, $rangeEnd] = $this->resolveRange($period, $dateFrom, $dateTo);
+
+        $records = Protest::query()
+            ->with('associate')
+            ->whereBetween('registered_at', [$rangeStart->toDateString(), $rangeEnd->toDateString()])
+            ->orderByDesc('registered_at')
+            ->get();
+
+        $totalAmount = (float) $records->sum('amount');
+
+        $byType = collect(Protest::TYPES)->map(fn ($label, $key) => [
+            'label' => $label,
+            'count' => $records->where('type', $key)->count(),
+            'total' => (float) $records->where('type', $key)->sum('amount'),
+        ])->all();
+
+        $byChannel = collect(Protest::CHANNELS)->map(fn ($label, $key) => [
+            'label' => $label,
+            'count' => $records->where('channel', $key)->count(),
+        ])->all();
+
+        return [
+            'period' => $period,
+            'dateFrom' => $isRange ? $rangeStart->toDateString() : null,
+            'dateTo' => $isRange ? $rangeEnd->toDateString() : null,
+            'isRange' => $isRange,
+            'monthStart' => $rangeStart,
+            'monthEnd' => $rangeEnd,
+            'totalCount' => $records->count(),
+            'totalAmount' => $totalAmount,
+            'regularizedCount' => $records->where('status', Protest::STATUS_REGULARIZADO)->count(),
+            'byType' => $byType,
+            'byChannel' => $byChannel,
+            'records' => $records,
         ];
     }
 

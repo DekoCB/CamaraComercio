@@ -42,6 +42,14 @@ class ReportController extends Controller
         return view('reports.collectors', $this->reports->collectorProductivity($period, $dateFrom, $dateTo));
     }
 
+    public function protests(Request $request): View
+    {
+        $period = $request->query('period', now()->format('Y-m'));
+        [$dateFrom, $dateTo] = $this->dateRangeFrom($request);
+
+        return view('reports.protests', $this->reports->protests($period, $dateFrom, $dateTo));
+    }
+
     public function exportCollections(Request $request, string $format): StreamedResponse|Response
     {
         $period = $request->query('period', now()->format('Y-m'));
@@ -131,5 +139,36 @@ class ReportController extends Controller
         ];
 
         return $this->export->toExcel("productividad-{$label}", 'Productividad por cobrador', $data['isRange'] ? "{$data['dateFrom']} a {$data['dateTo']}" : $period, $headers, $rows, $totals, $charts);
+    }
+
+    public function exportProtests(Request $request, string $format): StreamedResponse|Response
+    {
+        $period = $request->query('period', now()->format('Y-m'));
+        [$dateFrom, $dateTo] = $this->dateRangeFrom($request);
+        $data = $this->reports->protests($period, $dateFrom, $dateTo);
+        $label = $data['isRange'] ? "{$data['dateFrom']}_{$data['dateTo']}" : $period;
+
+        $headers = ['Fecha', 'Tipo', 'Vía', 'Deudor', 'Acreedor', 'Monto', 'Estado'];
+        $rows = $data['records']->map(fn ($r) => [
+            $r->registered_at->format('d/m/Y'),
+            $r->typeLabel(),
+            $r->channelLabel(),
+            $r->debtor_name,
+            $r->creditor_name,
+            number_format((float) $r->amount, 2),
+            $r->status,
+        ])->all();
+        $totals = ['', '', '', '', 'Total', number_format($data['totalAmount'], 2), $data['totalCount'].' registros'];
+
+        if ($format === 'pdf') {
+            return $this->export->toPdf("protestos-{$label}", 'reports.pdf.protests', $data);
+        }
+
+        $charts = [
+            ['type' => 'bar', 'title' => 'Monto por tipo', 'categories' => array_column($data['byType'], 'label'), 'series' => ['Monto' => array_column($data['byType'], 'total')]],
+            ['type' => 'bar', 'title' => 'Registros por vía', 'categories' => array_column($data['byChannel'], 'label'), 'series' => ['Registros' => array_column($data['byChannel'], 'count')]],
+        ];
+
+        return $this->export->toExcel("protestos-{$label}", 'Protestos y Moras', $data['isRange'] ? "{$data['dateFrom']} a {$data['dateTo']}" : $period, $headers, $rows, $totals, $charts);
     }
 }

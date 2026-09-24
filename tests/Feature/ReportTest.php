@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Associate;
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Models\Protest;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\CreatesUsers;
 use Tests\TestCase;
@@ -108,6 +109,51 @@ class ReportTest extends TestCase
             ->assertSeeInOrder(['Cobrador B', 'Cobrador A']) // biggest total first
             ->assertSee('S/ 350.00') // total collected in August: 100 + 50 + 200
             ->assertDontSee('999.00'); // September payment excluded
+    }
+
+    public function test_protests_report_groups_registrations_by_type_and_channel(): void
+    {
+        Protest::factory()->create(['type' => Protest::TYPE_PROTESTO, 'channel' => Protest::CHANNEL_NOTARIAL, 'amount' => 80, 'registered_at' => '2026-08-05']);
+        Protest::factory()->create(['type' => Protest::TYPE_PROTESTO, 'channel' => Protest::CHANNEL_JUDICIAL, 'amount' => 60, 'registered_at' => '2026-08-10']);
+        Protest::factory()->create(['type' => Protest::TYPE_MORA, 'channel' => Protest::CHANNEL_BANCARIO, 'amount' => 40, 'registered_at' => '2026-08-15']);
+        Protest::factory()->create(['amount' => 999, 'registered_at' => '2026-07-01']); // outside the period
+
+        $user = $this->userWithPermissions(['reports.view', 'protests.view']);
+
+        $response = $this->actingAs($user)->get('/reports/protests?period=2026-08');
+
+        $response->assertOk()
+            ->assertSeeInOrder(['Registros', '3'])
+            ->assertSee('S/ 180.00') // 80 + 60 + 40, excludes the July record
+            ->assertDontSee('999.00');
+    }
+
+    public function test_protests_report_requires_both_reports_view_and_protests_view(): void
+    {
+        $onlyReports = $this->userWithPermissions(['reports.view']);
+        $onlyProtests = $this->userWithPermissions(['protests.view']);
+
+        $this->actingAs($onlyReports)->get('/reports/protests')->assertForbidden();
+        $this->actingAs($onlyProtests)->get('/reports/protests')->assertForbidden();
+    }
+
+    public function test_protests_export_requires_reports_export_and_protests_view(): void
+    {
+        $user = $this->userWithPermissions(['reports.view', 'reports.export']);
+
+        $this->actingAs($user)->get('/reports/protests/export/excel')->assertForbidden();
+    }
+
+    public function test_protests_excel_and_pdf_export_work(): void
+    {
+        Protest::factory()->create(['registered_at' => now()]);
+        $user = $this->userWithPermissions(['reports.view', 'reports.export', 'protests.view']);
+
+        $excel = $this->actingAs($user)->get('/reports/protests/export/excel');
+        $pdf = $this->actingAs($user)->get('/reports/protests/export/pdf');
+
+        $excel->assertOk()->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $pdf->assertOk()->assertHeader('Content-Type', 'application/pdf');
     }
 
     public function test_report_routes_require_reports_view_permission(): void

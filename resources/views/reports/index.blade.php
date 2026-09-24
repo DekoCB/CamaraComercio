@@ -36,5 +36,18 @@
                 </form>
             </div>
         </div>
+        @can('protests.view')
+            <div class="col-md-6">
+                <div class="card-surface h-100">
+                    <div class="kpi-icon icon-warning" style="margin-bottom: var(--space-4);">{{ icon('shield', 'icon', 18) }}</div>
+                    <h2 class="text-h3" style="margin-bottom: var(--space-2);">Protestos y Moras</h2>
+                    <p class="text-secondary" style="font-size: 0.875rem; margin-bottom: var(--space-4);">Cuántos protestos y moras se registraron, por tipo y por vía, en un período o rango de fechas.</p>
+                    <form method="GET" action="{{ route('reports.protests') }}" class="d-flex gap-2">
+                        <input type="month" name="period" class="form-control" style="max-width: 160px" value="{{ $defaultPeriod }}">
+                        <button type="submit" class="btn btn-primary">Ver reporte</button>
+                    </form>
+                </div>
+            </div>
+        @endcan
     </div>
 @endsection

@@ -213,6 +213,17 @@ Route::middleware('auth')->group(function () {
         Route::get('reports/debt/export/{format}', [ReportController::class, 'exportDebt'])->name('reports.debt.export');
         Route::get('reports/collectors/export/{format}', [ReportController::class, 'exportCollectors'])->name('reports.collectors.export');
     });
+    // "Protestos y Moras" en Reportes necesita protests.view además de
+    // reports.view/reports.export — mismo criterio de permiso en capas
+    // que Cartera (ver este dato es del módulo de Protestos, no de
+    // Reportes en sí), así que Gerencia (que sí tiene reports.*) no lo
+    // ve a menos que también tenga protests.view.
+    Route::middleware(['can:reports.view', 'can:protests.view'])->group(function () {
+        Route::get('reports/protests', [ReportController::class, 'protests'])->name('reports.protests');
+    });
+    Route::middleware(['can:reports.export', 'can:protests.view'])->group(function () {
+        Route::get('reports/protests/export/{format}', [ReportController::class, 'exportProtests'])->name('reports.protests.export');
+    });
 
     // Registro de Protestos y Moras — alcance PROVISIONAL, ver Protest.
     // Uso interno solo para personal de la CCH (sin consulta pública),
