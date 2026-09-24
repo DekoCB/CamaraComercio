@@ -21,6 +21,7 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymentImportController;
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProtestController;
 use App\Http\Controllers\RentalController;
 use App\Http\Controllers\ReportController;
 use Illuminate\Support\Facades\Auth;
@@ -211,6 +212,25 @@ Route::middleware('auth')->group(function () {
         Route::get('reports/collections/export/{format}', [ReportController::class, 'exportCollections'])->name('reports.collections.export');
         Route::get('reports/debt/export/{format}', [ReportController::class, 'exportDebt'])->name('reports.debt.export');
         Route::get('reports/collectors/export/{format}', [ReportController::class, 'exportCollectors'])->name('reports.collectors.export');
+    });
+
+    // Registro de Protestos y Moras — alcance PROVISIONAL, ver Protest.
+    // Uso interno solo para personal de la CCH (sin consulta pública),
+    // por eso no hay una ruta sin permiso como en associates.index.
+    // "create" debe registrarse antes de {protest} por la misma razón
+    // que en Alquileres y Facturación.
+    Route::middleware('can:protests.view')->group(function () {
+        Route::get('protests', [ProtestController::class, 'index'])->name('protests.index');
+    });
+    Route::middleware('can:protests.manage')->group(function () {
+        Route::get('protests/create', [ProtestController::class, 'create'])->name('protests.create');
+        Route::post('protests', [ProtestController::class, 'store'])->name('protests.store');
+    });
+    Route::middleware('can:protests.view')->group(function () {
+        Route::get('protests/{protest}', [ProtestController::class, 'show'])->name('protests.show');
+    });
+    Route::middleware('can:protests.manage')->group(function () {
+        Route::put('protests/{protest}/regularize', [ProtestController::class, 'regularize'])->name('protests.regularize');
     });
 
     // Administration (EP-02) — each sub-area gated by its own permission,

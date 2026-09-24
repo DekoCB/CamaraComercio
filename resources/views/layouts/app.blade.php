@@ -84,6 +84,13 @@
                     </a>
                 @endcan
             @endmodule
+            @module('protests')
+                @can('protests.view')
+                    <a href="{{ route('protests.index') }}" class="nav-link {{ request()->routeIs('protests.*') ? 'active' : '' }}" title="Protestos y Moras">
+                        {{ icon('shield') }}<span>Protestos y Moras</span>
+                    </a>
+                @endcan
+            @endmodule
             @module('reports')
                 @can('reports.view')
                     <a href="{{ route('reports.index') }}" class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}" title="Reportes">

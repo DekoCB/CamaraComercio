@@ -35,6 +35,8 @@ class RolesPermissionsModulesSeeder extends Seeder
             'reports.export' => 'Exportar reportes a Excel/PDF',
             'rentals.view' => 'Ver alquileres de espacios y el calendario de reservas',
             'rentals.manage' => 'Crear, confirmar, facturar y cancelar alquileres de espacios',
+            'protests.view' => 'Ver el registro de protestos y moras',
+            'protests.manage' => 'Registrar y regularizar protestos y moras',
             'admin.users' => 'Gestionar usuarios',
             'admin.roles' => 'Gestionar roles, permisos y accesos a módulos',
             'admin.modules' => 'Gestionar módulos del sistema',
@@ -47,8 +49,9 @@ class RolesPermissionsModulesSeeder extends Seeder
             'billing' => ['Facturación', 'bi-receipt', '/invoices', 4],
             'payments' => ['Pagos', 'bi-cash-coin', '/payments', 5],
             'portfolio' => ['Cartera', 'bi-graph-up', '/portfolio', 6],
-            'reports' => ['Reportes', 'bi-bar-chart', '/reports', 7],
-            'administration' => ['Administración', 'bi-gear', '/admin/users', 8],
+            'protests' => ['Protestos y Moras', 'bi-shield-exclamation', '/protests', 7],
+            'reports' => ['Reportes', 'bi-bar-chart', '/reports', 8],
+            'administration' => ['Administración', 'bi-gear', '/admin/users', 9],
         ])->map(fn (array $attrs, string $code) => Module::updateOrCreate(['code' => $code], [
             'name' => $attrs[0],
             'icon' => $attrs[1],
@@ -70,10 +73,10 @@ class RolesPermissionsModulesSeeder extends Seeder
         );
         $collectorRole->permissions()->sync($permissions->only([
             'associates.manage', 'billing.generate', 'billing.view', 'billing.edit', 'billing.void', 'payments.register',
-            'portfolio.view', 'reports.view', 'reports.export',
+            'portfolio.view', 'reports.view', 'reports.export', 'protests.view', 'protests.manage',
         ])->pluck('id'));
         $collectorRole->modules()->sync($modules->only([
-            'dashboard', 'associates', 'billing', 'payments', 'portfolio', 'reports',
+            'dashboard', 'associates', 'billing', 'payments', 'portfolio', 'protests', 'reports',
         ])->pluck('id'));
 
         // Los 4 roles pedidos por el cliente en la demo del 15-sep — acta2.txt
