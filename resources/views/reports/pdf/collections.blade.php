@@ -36,6 +36,10 @@
         </tr>
     </table>
 
+    <x-pdf-bar-chart title="Facturado vs. Cobrado" :categories="['Facturado', 'Cobrado']" :values="[$totalInvoiced, $totalCollected]" />
+
+    <x-pdf-line-chart title="Tendencia mensual (últimos 6 meses)" :categories="$trend['labels']" :series="['Facturado' => $trend['invoiced'], 'Cobrado' => $trend['collected']]" />
+
     <table>
         <thead>
         <tr>

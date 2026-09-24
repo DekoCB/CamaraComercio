@@ -108,7 +108,20 @@ class PortfolioController extends Controller
             return $this->export->toPdf('cartera-asociados', 'portfolio.pdf.index', ['associates' => $associates]);
         }
 
-        return $this->export->toExcel('cartera-asociados', 'Cartera por asociado', null, $headers, $rows, $totals);
+        $totalInvoicedChart = $associates->sum(fn (Associate $a) => (float) ($a->total_invoiced ?? 0));
+        $totalPaidChart = $associates->sum(fn (Associate $a) => (float) ($a->total_paid ?? 0));
+
+        $bySectorista = $associates
+            ->groupBy(fn (Associate $a) => $a->sectorista ?: 'Sin asignar')
+            ->map(fn ($group) => $group->sum(fn (Associate $a) => (float) ($a->total_invoiced ?? 0) - (float) ($a->total_paid ?? 0)))
+            ->sortDesc();
+
+        $charts = [
+            ['type' => 'bar', 'title' => 'Facturado, pagado y pendiente', 'categories' => ['Facturado', 'Pagado', 'Pendiente'], 'series' => ['Monto' => [$totalInvoicedChart, $totalPaidChart, $totalInvoicedChart - $totalPaidChart]]],
+            ['type' => 'bar', 'title' => 'Pendiente por sectorista', 'categories' => $bySectorista->keys()->all(), 'series' => ['Pendiente' => $bySectorista->values()->all()]],
+        ];
+
+        return $this->export->toExcel('cartera-asociados', 'Cartera por asociado', null, $headers, $rows, $totals, $charts);
     }
 
     /** A quién falta cobrar, exported with whatever filters are active. */
@@ -131,7 +144,15 @@ class PortfolioController extends Controller
             return $this->export->toPdf('cartera-deudores', 'portfolio.pdf.debtors', ['associates' => $associates]);
         }
 
-        return $this->export->toExcel('cartera-deudores', 'A quién falta cobrar', null, $headers, $rows, $totals);
+        $topDebtors = $associates
+            ->map(fn (Associate $a) => ['name' => $a->name, 'pending' => (float) ($a->total_invoiced ?? 0) - (float) ($a->total_paid ?? 0)])
+            ->sortByDesc('pending')
+            ->take(10);
+        $charts = $topDebtors->isEmpty() ? [] : [
+            ['type' => 'bar', 'title' => 'Top 10 — monto pendiente', 'categories' => $topDebtors->pluck('name')->all(), 'series' => ['Pendiente' => $topDebtors->pluck('pending')->all()]],
+        ];
+
+        return $this->export->toExcel('cartera-deudores', 'A quién falta cobrar', null, $headers, $rows, $totals, $charts);
     }
 
     public function statement(Request $request, Associate $associate): View

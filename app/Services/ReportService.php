@@ -57,7 +57,36 @@ class ReportService
             'paymentsCount' => $paymentsCount,
             'payingAssociatesCount' => $payingAssociatesCount,
             'payments' => (clone $payments)->with(['invoice.associate', 'registeredBy'])->orderByDesc('paid_at')->get(),
+            'trend' => $this->monthlyTrend($rangeEnd),
         ];
+    }
+
+    /**
+     * Facturado vs. cobrado for the 6 calendar months up to and including
+     * $through's month — context for the single period/range collections()
+     * already reports, not a replacement for it. Same accrual-vs-cash split
+     * as collections(), just repeated per month instead of summed once.
+     *
+     * @return array{labels: string[], invoiced: float[], collected: float[]}
+     */
+    public function monthlyTrend(CarbonImmutable $through, int $months = 6): array
+    {
+        $labels = [];
+        $invoiced = [];
+        $collected = [];
+
+        $monthNames = [1 => 'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+        for ($i = 0; $i < $months; $i++) {
+            $monthStart = $through->startOfMonth()->subMonths($months - 1 - $i);
+            $monthEnd = $monthStart->endOfMonth();
+
+            $labels[] = $monthNames[$monthStart->month].' '.$monthStart->format('y');
+            $invoiced[] = (float) Invoice::query()->whereNull('voided_at')->where('period', $monthStart->format('Y-m'))->sum('amount');
+            $collected[] = (float) Payment::active()->whereBetween('paid_at', [$monthStart, $monthEnd])->sum('amount');
+        }
+
+        return ['labels' => $labels, 'invoiced' => $invoiced, 'collected' => $collected];
     }
 
     /**

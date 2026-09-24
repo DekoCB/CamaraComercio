@@ -16,6 +16,16 @@
     <h1>A quién falta cobrar</h1>
     <div class="meta">Generado: {{ now()->format('d/m/Y H:i') }}</div>
 
+    @php
+        $topDebtors = $associates
+            ->map(fn ($a) => ['name' => $a->name, 'pending' => (float) ($a->total_invoiced ?? 0) - (float) ($a->total_paid ?? 0)])
+            ->sortByDesc('pending')
+            ->take(10);
+    @endphp
+    @if ($topDebtors->isNotEmpty())
+        <x-pdf-bar-chart title="Top 10 — monto pendiente" :categories="$topDebtors->pluck('name')->all()" :values="$topDebtors->pluck('pending')->all()" />
+    @endif
+
     <table>
         <thead>
         <tr>

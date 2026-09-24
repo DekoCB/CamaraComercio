@@ -29,6 +29,14 @@
         </tr>
     </table>
 
+    @php
+        $bucketColors = ['PENDIENTE' => '#2f6690', 'PARCIAL' => '#c98a2c', 'VENCIDA' => '#8a3b38'];
+        $debtLabels = $distribution->keys()->all();
+        $debtValues = $distribution->pluck('total_balance')->map(fn ($v) => (float) $v)->all();
+        $debtColors = array_map(fn ($bucket) => $bucketColors[$bucket] ?? '#57606b', $debtLabels);
+    @endphp
+    <x-pdf-pie-chart title="Deuda por estado" :labels="$debtLabels" :values="$debtValues" :colors="$debtColors" />
+
     <table>
         <thead>
         <tr>

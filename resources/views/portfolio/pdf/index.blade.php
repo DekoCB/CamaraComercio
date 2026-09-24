@@ -16,6 +16,24 @@
     <h1>Cartera por asociado</h1>
     <div class="meta">Generado: {{ now()->format('d/m/Y H:i') }}</div>
 
+    @php
+        $totalInvoicedChart = $associates->sum(fn ($a) => (float) ($a->total_invoiced ?? 0));
+        $totalPaidChart = $associates->sum(fn ($a) => (float) ($a->total_paid ?? 0));
+        $bySectorista = $associates
+            ->groupBy(fn ($a) => $a->sectorista ?: 'Sin asignar')
+            ->map(fn ($group) => $group->sum(fn ($a) => (float) ($a->total_invoiced ?? 0) - (float) ($a->total_paid ?? 0)))
+            ->sortDesc();
+    @endphp
+    <x-pdf-bar-chart
+        title="Facturado, pagado y pendiente"
+        :categories="['Facturado', 'Pagado', 'Pendiente']"
+        :values="[$totalInvoicedChart, $totalPaidChart, $totalInvoicedChart - $totalPaidChart]"
+    />
+
+    @if ($bySectorista->isNotEmpty())
+        <x-pdf-bar-chart title="Pendiente por sectorista" :categories="$bySectorista->keys()->all()" :values="$bySectorista->values()->all()" />
+    @endif
+
     <table>
         <thead>
         <tr>

@@ -63,7 +63,12 @@ class ReportController extends Controller
             return $this->export->toPdf("cobranza-{$label}", 'reports.pdf.collections', $data);
         }
 
-        return $this->export->toExcel("cobranza-{$label}", 'Cobranza del período', $data['isRange'] ? "{$data['dateFrom']} a {$data['dateTo']}" : $period, $headers, $rows, $totals);
+        $charts = [
+            ['type' => 'bar', 'title' => 'Facturado vs. Cobrado', 'categories' => ['Facturado', 'Cobrado'], 'series' => ['Monto' => [$data['totalInvoiced'], $data['totalCollected']]]],
+            ['type' => 'line', 'title' => 'Tendencia mensual (últimos 6 meses)', 'categories' => $data['trend']['labels'], 'series' => ['Facturado' => $data['trend']['invoiced'], 'Cobrado' => $data['trend']['collected']]],
+        ];
+
+        return $this->export->toExcel("cobranza-{$label}", 'Cobranza del período', $data['isRange'] ? "{$data['dateFrom']} a {$data['dateTo']}" : $period, $headers, $rows, $totals, $charts);
     }
 
     /**
@@ -93,7 +98,11 @@ class ReportController extends Controller
             return $this->export->toPdf('deuda-pendiente', 'reports.pdf.debt', $data);
         }
 
-        return $this->export->toExcel('deuda-pendiente', 'Deuda pendiente', null, $headers, $rows, $totals);
+        $charts = [
+            ['type' => 'pie', 'title' => 'Deuda por estado', 'categories' => $data['distribution']->keys()->all(), 'series' => ['Saldo' => $data['distribution']->pluck('total_balance')->map(fn ($v) => (float) $v)->all()]],
+        ];
+
+        return $this->export->toExcel('deuda-pendiente', 'Deuda pendiente', null, $headers, $rows, $totals, $charts);
     }
 
     public function exportCollectors(Request $request, string $format): StreamedResponse|Response
@@ -117,6 +126,10 @@ class ReportController extends Controller
             return $this->export->toPdf("productividad-{$label}", 'reports.pdf.collectors', $data);
         }
 
-        return $this->export->toExcel("productividad-{$label}", 'Productividad por cobrador', $data['isRange'] ? "{$data['dateFrom']} a {$data['dateTo']}" : $period, $headers, $rows, $totals);
+        $charts = [
+            ['type' => 'bar', 'title' => 'Total cobrado por cobrador', 'categories' => array_column($data['byCollector'], 'name'), 'series' => ['Total cobrado' => array_column($data['byCollector'], 'total')]],
+        ];
+
+        return $this->export->toExcel("productividad-{$label}", 'Productividad por cobrador', $data['isRange'] ? "{$data['dateFrom']} a {$data['dateTo']}" : $period, $headers, $rows, $totals, $charts);
     }
 }

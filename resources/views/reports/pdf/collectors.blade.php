@@ -33,6 +33,8 @@
         </tr>
     </table>
 
+    <x-pdf-bar-chart title="Total cobrado por cobrador" :categories="array_column($byCollector, 'name')" :values="array_column($byCollector, 'total')" />
+
     <table>
         <thead>
         <tr>
