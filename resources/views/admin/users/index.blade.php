@@ -3,7 +3,7 @@
 @section('title', 'Usuarios')
 
 @section('content')
-    <x-page-header title="Administración" subtitle="Usuarios, roles y módulos del sistema.">
+    <x-page-header title="Administración" subtitle="Usuarios, roles, módulos y sesiones del sistema.">
         <x-slot:actions>
             <a href="{{ route('admin.users.create') }}" class="btn btn-primary btn-sm js-modal-link" data-modal-title="Nuevo usuario">{{ icon('user-round-plus', 'icon', 16) }} Nuevo usuario</a>
         </x-slot:actions>

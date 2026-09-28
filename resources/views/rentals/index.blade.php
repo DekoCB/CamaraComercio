@@ -9,6 +9,9 @@
                 {{ icon('calendar', 'icon', 16) }} Calendario
             </a>
             @can('rentals.manage')
+                <a href="{{ route('spaces.index') }}" class="btn btn-secondary btn-sm">
+                    {{ icon('building-2', 'icon', 16) }} Gestionar espacios
+                </a>
                 <a href="{{ route('rentals.create') }}" class="btn btn-primary btn-sm js-modal-link" data-modal-title="Nueva cotización de alquiler">
                     {{ icon('plus', 'icon', 16) }} Nueva cotización
                 </a>

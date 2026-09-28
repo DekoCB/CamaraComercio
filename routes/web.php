@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\ModuleController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\SessionController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\AssociateController;
 use App\Http\Controllers\AssociateDeclarationController;
@@ -24,6 +25,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProtestController;
 use App\Http\Controllers\RentalController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SpaceController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -122,12 +124,20 @@ Route::middleware('auth')->group(function () {
         Route::get('rentals', [RentalController::class, 'index'])->name('rentals.index');
         Route::get('rentals/calendar', [RentalController::class, 'calendar'])->name('rentals.calendar');
     });
-    // "create" is a static path one segment deep like {rental} itself, so
-    // it has to be registered before that wildcard below — same reasoning
-    // as the "generate"/"import" statics in Facturación.
+    // "create" and "spaces" are static paths one segment deep like
+    // {rental} itself, so they have to be registered before that
+    // wildcard below — same reasoning as the "generate"/"import" statics
+    // in Facturación. Catálogo de espacios: pantalla chica anidada aquí
+    // (mismo permiso rentals.manage), sin módulo ni permiso propio.
     Route::middleware('can:rentals.manage')->group(function () {
         Route::get('rentals/create', [RentalController::class, 'create'])->name('rentals.create');
         Route::post('rentals', [RentalController::class, 'store'])->name('rentals.store');
+
+        Route::get('rentals/spaces', [SpaceController::class, 'index'])->name('spaces.index');
+        Route::get('rentals/spaces/create', [SpaceController::class, 'create'])->name('spaces.create');
+        Route::post('rentals/spaces', [SpaceController::class, 'store'])->name('spaces.store');
+        Route::get('rentals/spaces/{space}/edit', [SpaceController::class, 'edit'])->name('spaces.edit');
+        Route::put('rentals/spaces/{space}', [SpaceController::class, 'update'])->name('spaces.update');
     });
     Route::middleware('can:rentals.view')->group(function () {
         Route::get('rentals/{rental}', [RentalController::class, 'show'])->name('rentals.show');
@@ -270,6 +280,17 @@ Route::middleware('auth')->group(function () {
             Route::get('modules/create', [ModuleController::class, 'create'])->name('modules.create');
             Route::post('modules', [ModuleController::class, 'store'])->name('modules.store');
             Route::put('modules/{module}/toggle', [ModuleController::class, 'toggle'])->name('modules.toggle');
+        });
+
+        // Sesiones activas: lee directo la tabla sessions (SESSION_DRIVER=
+        // database), no un modelo Eloquent — el id de sesión es una
+        // cadena aleatoria, no una PK autoincremental, así que no hay
+        // route-model-binding aquí. "Cerrar remotamente" es literalmente
+        // borrar esa fila: en su siguiente request, Laravel no encuentra
+        // esa sesión y trata al navegador como no autenticado.
+        Route::middleware('can:admin.sessions')->group(function () {
+            Route::get('sessions', [SessionController::class, 'index'])->name('sessions.index');
+            Route::delete('sessions/{id}', [SessionController::class, 'destroy'])->name('sessions.destroy');
         });
     });
 });

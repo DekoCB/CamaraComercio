@@ -9,4 +9,9 @@
     <a href="{{ route('admin.modules.index') }}" class="tab-link {{ str_starts_with($current, 'admin.modules') ? 'is-active' : '' }}">
         {{ icon('grid-3x3', 'icon', 15) }} Módulos
     </a>
+    @can('admin.sessions')
+        <a href="{{ route('admin.sessions.index') }}" class="tab-link {{ str_starts_with($current, 'admin.sessions') ? 'is-active' : '' }}">
+            {{ icon('clock', 'icon', 15) }} Sesiones
+        </a>
+    @endcan
 </div>

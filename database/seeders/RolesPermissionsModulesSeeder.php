@@ -40,6 +40,7 @@ class RolesPermissionsModulesSeeder extends Seeder
             'admin.users' => 'Gestionar usuarios',
             'admin.roles' => 'Gestionar roles, permisos y accesos a módulos',
             'admin.modules' => 'Gestionar módulos del sistema',
+            'admin.sessions' => 'Ver sesiones activas y cerrarlas remotamente',
         ])->map(fn (string $description, string $code) => Permission::updateOrCreate(['code' => $code], ['description' => $description]));
 
         $modules = collect([

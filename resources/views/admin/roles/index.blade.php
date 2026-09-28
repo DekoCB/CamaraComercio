@@ -3,7 +3,7 @@
 @section('title', 'Roles')
 
 @section('content')
-    <x-page-header title="Administración" subtitle="Usuarios, roles y módulos del sistema.">
+    <x-page-header title="Administración" subtitle="Usuarios, roles, módulos y sesiones del sistema.">
         <x-slot:actions>
             <a href="{{ route('admin.roles.create') }}" class="btn btn-primary btn-sm js-modal-link" data-modal-title="Nuevo rol">{{ icon('plus', 'icon', 16) }} Nuevo rol</a>
         </x-slot:actions>
