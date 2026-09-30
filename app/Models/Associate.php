@@ -54,8 +54,34 @@ class Associate extends Model
      */
     public const MEMBERSHIP_DECLARATION_OPTIONS = ['ASPIRANTE', 'ASOCIADO'];
 
+    /** "N° de Trabajadores" en la Ficha de Afiliación (formato sept-2026). */
+    public const EMPLOYEE_COUNT_RANGES = ['1 a 10', '11 a 50', '51 a 100', '101 a 200', '201 a más'];
+
+    /**
+     * "Patrimonio (miles S/.)" y "Ventas Anuales (miles S/.)" comparten
+     * las mismas 6 franjas en el formulario físico — ambas están
+     * denominadas en miles de soles, a diferencia de "Ventas mensuales"
+     * (en soles corrientes, con sus propias franjas más abajo).
+     */
+    public const ASSETS_RANGES = [
+        'Menos de 2,000', 'De 2,001 a 5,000', 'De 5,001 a 10,000',
+        'De 10,001 a 25,000', 'De 25,001 a 50,000', 'Más de 50,000',
+    ];
+
+    public const ANNUAL_SALES_RANGES = [
+        'Menos de 2,000', 'De 2,001 a 5,000', 'De 5,001 a 10,000',
+        'De 10,001 a 25,000', 'De 25,001 a 50,000', 'Más de 50,000',
+    ];
+
+    public const MONTHLY_SALES_RANGES = ['Menos de 50', 'De 50 a 100', 'De 101 a 200', 'De 201 a 500', 'Más de 501'];
+
+    public const TRADE_ASSOCIATIONS = ['ADEX', 'SIN', 'ASBANC', 'COMEXPERU', 'CAMATUR', 'CONACO', 'CONFIEP'];
+
+    public const REGISTRATION_PAYMENT_METHODS = ['EFECTIVO', 'CHEQUE', 'DEPÓSITO'];
+
     protected $fillable = [
         'name',
+        'internal_code',
         'status',
         'sectorista',
         'category',
@@ -102,6 +128,23 @@ class Associate extends Model
         'public_registry_title',
         'main_activity',
         'complementary_activities',
+        'mobile_phone',
+        'fax',
+        'address_number',
+        'address_lot_interior',
+        'address_reference',
+        'sector_economico',
+        'main_inputs',
+        'main_suppliers',
+        'employee_count_range',
+        'assets_range',
+        'monthly_sales_range',
+        'annual_sales_range',
+        'trade_associations',
+        'interested_services',
+        'registration_fee',
+        'annual_fee',
+        'registration_payment_method',
     ];
 
     protected function casts(): array
@@ -115,6 +158,9 @@ class Associate extends Model
             'cch_rep_birthday' => 'date',
             'activities_started_at' => 'date',
             'complementary_activities' => 'array',
+            'trade_associations' => 'array',
+            'registration_fee' => 'decimal:2',
+            'annual_fee' => 'decimal:2',
         ];
     }
 

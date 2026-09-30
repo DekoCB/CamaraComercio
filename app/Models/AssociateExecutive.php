@@ -21,6 +21,7 @@ class AssociateExecutive extends Model
         'name',
         'position',
         'phone',
+        'email',
         'birthday',
     ];
 

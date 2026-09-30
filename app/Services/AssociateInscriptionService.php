@@ -21,14 +21,17 @@ use Illuminate\Support\Str;
 class AssociateInscriptionService
 {
     private const ASSOCIATE_FIELDS = [
-        'name', 'ruc', 'company', 'activities_started_at',
-        'billing_address', 'billing_district', 'billing_province',
+        'name', 'internal_code', 'ruc', 'company', 'anniversary_date',
+        'billing_address', 'address_number', 'address_lot_interior', 'billing_district', 'billing_province', 'address_reference',
         'mailing_address', 'mailing_district',
-        'contact_phone', 'email', 'website',
+        'contact_phone', 'mobile_phone', 'fax', 'email', 'website',
         'public_registry_entry', 'public_registry_title', 'notes',
         'legal_rep_name', 'legal_rep_dni', 'legal_rep_position', 'legal_rep_phone', 'legal_rep_email', 'legal_rep_birthday',
         'cch_rep_name', 'cch_rep_dni', 'cch_rep_position', 'cch_rep_phone', 'cch_rep_email', 'cch_rep_birthday',
-        'main_activity', 'complementary_activities', 'ciiu', 'profession',
+        'main_activity', 'complementary_activities', 'ciiu', 'profession', 'sector_economico',
+        'main_inputs', 'main_suppliers', 'employee_count_range', 'assets_range', 'monthly_sales_range', 'annual_sales_range',
+        'trade_associations', 'interested_services',
+        'category', 'monthly_fee', 'registration_fee', 'annual_fee', 'registration_payment_method',
     ];
 
     public function generate(Associate $associate, array $data, int $userId): AssociateDocument
@@ -45,6 +48,7 @@ class AssociateInscriptionService
                     'name' => $row['name'],
                     'position' => $row['position'] ?? null,
                     'phone' => $row['phone'] ?? null,
+                    'email' => $row['email'] ?? null,
                     'birthday' => $row['birthday'] ?? null,
                 ]);
             }
@@ -70,7 +74,10 @@ class AssociateInscriptionService
             $options = new DompdfOptions;
             $options->set('isRemoteEnabled', false);
             $dompdf = new Dompdf($options);
-            $dompdf->loadHtml(view('associates.pdf.ficha-inscripcion', ['associate' => $associate])->render());
+            $dompdf->loadHtml(view('associates.pdf.ficha-inscripcion', [
+                'associate' => $associate,
+                'logoDataUri' => $this->logoDataUri(),
+            ])->render());
             $dompdf->setPaper('a4', 'portrait');
             $dompdf->render();
             $content = $dompdf->output();
@@ -87,5 +94,12 @@ class AssociateInscriptionService
                 'uploaded_by' => $userId,
             ]);
         });
+    }
+
+    private function logoDataUri(): string
+    {
+        $path = public_path('images/logo.png');
+
+        return 'data:image/png;base64,'.base64_encode(file_get_contents($path));
     }
 }

@@ -97,7 +97,7 @@
                         <label class="field-label" for="membership_status">Declara en calidad de <span class="required">*</span></label>
                         <select class="form-select @error('membership_status') is-invalid @enderror" id="membership_status" name="membership_status" required>
                             @foreach (\App\Models\Associate::MEMBERSHIP_DECLARATION_OPTIONS as $option)
-                                <option value="{{ $option }}" {{ old('membership_status') === $option ? 'selected' : '' }}>{{ ucfirst(strtolower($option)) }}</option>
+                                <option value="{{ $option }}" {{ old('membership_status') === $option ? 'selected' : '' }}>{{ ucfirst(mb_strtolower($option, 'UTF-8')) }}</option>
                             @endforeach
                         </select>
                         @error('membership_status')<div class="field-error">{{ icon('alert-triangle', 'icon', 14) }} {{ $message }}</div>@enderror
