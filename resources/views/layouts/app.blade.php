@@ -91,17 +91,17 @@
                     </a>
                 @endcan
             @endmodule
-            @module('reports')
-                @can('reports.view')
-                    <a href="{{ route('reports.index') }}" class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}" title="Reportes">
-                        {{ icon('bar-chart-3') }}<span>Reportes</span>
-                    </a>
-                @endcan
-            @endmodule
             @module('parking')
                 @can('parking.manage')
                     <a href="{{ route('parking.index') }}" class="nav-link {{ request()->routeIs('parking.*') ? 'active' : '' }}" title="Estacionamiento">
                         {{ icon('car') }}<span>Estacionamiento</span>
+                    </a>
+                @endcan
+            @endmodule
+            @module('reports')
+                @can('reports.view')
+                    <a href="{{ route('reports.index') }}" class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}" title="Reportes">
+                        {{ icon('bar-chart-3') }}<span>Reportes</span>
                     </a>
                 @endcan
             @endmodule

@@ -107,6 +107,7 @@
                         <th class="is-numeric">Monto</th>
                         <th>Correo</th>
                         <th>Estado</th>
+                        <th>Juramentación</th>
                         <th class="is-numeric"><span class="visually-hidden">Acciones</span></th>
                     </tr>
                     </thead>
@@ -124,6 +125,13 @@
                             <td class="cell-muted cell-email" title="{{ $associate->email }}">{{ $associate->email ?? '-' }}</td>
                             <td>
                                 @include('associates._status_badge', ['status' => $associate->status])
+                            </td>
+                            <td class="cell-nowrap">
+                                @if ($associate->isSwornIn())
+                                    <span class="badge badge-success">{{ icon('check-circle-2', 'icon', 13) }} {{ $associate->sworn_in_at->format('d/m/Y') }}</span>
+                                @else
+                                    <span class="badge badge-warning">{{ icon('clock', 'icon', 13) }} No juramentado</span>
+                                @endif
                             </td>
                             <td class="is-numeric">
                                 <div class="row-actions">
