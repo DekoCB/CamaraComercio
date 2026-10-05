@@ -98,6 +98,13 @@
                     </a>
                 @endcan
             @endmodule
+            @module('parking')
+                @can('parking.manage')
+                    <a href="{{ route('parking.index') }}" class="nav-link {{ request()->routeIs('parking.*') ? 'active' : '' }}" title="Estacionamiento">
+                        {{ icon('car') }}<span>Estacionamiento</span>
+                    </a>
+                @endcan
+            @endmodule
             @module('administration')
                 <a href="{{ route('admin.users.index') }}" class="nav-link {{ request()->routeIs('admin.*') ? 'active' : '' }}" title="Administración">
                     {{ icon('settings') }}<span>Administración</span>

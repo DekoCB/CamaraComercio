@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Module;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\Setting;
 use App\Models\Space;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -41,6 +42,7 @@ class RolesPermissionsModulesSeeder extends Seeder
             'admin.roles' => 'Gestionar roles, permisos y accesos a módulos',
             'admin.modules' => 'Gestionar módulos del sistema',
             'admin.sessions' => 'Ver sesiones activas y cerrarlas remotamente',
+            'parking.manage' => 'Registrar vehículos, marcar su salida y ver el estacionamiento del local',
         ])->map(fn (string $description, string $code) => Permission::updateOrCreate(['code' => $code], ['description' => $description]));
 
         $modules = collect([
@@ -52,7 +54,8 @@ class RolesPermissionsModulesSeeder extends Seeder
             'portfolio' => ['Cartera', 'bi-graph-up', '/portfolio', 6],
             'protests' => ['Protestos y Moras', 'bi-shield-exclamation', '/protests', 7],
             'reports' => ['Reportes', 'bi-bar-chart', '/reports', 8],
-            'administration' => ['Administración', 'bi-gear', '/admin/users', 9],
+            'parking' => ['Estacionamiento', 'car', '/parking', 9],
+            'administration' => ['Administración', 'bi-gear', '/admin/users', 10],
         ])->map(fn (array $attrs, string $code) => Module::updateOrCreate(['code' => $code], [
             'name' => $attrs[0],
             'icon' => $attrs[1],
@@ -189,15 +192,28 @@ class RolesPermissionsModulesSeeder extends Seeder
             ]
         );
 
-        // Catálogo de espacios alquilables (nuevo módulo Alquileres): mismo
-        // criterio que el beneficio "uso gratuito del auditorio" — un
-        // espacio real conocido, sembrado una vez; no hay pantalla de
-        // administración todavía, así que agregar otro espacio implica
-        // esta misma vía (una fila nueva aquí), no una migración.
-        Space::updateOrCreate(['name' => 'Auditorio'], [
+        // Catálogo de espacios alquilables (nuevo módulo Alquileres), con
+        // sus tarifas por hora reales (confirmadas por el cliente oct-2026).
+        // Administrable desde "Gestionar espacios" — esto solo cubre una
+        // instalación nueva; un entorno ya sembrado se corrige con la
+        // migración 2026_10_03_120000, no reseteando estas filas.
+        Space::updateOrCreate(['name' => 'Auditorio Mayor'], [
             'description' => 'Auditorio principal de la Cámara de Comercio de Huancayo.',
+            'default_rate' => 250.00,
             'is_active' => true,
         ]);
+        Space::updateOrCreate(['name' => 'Auditorio Menor'], [
+            'description' => 'Sala del auditorio menor de la Cámara de Comercio de Huancayo.',
+            'default_rate' => 180.00,
+            'is_active' => true,
+        ]);
+        Space::updateOrCreate(['name' => 'Auditorio Junín'], [
+            'description' => 'Sala del auditorio Junín de la Cámara de Comercio de Huancayo.',
+            'default_rate' => 130.00,
+            'is_active' => true,
+        ]);
+
+        Setting::set('rentals.projector_hourly_rate', Setting::get('rentals.projector_hourly_rate', '30.00'));
 
         $this->command->info('Roles, permisos, módulos y usuarios de desarrollo listos:');
         $this->command->info('  Administrador:           admin@camaracomercio.test / Admin#2026Local');

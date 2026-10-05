@@ -2,7 +2,7 @@
     $val = fn (string $field, $default = '') => old($field, isset($rental) ? $rental->{$field} : $default);
 @endphp
 
-<form method="POST" action="{{ isset($rental) ? route('rentals.update', $rental) : route('rentals.store') }}" novalidate>
+<form method="POST" action="{{ isset($rental) ? route('rentals.update', $rental) : route('rentals.store') }}" class="js-rental-form" novalidate>
     @csrf
     @if (isset($rental))
         @method('PUT')
@@ -15,7 +15,7 @@
                 <select class="form-select @error('space_id') is-invalid @enderror" id="space_id" name="space_id" required>
                     <option value="">— Selecciona —</option>
                     @foreach ($spaces as $space)
-                        <option value="{{ $space->id }}" {{ (string) $val('space_id') === (string) $space->id ? 'selected' : '' }}>{{ $space->name }}</option>
+                        <option value="{{ $space->id }}" data-rate="{{ $space->default_rate ?? 0 }}" {{ (string) $val('space_id') === (string) $space->id ? 'selected' : '' }}>{{ $space->name }}</option>
                     @endforeach
                 </select>
                 @error('space_id')<div class="field-error">{{ icon('alert-triangle', 'icon', 14) }} {{ $message }}</div>@enderror
@@ -56,6 +56,10 @@
                     <span class="currency-prefix">S/</span>
                     <input type="number" step="0.01" min="0" class="form-control @error('amount') is-invalid @enderror" id="amount" name="amount" required value="{{ $val('amount') }}">
                 </div>
+                <div class="field-help" id="suggestedAmountHint" hidden>
+                    Sugerido: <span id="suggestedAmountValue"></span>
+                    <button type="button" class="btn btn-link btn-sm" id="useSuggestedAmount" style="padding: 0; vertical-align: baseline;">Usar</button>
+                </div>
                 @error('amount')<div class="field-error">{{ icon('alert-triangle', 'icon', 14) }} {{ $message }}</div>@enderror
             </div>
         </div>
@@ -64,6 +68,35 @@
                 <label class="field-label" for="purpose">Motivo</label>
                 <input type="text" class="form-control @error('purpose') is-invalid @enderror" id="purpose" name="purpose" maxlength="255" value="{{ $val('purpose') }}" placeholder="Charla, capacitación, evento...">
                 @error('purpose')<div class="field-error">{{ icon('alert-triangle', 'icon', 14) }} {{ $message }}</div>@enderror
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="field">
+                <label class="field-label" for="chairs">Sillas</label>
+                <input type="number" min="0" step="1" class="form-control @error('chairs') is-invalid @enderror" id="chairs" name="chairs" value="{{ $val('chairs') }}">
+                @error('chairs')<div class="field-error">{{ icon('alert-triangle', 'icon', 14) }} {{ $message }}</div>@enderror
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="field">
+                <label class="field-label" for="tables">Mesas</label>
+                <input type="number" min="0" step="1" class="form-control @error('tables') is-invalid @enderror" id="tables" name="tables" value="{{ $val('tables') }}">
+                @error('tables')<div class="field-error">{{ icon('alert-triangle', 'icon', 14) }} {{ $message }}</div>@enderror
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="field">
+                <label class="field-label" for="bank_account">Cuenta bancaria</label>
+                <input type="text" class="form-control @error('bank_account') is-invalid @enderror" id="bank_account" name="bank_account" maxlength="100" value="{{ $val('bank_account') }}" placeholder="BCP 193-...">
+                @error('bank_account')<div class="field-error">{{ icon('alert-triangle', 'icon', 14) }} {{ $message }}</div>@enderror
+            </div>
+        </div>
+        <div class="col-md-3 d-flex align-items-end">
+            <div class="field">
+                <label class="form-check">
+                    <input type="checkbox" class="form-check-input" id="projector" name="projector" value="1" data-rate="{{ $projectorHourlyRate ?? 0 }}" {{ $val('projector') ? 'checked' : '' }}>
+                    Incluye proyector (S/ {{ number_format((float) ($projectorHourlyRate ?? 0), 2) }} x hora)
+                </label>
             </div>
         </div>
         <div class="col-12">

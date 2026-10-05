@@ -21,12 +21,12 @@
     </div>
 
     <div class="field">
-        <label class="field-label" for="default_rate">Tarifa referencial</label>
+        <label class="field-label" for="default_rate">Tarifa por hora (S/)</label>
         <div class="input-money">
             <span class="currency-prefix">S/</span>
             <input type="number" step="0.01" min="0" class="form-control @error('default_rate') is-invalid @enderror" id="default_rate" name="default_rate" value="{{ $val('default_rate') }}">
         </div>
-        <div class="field-help">Solo referencial — el monto real se ajusta en cada cotización.</div>
+        <div class="field-help">Se usa para sugerir el monto al cotizar — el monto final se puede ajustar igual caso por caso.</div>
         @error('default_rate')<div class="field-error">{{ icon('alert-triangle', 'icon', 14) }} {{ $message }}</div>@enderror
     </div>
 

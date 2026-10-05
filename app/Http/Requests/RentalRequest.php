@@ -22,6 +22,9 @@ class RentalRequest extends FormRequest
             'ends_at' => ['required', 'date', 'after:starts_at'],
             'amount' => ['required', 'numeric', 'min:0'],
             'purpose' => ['nullable', 'string', 'max:255'],
+            'chairs' => ['nullable', 'integer', 'min:0', 'max:9999'],
+            'tables' => ['nullable', 'integer', 'min:0', 'max:9999'],
+            'bank_account' => ['nullable', 'string', 'max:100'],
             'notes' => ['nullable', 'string', 'max:1000'],
         ];
     }

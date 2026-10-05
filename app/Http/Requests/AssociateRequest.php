@@ -37,6 +37,7 @@ class AssociateRequest extends FormRequest
             'category' => ['nullable', 'string', 'max:10'],
             'monthly_fee' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
             'joined_at' => ['nullable', 'date'],
+            'sworn_in_at' => ['nullable', 'date'],
             'person_type' => ['nullable', Rule::in(Associate::PERSON_TYPES)],
             'anniversary_date' => ['nullable', 'date'],
             // OPEN_BUSINESS_DECISIONS.md #12: RUC adopted as the associate's
@@ -107,6 +108,7 @@ class AssociateRequest extends FormRequest
             'status' => 'estado',
             'monthly_fee' => 'monto a pagar',
             'joined_at' => 'fecha de ingreso',
+            'sworn_in_at' => 'fecha de juramentación',
             'person_type' => 'tipo de persona',
             'anniversary_date' => 'fecha de aniversario',
             'company' => 'nombre comercial',

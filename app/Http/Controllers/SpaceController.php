@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\SpaceRequest;
 use App\Models\AuditLog;
+use App\Models\Setting;
 use App\Models\Space;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,7 +19,23 @@ class SpaceController extends Controller
 {
     public function index(): View
     {
-        return view('spaces.index', ['spaces' => Space::orderBy('name')->get()]);
+        return view('spaces.index', [
+            'spaces' => Space::orderBy('name')->get(),
+            'projectorHourlyRate' => Setting::get('rentals.projector_hourly_rate', '0'),
+        ]);
+    }
+
+    public function updateEquipmentRates(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'projector_hourly_rate' => ['required', 'numeric', 'min:0', 'max:9999.99'],
+        ]);
+
+        Setting::set('rentals.projector_hourly_rate', number_format((float) $data['projector_hourly_rate'], 2, '.', ''));
+
+        AuditLog::record('rental.equipment_rates.update', 'setting', 'rentals.projector_hourly_rate', 'success');
+
+        return redirect()->route('spaces.index')->with('success', 'Tarifa de equipos actualizada.');
     }
 
     public function create(Request $request): View

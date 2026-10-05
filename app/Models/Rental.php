@@ -44,6 +44,10 @@ class Rental extends Model
         'ends_at',
         'purpose',
         'amount',
+        'chairs',
+        'tables',
+        'projector',
+        'bank_account',
         'status',
         'notes',
         'created_by',
@@ -58,8 +62,17 @@ class Rental extends Model
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
             'amount' => 'decimal:2',
+            'chairs' => 'integer',
+            'tables' => 'integer',
+            'projector' => 'boolean',
             'cancelled_at' => 'datetime',
         ];
+    }
+
+    /** Duración calculada del horario — nunca guardada aparte para que no pueda desacordar con starts_at/ends_at. */
+    public function hours(): float
+    {
+        return round($this->starts_at->diffInMinutes($this->ends_at) / 60, 1);
     }
 
     public function space(): BelongsTo

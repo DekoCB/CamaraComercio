@@ -17,6 +17,7 @@
             ['joined_at', 'Fecha de ingreso', 'date', ['col' => 4]],
             ['activities_started_at', 'Fecha de inicio de actividades', 'date', ['col' => 4]],
             ['anniversary_date', 'Fecha de aniversario', 'date', ['col' => 4]],
+            ['sworn_in_at', 'Fecha de juramentación', 'date', ['col' => 4, 'help' => 'Déjalo vacío si el asociado todavía no se ha juramentado.']],
             ['email', 'Correo de la empresa', 'email', ['col' => 6]],
             ['contact_phone', 'Teléfono de la empresa', 'text', ['col' => 6]],
             ['website', 'Página web', 'text', ['col' => 12]],

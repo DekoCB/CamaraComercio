@@ -87,6 +87,7 @@ class Associate extends Model
         'category',
         'monthly_fee',
         'joined_at',
+        'sworn_in_at',
         'person_type',
         'anniversary_date',
         'ruc',
@@ -153,6 +154,7 @@ class Associate extends Model
             'is_active' => 'boolean',
             'monthly_fee' => 'decimal:2',
             'joined_at' => 'date',
+            'sworn_in_at' => 'date',
             'anniversary_date' => 'date',
             'legal_rep_birthday' => 'date',
             'cch_rep_birthday' => 'date',
@@ -181,6 +183,11 @@ class Associate extends Model
             $associate->status ??= self::STATUS_ACTIVO;
             $associate->is_active = $associate->status === self::STATUS_ACTIVO;
         });
+    }
+
+    public function isSwornIn(): bool
+    {
+        return $this->sworn_in_at !== null;
     }
 
     public function invoices(): HasMany

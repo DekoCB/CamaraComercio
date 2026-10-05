@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Setting;
 use App\Models\Space;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\CreatesUsers;
@@ -22,20 +23,19 @@ class SpaceTest extends TestCase
         ]);
 
         $response->assertRedirect(route('spaces.index'));
-        $space = Space::first();
-        $this->assertSame('Sala de Reuniones', $space->name);
+        $space = Space::where('name', 'Sala de Reuniones')->firstOrFail();
         $this->assertTrue($space->is_active);
     }
 
     public function test_two_spaces_cannot_share_the_same_name(): void
     {
         $user = $this->userWithPermissions(['rentals.manage']);
-        Space::factory()->create(['name' => 'Auditorio']);
+        Space::factory()->create(['name' => 'Sala Piloto']);
 
-        $response = $this->actingAs($user)->post('/rentals/spaces', ['name' => 'Auditorio']);
+        $response = $this->actingAs($user)->post('/rentals/spaces', ['name' => 'Sala Piloto']);
 
         $response->assertSessionHasErrors('name');
-        $this->assertSame(1, Space::count());
+        $this->assertSame(1, Space::where('name', 'Sala Piloto')->count());
     }
 
     public function test_editing_can_toggle_a_space_inactive(): void
@@ -61,6 +61,32 @@ class SpaceTest extends TestCase
         $this->actingAs($user)->get('/rentals/spaces/create')->assertForbidden();
         $this->actingAs($user)->post('/rentals/spaces', ['name' => 'X'])->assertForbidden();
         $this->actingAs($user)->get("/rentals/spaces/{$space->id}/edit")->assertForbidden();
+    }
+
+    public function test_the_three_real_auditoriums_are_seeded_with_their_hourly_rates(): void
+    {
+        $this->assertSame('250.00', Space::where('name', 'Auditorio Mayor')->value('default_rate'));
+        $this->assertSame('180.00', Space::where('name', 'Auditorio Menor')->value('default_rate'));
+        $this->assertSame('130.00', Space::where('name', 'Auditorio Junín')->value('default_rate'));
+        $this->assertSame(0, Space::where('name', 'Auditorio')->count());
+        $this->assertSame('30.00', Setting::get('rentals.projector_hourly_rate'));
+    }
+
+    public function test_equipment_rate_can_be_updated(): void
+    {
+        $user = $this->userWithPermissions(['rentals.manage']);
+
+        $response = $this->actingAs($user)->put('/rentals/spaces/equipment-rates', ['projector_hourly_rate' => '35.50']);
+
+        $response->assertRedirect(route('spaces.index'));
+        $this->assertSame('35.50', Setting::get('rentals.projector_hourly_rate'));
+    }
+
+    public function test_updating_the_equipment_rate_requires_rentals_manage(): void
+    {
+        $user = $this->userWithPermissions(['rentals.view']);
+
+        $this->actingAs($user)->put('/rentals/spaces/equipment-rates', ['projector_hourly_rate' => '35.50'])->assertForbidden();
     }
 
     public function test_rentals_index_links_to_space_management_for_managers_only(): void

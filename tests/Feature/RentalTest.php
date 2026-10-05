@@ -41,6 +41,49 @@ class RentalTest extends TestCase
         $this->assertSame((float) $payload['amount'], (float) $rental->amount);
     }
 
+    public function test_create_form_shows_each_spaces_hourly_rate_and_the_projector_rate(): void
+    {
+        $user = $this->userWithPermissions(['rentals.manage']);
+
+        $response = $this->actingAs($user)->get('/rentals/create');
+
+        $response->assertOk()
+            ->assertSee('data-rate="250.00"', false)
+            ->assertSee('Auditorio Mayor')
+            ->assertSee('S/ 30.00 x hora');
+    }
+
+    public function test_equipment_and_bank_account_fields_are_saved(): void
+    {
+        $user = $this->userWithPermissions(['rentals.manage']);
+
+        $this->actingAs($user)->post('/rentals', $this->validPayload([
+            'chairs' => '40',
+            'tables' => '10',
+            'projector' => '1',
+            'bank_account' => 'BCP 193-1234567-0-12',
+        ]));
+
+        $rental = Rental::first();
+        $this->assertSame(40, $rental->chairs);
+        $this->assertSame(10, $rental->tables);
+        $this->assertTrue($rental->projector);
+        $this->assertSame('BCP 193-1234567-0-12', $rental->bank_account);
+        $this->assertSame(2.0, $rental->hours());
+    }
+
+    public function test_unchecking_projector_on_update_clears_it(): void
+    {
+        $user = $this->userWithPermissions(['rentals.manage']);
+        $this->actingAs($user)->post('/rentals', $this->validPayload(['projector' => '1']));
+        $rental = Rental::first();
+        $this->assertTrue($rental->fresh()->projector);
+
+        $this->actingAs($user)->put("/rentals/{$rental->id}", $this->validPayload());
+
+        $this->assertFalse($rental->fresh()->projector);
+    }
+
     public function test_ends_at_must_be_after_starts_at(): void
     {
         $user = $this->userWithPermissions(['rentals.manage']);

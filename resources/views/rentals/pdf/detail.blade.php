@@ -29,10 +29,26 @@
         <tr><th>Asociado</th><td>{{ $rental->associate->name }}{{ $rental->associate->ruc ? ' — RUC '.$rental->associate->ruc : '' }}</td></tr>
         <tr><th>Inicio</th><td>{{ $rental->starts_at->format('d/m/Y H:i') }}</td></tr>
         <tr><th>Fin</th><td>{{ $rental->ends_at->format('d/m/Y H:i') }}</td></tr>
+        <tr><th>Duración</th><td>{{ $rental->hours() }} horas</td></tr>
         @if ($rental->purpose)
             <tr><th>Motivo</th><td>{{ $rental->purpose }}</td></tr>
         @endif
+        @if ($rental->chairs || $rental->tables || $rental->projector)
+            <tr>
+                <th>Equipo incluido</th>
+                <td>
+                    {{ collect([
+                        $rental->chairs ? $rental->chairs.' sillas' : null,
+                        $rental->tables ? $rental->tables.' mesas' : null,
+                        $rental->projector ? 'Proyector' : null,
+                    ])->filter()->implode(' · ') }}
+                </td>
+            </tr>
+        @endif
         <tr class="totals"><th>Monto</th><td>{{ format_money($rental->amount) }}</td></tr>
+        @if ($rental->bank_account)
+            <tr><th>Cuenta bancaria</th><td>{{ $rental->bank_account }}</td></tr>
+        @endif
     </table>
 
     @if ($rental->status === \App\Models\Rental::STATUS_COTIZADA)

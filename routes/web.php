@@ -12,12 +12,14 @@ use App\Http\Controllers\AssociateInscriptionController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\BenefitController;
 use App\Http\Controllers\BenefitUsageController;
 use App\Http\Controllers\BirthdayController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceImportController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ParkingController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymentImportController;
 use App\Http\Controllers\PortfolioController;
@@ -76,6 +78,10 @@ Route::middleware('auth')->group(function () {
     // both by route middleware and by AssociateRequest::authorize()).
     Route::get('associates', [AssociateController::class, 'index'])->name('associates.index');
     Route::get('associates/birthdays', [BirthdayController::class, 'index'])->name('associates.birthdays');
+    // Catálogo de beneficios (oct-2026): tercera pestaña de Asociados,
+    // visible a cualquiera con sesión igual que el listado y Cumpleaños —
+    // solo crear/editar el catálogo exige associates.manage, más abajo.
+    Route::get('associates/benefits', [BenefitController::class, 'index'])->name('benefits.index');
     Route::get('associates/{associate}', [AssociateController::class, 'show'])->name('associates.show')->whereNumber('associate');
     Route::middleware('can:associates.manage')->group(function () {
         Route::get('associates/create', [AssociateController::class, 'create'])->name('associates.create');
@@ -113,6 +119,13 @@ Route::middleware('auth')->group(function () {
 
         Route::post('associates/{associate}/benefit-usages', [BenefitUsageController::class, 'store'])->name('associates.benefitUsages.store');
         Route::delete('benefit-usages/{benefitUsage}', [BenefitUsageController::class, 'destroy'])->name('associates.benefitUsages.destroy');
+
+        // Administrar el catálogo en sí (no el uso puntual de un asociado,
+        // ver arriba) — agregar/editar beneficios y su cupo anual.
+        Route::get('associates/benefits/create', [BenefitController::class, 'create'])->name('benefits.create');
+        Route::post('associates/benefits', [BenefitController::class, 'store'])->name('benefits.store');
+        Route::get('associates/benefits/{benefit}/edit', [BenefitController::class, 'edit'])->name('benefits.edit');
+        Route::put('associates/benefits/{benefit}', [BenefitController::class, 'update'])->name('benefits.update');
     });
 
     // Alquiler de espacios (nuevo módulo, sept-2026). Igual que Reportes,
@@ -136,6 +149,10 @@ Route::middleware('auth')->group(function () {
         Route::get('rentals/spaces', [SpaceController::class, 'index'])->name('spaces.index');
         Route::get('rentals/spaces/create', [SpaceController::class, 'create'])->name('spaces.create');
         Route::post('rentals/spaces', [SpaceController::class, 'store'])->name('spaces.store');
+        // Tarifa del proyector (equipo, no un espacio en sí) — también 3
+        // segmentos como {space} arriba, así que va antes de ese PUT.
+        Route::put('rentals/spaces/equipment-rates', [SpaceController::class, 'updateEquipmentRates'])->name('spaces.equipmentRates.update');
+
         Route::get('rentals/spaces/{space}/edit', [SpaceController::class, 'edit'])->name('spaces.edit');
         Route::put('rentals/spaces/{space}', [SpaceController::class, 'update'])->name('spaces.update');
     });
@@ -252,6 +269,20 @@ Route::middleware('auth')->group(function () {
     });
     Route::middleware('can:protests.manage')->group(function () {
         Route::put('protests/{protest}/regularize', [ProtestController::class, 'regularize'])->name('protests.regularize');
+    });
+
+    // Control de estacionamiento del propio local (oct-2026) — solo
+    // Administrador, así que un único permiso alcanza (sin separar
+    // ver/gestionar como en Protestos). "create" antes de {parkingSession}
+    // por la misma razón de siempre.
+    Route::middleware('can:parking.manage')->group(function () {
+        Route::get('parking', [ParkingController::class, 'index'])->name('parking.index');
+        Route::get('parking/create', [ParkingController::class, 'create'])->name('parking.create');
+        Route::post('parking', [ParkingController::class, 'store'])->name('parking.store');
+        Route::get('parking/{parkingSession}/edit', [ParkingController::class, 'edit'])->name('parking.edit');
+        Route::put('parking/{parkingSession}', [ParkingController::class, 'update'])->name('parking.update');
+        Route::get('parking/{parkingSession}/checkout', [ParkingController::class, 'checkoutForm'])->name('parking.checkout.form');
+        Route::put('parking/{parkingSession}/checkout', [ParkingController::class, 'checkout'])->name('parking.checkout');
     });
 
     // Administration (EP-02) — each sub-area gated by its own permission,

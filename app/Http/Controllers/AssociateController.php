@@ -26,8 +26,10 @@ class AssociateController extends Controller
     {
         $term = trim((string) $request->query('q', ''));
         $associateId = $request->query('associate_id');
+        $swornIn = $request->query('sworn_in');
+        $swornIn = in_array($swornIn, ['1', '0'], true) ? $swornIn : null;
 
-        $filters = ['q' => $term, 'associate_id' => $associateId];
+        $filters = ['q' => $term, 'associate_id' => $associateId, 'sworn_in' => $swornIn];
         foreach (self::COLUMN_FILTERS as $column) {
             $value = trim((string) $request->query($column, ''));
             $filters[$column] = $value !== '' ? $value : null;
@@ -56,6 +58,9 @@ class AssociateController extends Controller
                 $associates->where($column, $filters[$column]);
             }
         }
+        if ($swornIn !== null) {
+            $associates->when($swornIn === '1', fn ($q) => $q->whereNotNull('sworn_in_at'), fn ($q) => $q->whereNull('sworn_in_at'));
+        }
 
         $associates = $associates->orderBy('name')->paginate(15)->withQueryString();
 
@@ -75,6 +80,7 @@ class AssociateController extends Controller
                 'category' => $distinct('category'),
                 'person_type' => Associate::PERSON_TYPES,
                 'billing_district' => $distinct('billing_district'),
+                'sworn_in' => ['1', '0'],
             ],
         ]);
     }

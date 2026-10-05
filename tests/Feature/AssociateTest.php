@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Associate;
+use App\Models\Invoice;
+use Carbon\CarbonInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\CreatesUsers;
 use Tests\TestCase;
@@ -151,6 +153,7 @@ class AssociateTest extends TestCase
             'category' => 'D',
             'monthly_fee' => '75.00',
             'joined_at' => '2018-09-25',
+            'sworn_in_at' => '2019-03-12',
             'person_type' => 'PERSONA JURÍDICA',
             'anniversary_date' => '2017-07-01',
             'ruc' => '20602485146',
@@ -185,7 +188,7 @@ class AssociateTest extends TestCase
         $associate = Associate::where('ruc', '20602485146')->firstOrFail();
         foreach ($payload as $field => $expected) {
             $actual = $associate->{$field};
-            if ($actual instanceof \Carbon\CarbonInterface) {
+            if ($actual instanceof CarbonInterface) {
                 $actual = $actual->format('Y-m-d');
             }
             $this->assertEquals($expected, $actual, "Campo {$field}");
@@ -258,6 +261,28 @@ class AssociateTest extends TestCase
             ->assertSee('No se encontraron resultados para los filtros seleccionados');
     }
 
+    public function test_list_can_be_filtered_by_sworn_in_status(): void
+    {
+        $user = $this->userWithPermissions([]);
+        Associate::factory()->create(['ruc' => '20100000333', 'sworn_in_at' => '2020-05-01']);
+        Associate::factory()->create(['ruc' => '20100000444', 'sworn_in_at' => null]);
+
+        $this->actingAs($user)->get('/associates?sworn_in=1')
+            ->assertOk()->assertSee('20100000333')->assertDontSee('20100000444');
+        $this->actingAs($user)->get('/associates?sworn_in=0')
+            ->assertOk()->assertSee('20100000444')->assertDontSee('20100000333');
+    }
+
+    public function test_show_page_displays_sworn_in_status(): void
+    {
+        $user = $this->userWithPermissions([]);
+        $swornIn = Associate::factory()->create(['sworn_in_at' => '2021-08-15']);
+        $notSwornIn = Associate::factory()->create(['sworn_in_at' => null]);
+
+        $this->actingAs($user)->get("/associates/{$swornIn->id}")->assertOk()->assertSee('Juramentado el 15/08/2021');
+        $this->actingAs($user)->get("/associates/{$notSwornIn->id}")->assertOk()->assertSee('No juramentado');
+    }
+
     public function test_dropdown_options_and_active_chips_reflect_stored_values(): void
     {
         $user = $this->userWithPermissions([]);
@@ -292,7 +317,7 @@ class AssociateTest extends TestCase
     {
         $user = $this->userWithPermissions(['associates.manage']);
         $associate = Associate::factory()->create();
-        \App\Models\Invoice::factory()->for($associate)->create();
+        Invoice::factory()->for($associate)->create();
 
         $response = $this->actingAs($user)->from('/associates')->delete("/associates/{$associate->id}");
 

@@ -51,7 +51,7 @@ class AssociateDocument extends Model
         self::TYPE_FICHA_RUC => 'Ficha RUC',
         self::TYPE_LICENCIA_FUNCIONAMIENTO => 'Licencia de Funcionamiento',
         self::TYPE_VIGENCIA_PODER => 'Vigencia de Poder',
-        self::TYPE_TRES_ULTIMOS_PVP => '3 últimos PVP',
+        self::TYPE_TRES_ULTIMOS_PVP => 'PDT Archivos',
         self::TYPE_COPIA_PRIMER_PAGO => 'Copia de primer Pago',
         self::TYPE_TITULO_PROPIEDAD => 'Título de Propiedad',
         self::TYPE_CONVENIOS => 'Convenios',

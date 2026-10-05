@@ -1022,6 +1022,68 @@
     initPaymentQuickForm(document);
 
     /* ---------------------------------------------------------------
+     * Alquileres: monto sugerido = (tarifa del espacio + tarifa del
+     * proyector si se incluye) x horas — solo informativo, nunca
+     * sobrescribe el campo Monto a menos que se pulse "Usar": el monto
+     * real se ajusta caso por caso. Mismo patrón root-scoped que
+     * initPaymentQuickForm, para que funcione tanto en la página completa
+     * como cargado dentro del modal.
+     * --------------------------------------------------------------- */
+    function initRentalForm(root) {
+        var form = root.querySelector('.js-rental-form');
+        if (!form) {
+            return;
+        }
+
+        var spaceSelect = form.querySelector('#space_id');
+        var startsAt = form.querySelector('#starts_at');
+        var endsAt = form.querySelector('#ends_at');
+        var projector = form.querySelector('#projector');
+        var amount = form.querySelector('#amount');
+        var hint = form.querySelector('#suggestedAmountHint');
+        var hintValue = form.querySelector('#suggestedAmountValue');
+        var useButton = form.querySelector('#useSuggestedAmount');
+        if (!spaceSelect || !startsAt || !endsAt || !projector || !amount || !hint) {
+            return;
+        }
+
+        var suggested = 0;
+
+        function refresh() {
+            var option = spaceSelect.options[spaceSelect.selectedIndex];
+            var rate = option ? parseFloat(option.dataset.rate) : NaN;
+            var start = startsAt.value ? new Date(startsAt.value) : null;
+            var end = endsAt.value ? new Date(endsAt.value) : null;
+
+            if (!rate || isNaN(rate) || !start || !end || end <= start) {
+                hint.hidden = true;
+                return;
+            }
+
+            var hours = (end - start) / 3600000;
+            var projectorRate = projector.checked ? (parseFloat(projector.dataset.rate) || 0) : 0;
+            suggested = Math.round((rate + projectorRate) * hours * 100) / 100;
+
+            hintValue.textContent = 'S/ ' + suggested.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' (' + hours.toFixed(1) + ' h)';
+            hint.hidden = false;
+        }
+
+        [spaceSelect, startsAt, endsAt, projector].forEach(function (el) {
+            el.addEventListener('change', refresh);
+        });
+        refresh();
+
+        if (useButton) {
+            useButton.addEventListener('click', function () {
+                amount.value = suggested.toFixed(2);
+                amount.focus();
+            });
+        }
+    }
+
+    initRentalForm(document);
+
+    /* ---------------------------------------------------------------
      * Form modal — overlays small create/edit forms on top of the list
      * page that opened them instead of navigating to a dedicated
      * screen. The fetched form is the exact same partial the full-page
@@ -1192,6 +1254,7 @@
             enhanceDateInputs(formModalBody);
             initInvoiceWizard(formModalBody);
             initPaymentQuickForm(formModalBody);
+            initRentalForm(formModalBody);
             wireModalForm(formModalBody.querySelector('form'));
             var firstField = formModalBody.querySelector('input:not([type="hidden"]), .select-trigger, .datepicker-trigger, textarea');
             if (firstField) {

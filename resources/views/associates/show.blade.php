@@ -27,6 +27,7 @@
             ['Monto a pagar', $fmtMoney($associate->monthly_fee)],
             ['Último mes pagado', $fmtPeriod($lastPaidPeriod)],
             ['Fecha de ingreso', $fmtDate($associate->joined_at)],
+            ['Fecha de juramentación', $associate->isSwornIn() ? $fmtDate($associate->sworn_in_at) : 'Aún no juramentado'],
             ['Fecha de inicio de actividades', $fmtDate($associate->activities_started_at)],
             ['Fecha de aniversario', $fmtDate($associate->anniversary_date)],
             ['Correo de la empresa', $associate->email],
@@ -114,6 +115,11 @@
             <div>
                 <div class="d-flex align-items-center gap-2 mb-1">
                     @include('associates._status_badge', ['status' => $associate->status])
+                    @if ($associate->isSwornIn())
+                        <span class="badge badge-success">{{ icon('check-circle-2', 'icon', 13) }} Juramentado el {{ $associate->sworn_in_at->format('d/m/Y') }}</span>
+                    @else
+                        <span class="badge badge-warning">{{ icon('clock', 'icon', 13) }} No juramentado</span>
+                    @endif
                     @if ($associate->sectorista)
                         <span class="badge badge-neutral">Sectorista: {{ $associate->sectorista }}</span>
                     @endif

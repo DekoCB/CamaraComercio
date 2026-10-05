@@ -29,6 +29,10 @@ class RentalService
             'ends_at' => $data['ends_at'],
             'purpose' => $data['purpose'] ?? null,
             'amount' => $data['amount'],
+            'chairs' => $data['chairs'] ?? null,
+            'tables' => $data['tables'] ?? null,
+            'projector' => $data['projector'] ?? false,
+            'bank_account' => $data['bank_account'] ?? null,
             'status' => Rental::STATUS_COTIZADA,
             'notes' => $data['notes'] ?? null,
             'created_by' => $userId,
@@ -60,6 +64,10 @@ class RentalService
                 'ends_at' => $endsAt,
                 'purpose' => $data['purpose'] ?? null,
                 'amount' => $data['amount'],
+                'chairs' => $data['chairs'] ?? null,
+                'tables' => $data['tables'] ?? null,
+                'projector' => $data['projector'] ?? false,
+                'bank_account' => $data['bank_account'] ?? null,
                 'notes' => $data['notes'] ?? null,
             ]);
 

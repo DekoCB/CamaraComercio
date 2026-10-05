@@ -14,6 +14,23 @@
         </x-slot:actions>
     </x-page-header>
 
+    <div class="card-surface mb-3" style="max-width: 420px;">
+        <h3 class="form-section-title" style="padding: 0;">Tarifa de equipos</h3>
+        <form method="POST" action="{{ route('spaces.equipmentRates.update') }}" novalidate>
+            @csrf
+            @method('PUT')
+            <div class="field">
+                <label class="field-label" for="projector_hourly_rate">Proyector multimedia — ecrán (S/ por hora) <span class="required">*</span></label>
+                <div class="input-money">
+                    <span class="currency-prefix">S/</span>
+                    <input type="number" step="0.01" min="0" class="form-control @error('projector_hourly_rate') is-invalid @enderror" id="projector_hourly_rate" name="projector_hourly_rate" required value="{{ old('projector_hourly_rate', $projectorHourlyRate) }}">
+                </div>
+                @error('projector_hourly_rate')<div class="field-error">{{ icon('alert-triangle', 'icon', 14) }} {{ $message }}</div>@enderror
+            </div>
+            <button type="submit" class="btn btn-secondary btn-sm">{{ icon('check', 'icon', 15) }} Guardar tarifa</button>
+        </form>
+    </div>
+
     <div class="table-card">
         @if ($spaces->isEmpty())
             <x-empty-state icon="building-2" title="No hay espacios" message="Todavía no se registró ningún espacio alquilable." />
@@ -24,7 +41,7 @@
                     <tr>
                         <th>Nombre</th>
                         <th>Descripción</th>
-                        <th class="is-numeric">Tarifa referencial</th>
+                        <th class="is-numeric">Tarifa por hora</th>
                         <th>Estado</th>
                         <th class="is-numeric"><span class="visually-hidden">Acciones</span></th>
                     </tr>

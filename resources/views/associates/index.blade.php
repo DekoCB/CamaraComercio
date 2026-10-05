@@ -28,9 +28,19 @@
                 'person_type' => 'Tipo de persona',
                 'billing_district' => 'Distrito',
                 'associate_id' => 'Asociado',
+                'sworn_in' => 'Juramentación',
             ];
             $activeFilters = array_filter($filters, fn ($v) => $v !== null && $v !== '');
-            $pretty = fn ($key, $value) => $key === 'status' ? ucfirst(strtolower($value)) : $value;
+            $pretty = function ($key, $value) {
+                if ($key === 'status') {
+                    return ucfirst(mb_strtolower($value, 'UTF-8'));
+                }
+                if ($key === 'sworn_in') {
+                    return $value === '1' ? 'Juramentado' : 'No juramentado';
+                }
+
+                return $value;
+            };
         @endphp
 
         <div class="table-toolbar">
@@ -40,7 +50,7 @@
                     <input type="search" name="q" class="form-control" placeholder="Buscar por razón social, RUC, nombre comercial, correo o representante" value="{{ $term }}">
                 </div>
 
-                @foreach (['status' => 'Estado', 'sectorista' => 'Sectorista', 'category' => 'Categoría', 'person_type' => 'Tipo de persona', 'billing_district' => 'Distrito'] as $key => $label)
+                @foreach (['status' => 'Estado', 'sectorista' => 'Sectorista', 'category' => 'Categoría', 'person_type' => 'Tipo de persona', 'billing_district' => 'Distrito', 'sworn_in' => 'Juramentación'] as $key => $label)
                     @if ($key === 'status' || $filterOptions[$key] !== [])
                         <select name="{{ $key }}" class="form-select form-select-sm" aria-label="{{ $label }}" onchange="this.form.submit()">
                             <option value="">{{ $label }}: todos</option>

@@ -6,6 +6,7 @@ use App\Models\Associate;
 use App\Models\Benefit;
 use App\Models\BenefitUsage;
 use DateTimeInterface;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -27,6 +28,40 @@ class BenefitService
             ->where('benefit_id', $benefit->id)
             ->whereYear('used_at', $year)
             ->count();
+    }
+
+    /**
+     * Para cada asociado activo, cuántos usos le quedan de cada beneficio
+     * activo este año — una sola consulta agregada en vez de N+1, ya que
+     * esto alimenta una tabla con todos los asociados a la vez.
+     */
+    public function remainingByAssociate(?int $year = null): Collection
+    {
+        $year ??= now()->year;
+        $benefits = Benefit::where('is_active', true)->orderBy('name')->get();
+
+        $usedCounts = BenefitUsage::query()
+            ->whereYear('used_at', $year)
+            ->selectRaw('associate_id, benefit_id, count(*) as used')
+            ->groupBy('associate_id', 'benefit_id')
+            ->get()
+            ->groupBy('associate_id')
+            ->map(fn ($rows) => $rows->keyBy('benefit_id'));
+
+        return Associate::where('is_active', true)->orderBy('name')->get()
+            ->map(function (Associate $associate) use ($benefits, $usedCounts) {
+                $remaining = $benefits->mapWithKeys(function (Benefit $benefit) use ($associate, $usedCounts) {
+                    $used = $usedCounts->get($associate->id)?->get($benefit->id)?->used ?? 0;
+
+                    return [$benefit->id => max(0, $benefit->annual_quota - $used)];
+                });
+
+                return (object) [
+                    'associate' => $associate,
+                    'remaining' => $remaining,
+                    'total' => $remaining->sum(),
+                ];
+            });
     }
 
     public function register(Associate $associate, Benefit $benefit, DateTimeInterface $usedAt, ?string $notes, int $registeredBy): BenefitUsage

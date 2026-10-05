@@ -48,7 +48,12 @@
                     <div class="detail-item"><dt>Asociado</dt><dd><a href="{{ route('associates.show', $rental->associate) }}" class="link-plain">{{ $rental->associate->name }}</a></dd></div>
                     <div class="detail-item"><dt>Inicio</dt><dd>{{ $rental->starts_at->format('d/m/Y H:i') }}</dd></div>
                     <div class="detail-item"><dt>Fin</dt><dd>{{ $rental->ends_at->format('d/m/Y H:i') }}</dd></div>
+                    <div class="detail-item"><dt>Duración</dt><dd>{{ $rental->hours() }} horas</dd></div>
                     <div class="detail-item"><dt>Monto</dt><dd>{{ format_money($rental->amount) }}</dd></div>
+                    <div class="detail-item"><dt>Sillas</dt><dd>{{ $rental->chairs ?? '-' }}</dd></div>
+                    <div class="detail-item"><dt>Mesas</dt><dd>{{ $rental->tables ?? '-' }}</dd></div>
+                    <div class="detail-item"><dt>Proyector</dt><dd>{{ $rental->projector ? 'Sí' : 'No' }}</dd></div>
+                    <div class="detail-item"><dt>Cuenta bancaria</dt><dd>{{ $rental->bank_account ?? '-' }}</dd></div>
                     <div class="detail-item"><dt>Registrado por</dt><dd>{{ $rental->creator->name ?? '-' }}</dd></div>
                 </dl>
 
