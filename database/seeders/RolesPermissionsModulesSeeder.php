@@ -214,6 +214,12 @@ class RolesPermissionsModulesSeeder extends Seeder
         ]);
 
         Setting::set('rentals.projector_hourly_rate', Setting::get('rentals.projector_hourly_rate', '30.00'));
+        Setting::set('rentals.bank_account_official', Setting::get('rentals.bank_account_official', implode("\n", [
+            'CUENTA OFICIAL BBVA:',
+            'CUENTA BBVA: 0011-0235-02019704-13',
+            'CCI: 011-235-000201970413-95',
+            'A NOMBRE: Fanny Galván Muñico y José Luis García Terrazos',
+        ])));
 
         $this->command->info('Roles, permisos, módulos y usuarios de desarrollo listos:');
         $this->command->info('  Administrador:           admin@camaracomercio.test / Admin#2026Local');

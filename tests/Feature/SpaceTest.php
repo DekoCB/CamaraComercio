@@ -72,23 +72,6 @@ class SpaceTest extends TestCase
         $this->assertSame('30.00', Setting::get('rentals.projector_hourly_rate'));
     }
 
-    public function test_equipment_rate_can_be_updated(): void
-    {
-        $user = $this->userWithPermissions(['rentals.manage']);
-
-        $response = $this->actingAs($user)->put('/rentals/spaces/equipment-rates', ['projector_hourly_rate' => '35.50']);
-
-        $response->assertRedirect(route('spaces.index'));
-        $this->assertSame('35.50', Setting::get('rentals.projector_hourly_rate'));
-    }
-
-    public function test_updating_the_equipment_rate_requires_rentals_manage(): void
-    {
-        $user = $this->userWithPermissions(['rentals.view']);
-
-        $this->actingAs($user)->put('/rentals/spaces/equipment-rates', ['projector_hourly_rate' => '35.50'])->assertForbidden();
-    }
-
     public function test_rentals_index_links_to_space_management_for_managers_only(): void
     {
         $manager = $this->userWithPermissions(['rentals.view', 'rentals.manage']);

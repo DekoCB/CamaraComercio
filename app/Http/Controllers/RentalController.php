@@ -7,6 +7,7 @@ use App\Http\Requests\RentalRequest;
 use App\Models\Associate;
 use App\Models\AuditLog;
 use App\Models\Rental;
+use App\Models\RentalCatalogItem;
 use App\Models\Setting;
 use App\Models\Space;
 use App\Services\RentalService;
@@ -78,7 +79,8 @@ class RentalController extends Controller
         $data = [
             'spaces' => Space::where('is_active', true)->orderBy('name')->get(),
             'associates' => Associate::where('is_active', true)->orderBy('name')->get(),
-            'projectorHourlyRate' => Setting::get('rentals.projector_hourly_rate', '0'),
+            'catalogItems' => RentalCatalogItem::where('is_active', true)->orderBy('sort_order')->get(),
+            'bankAccountDefault' => Setting::get('rentals.bank_account_official'),
         ];
 
         // Same ajax/full-page branch every other modal-based form in this
@@ -89,7 +91,7 @@ class RentalController extends Controller
 
     public function store(RentalRequest $request): RedirectResponse
     {
-        $rental = $this->rentals->create($request->validated() + ['projector' => $request->boolean('projector')], $request->user()->id);
+        $rental = $this->rentals->create($request->validated(), $request->user()->id);
 
         AuditLog::record('rental.create', 'rental', (string) $rental->id, 'success');
 
@@ -98,25 +100,28 @@ class RentalController extends Controller
 
     public function show(Rental $rental): View
     {
-        $rental->load(['space', 'associate', 'creator', 'cancelledBy']);
+        $rental->load(['space', 'associate', 'creator', 'cancelledBy', 'lineItems.catalogItem', 'catering']);
 
         return view('rentals.show', ['rental' => $rental]);
     }
 
     public function edit(Rental $rental): View
     {
+        $rental->load(['lineItems', 'catering']);
+
         return view('rentals.edit', [
             'rental' => $rental,
             'spaces' => Space::where('is_active', true)->orderBy('name')->get(),
             'associates' => Associate::where('is_active', true)->orderBy('name')->get(),
-            'projectorHourlyRate' => Setting::get('rentals.projector_hourly_rate', '0'),
+            'catalogItems' => RentalCatalogItem::where('is_active', true)->orderBy('sort_order')->get(),
+            'bankAccountDefault' => Setting::get('rentals.bank_account_official'),
         ]);
     }
 
     public function update(RentalRequest $request, Rental $rental): RedirectResponse
     {
         try {
-            $this->rentals->update($rental, $request->validated() + ['projector' => $request->boolean('projector')]);
+            $this->rentals->update($rental, $request->validated());
         } catch (InvalidArgumentException $e) {
             return back()->withErrors(['amount' => $e->getMessage()])->withInput();
         }
@@ -177,7 +182,7 @@ class RentalController extends Controller
      */
     public function pdf(Rental $rental): Response
     {
-        $rental->load(['space', 'associate']);
+        $rental->load(['space', 'associate', 'lineItems.catalogItem', 'catering']);
 
         $options = new DompdfOptions;
         $options->set('isRemoteEnabled', false);

@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Alquiler de un espacio a un asociado. Una sola fila cubre todo el ciclo
@@ -40,13 +42,11 @@ class Rental extends Model
     protected $fillable = [
         'space_id',
         'associate_id',
+        'client_name',
         'starts_at',
         'ends_at',
         'purpose',
         'amount',
-        'chairs',
-        'tables',
-        'projector',
         'bank_account',
         'status',
         'notes',
@@ -62,11 +62,71 @@ class Rental extends Model
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
             'amount' => 'decimal:2',
-            'chairs' => 'integer',
-            'tables' => 'integer',
-            'projector' => 'boolean',
             'cancelled_at' => 'datetime',
         ];
+    }
+
+    public function lineItems(): HasMany
+    {
+        return $this->hasMany(RentalLineItem::class)->orderBy('sort_order');
+    }
+
+    public function catering(): HasOne
+    {
+        return $this->hasOne(RentalCatering::class);
+    }
+
+    /** "Sres. ___" del documento — el asociado si lo es, si no el nombre libre. */
+    public function clientLabel(): string
+    {
+        return $this->associate->name ?? $this->client_name ?? '-';
+    }
+
+    /** Monto del espacio en sí (tarifa × horas) — la primera fila de la tabla de ítems. */
+    public function spaceSubtotal(): float
+    {
+        return round((float) ($this->space->default_rate ?? 0) * $this->hours(), 2);
+    }
+
+    public function equipmentTotal(): float
+    {
+        return round($this->spaceSubtotal() + $this->lineItems->sum(fn (RentalLineItem $item) => $item->total()), 2);
+    }
+
+    public function cateringTotal(): float
+    {
+        return (float) ($this->catering?->daily_cost ?? 0);
+    }
+
+    public function grandTotal(): float
+    {
+        return round($this->equipmentTotal() + $this->cateringTotal(), 2);
+    }
+
+    /**
+     * Resumen corto de qué se está alquilando además del espacio en sí —
+     * para que se vea de un vistazo en la tarjeta principal, sin tener que
+     * bajar a la tabla completa de ítems.
+     */
+    public function itemsSummary(): ?string
+    {
+        $names = $this->lineItems->map(fn (RentalLineItem $item) => $item->label());
+
+        if ($names->isEmpty() && ! $this->catering) {
+            return null;
+        }
+
+        $shown = $names->take(3);
+        $summary = $shown->implode(', ');
+        $remaining = $names->count() - $shown->count();
+        if ($remaining > 0) {
+            $summary .= ' +'.$remaining.' más';
+        }
+        if ($this->catering) {
+            $summary .= ($summary !== '' ? ' · ' : '').'Coffee break';
+        }
+
+        return $summary;
     }
 
     /** Duración calculada del horario — nunca guardada aparte para que no pueda desacordar con starts_at/ends_at. */

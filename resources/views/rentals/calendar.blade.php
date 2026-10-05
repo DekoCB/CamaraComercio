@@ -70,9 +70,9 @@
                                     @foreach ($dayRentals as $rental)
                                         <a href="{{ route('rentals.show', $rental) }}"
                                            class="calendar-event {{ $statusDot[$rental->status] ?? '' }}"
-                                           title="{{ $rental->space->name }} — {{ $rental->associate->name }} ({{ $rental->statusLabel() }}), {{ $rental->starts_at->format('H:i') }}–{{ $rental->ends_at->format('H:i') }}">
+                                           title="{{ $rental->space->name }} — {{ $rental->clientLabel() }} ({{ $rental->statusLabel() }}), {{ $rental->starts_at->format('H:i') }}–{{ $rental->ends_at->format('H:i') }}">
                                             <span class="calendar-event-name">{{ $rental->space->name }}</span>
-                                            <span class="calendar-event-kind">{{ $rental->starts_at->format('H:i') }} · {{ $rental->associate->name }}</span>
+                                            <span class="calendar-event-kind">{{ $rental->starts_at->format('H:i') }} · {{ $rental->clientLabel() }}</span>
                                         </a>
                                     @endforeach
                                 @endif
@@ -96,7 +96,7 @@
                         @foreach ($todayRentals as $rental)
                             <li>
                                 <a href="{{ route('rentals.show', $rental) }}" class="link-plain">
-                                    <strong>{{ $rental->space->name }}</strong> — {{ $rental->associate->name }}
+                                    <strong>{{ $rental->space->name }}</strong> — {{ $rental->clientLabel() }}
                                 </a>
                                 <div class="cell-muted" style="font-size: var(--text-xs);">
                                     {{ $rental->starts_at->format('H:i') }}–{{ $rental->ends_at->format('H:i') }} · <x-status-badge :status="$rental->status" />

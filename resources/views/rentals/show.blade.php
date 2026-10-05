@@ -1,16 +1,18 @@
 @extends('layouts.app')
 
-@section('title', 'Alquiler — '.$rental->space->name.' ('.$rental->associate->name.')')
+@section('title', 'Alquiler — '.$rental->space->name.' ('.$rental->clientLabel().')')
 
 @section('content')
-    <x-page-header :title="$rental->space->name" :subtitle="$rental->associate->name">
+    <x-page-header :title="$rental->space->name" :subtitle="$rental->clientLabel()">
         <x-slot:actions>
             <a href="{{ route('rentals.index') }}" class="btn btn-secondary btn-sm">
                 {{ icon('arrow-left', 'icon', 16) }} Volver
             </a>
-            <a href="{{ route('associates.show', $rental->associate) }}" class="btn btn-secondary btn-sm">
-                {{ icon('users', 'icon', 16) }} Ficha del asociado
-            </a>
+            @if ($rental->associate)
+                <a href="{{ route('associates.show', $rental->associate) }}" class="btn btn-secondary btn-sm">
+                    {{ icon('users', 'icon', 16) }} Ficha del asociado
+                </a>
+            @endif
             <a href="{{ route('rentals.pdf', $rental) }}" class="btn btn-secondary btn-sm">
                 {{ icon('file-down', 'icon', 16) }} {{ $rental->status === \App\Models\Rental::STATUS_COTIZADA ? 'Descargar cotización' : 'Descargar comprobante' }}
             </a>
@@ -45,15 +47,24 @@
 
                 <dl class="detail-grid">
                     <div class="detail-item"><dt>Espacio</dt><dd>{{ $rental->space->name }}</dd></div>
-                    <div class="detail-item"><dt>Asociado</dt><dd><a href="{{ route('associates.show', $rental->associate) }}" class="link-plain">{{ $rental->associate->name }}</a></dd></div>
+                    <div class="detail-item">
+                        <dt>Cliente</dt>
+                        <dd>
+                            @if ($rental->associate)
+                                <a href="{{ route('associates.show', $rental->associate) }}" class="link-plain">{{ $rental->associate->name }}</a>
+                            @else
+                                {{ $rental->client_name ?? '-' }}
+                            @endif
+                        </dd>
+                    </div>
+                    @if ($rental->itemsSummary())
+                        <div class="detail-item is-wide"><dt>Incluye</dt><dd>{{ $rental->itemsSummary() }}</dd></div>
+                    @endif
                     <div class="detail-item"><dt>Inicio</dt><dd>{{ $rental->starts_at->format('d/m/Y H:i') }}</dd></div>
                     <div class="detail-item"><dt>Fin</dt><dd>{{ $rental->ends_at->format('d/m/Y H:i') }}</dd></div>
                     <div class="detail-item"><dt>Duración</dt><dd>{{ $rental->hours() }} horas</dd></div>
-                    <div class="detail-item"><dt>Monto</dt><dd>{{ format_money($rental->amount) }}</dd></div>
-                    <div class="detail-item"><dt>Sillas</dt><dd>{{ $rental->chairs ?? '-' }}</dd></div>
-                    <div class="detail-item"><dt>Mesas</dt><dd>{{ $rental->tables ?? '-' }}</dd></div>
-                    <div class="detail-item"><dt>Proyector</dt><dd>{{ $rental->projector ? 'Sí' : 'No' }}</dd></div>
-                    <div class="detail-item"><dt>Cuenta bancaria</dt><dd>{{ $rental->bank_account ?? '-' }}</dd></div>
+                    <div class="detail-item"><dt>Monto cobrado</dt><dd>{{ format_money($rental->amount) }}</dd></div>
+                    <div class="detail-item"><dt>Cuenta bancaria</dt><dd style="white-space: pre-line;">{{ $rental->bank_account ?? '-' }}</dd></div>
                     <div class="detail-item"><dt>Registrado por</dt><dd>{{ $rental->creator->name ?? '-' }}</dd></div>
                 </dl>
 
@@ -64,6 +75,48 @@
                     </div>
                 @endif
             </div>
+
+            @if ($rental->lineItems->isNotEmpty())
+                <div class="card-surface mb-3">
+                    <h3 class="form-section-title" style="padding: 0;">Bienes y servicios cotizados</h3>
+                    <div class="table-wrap">
+                        <table class="data-table data-table-compact">
+                            <thead>
+                            <tr><th>Ítem</th><th class="is-numeric">Cant.</th><th class="is-numeric">Precio/hora</th><th class="is-numeric">Total</th></tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td class="cell-primary">{{ $rental->space->name }}</td>
+                                <td class="is-numeric">{{ $rental->hours() }}</td>
+                                <td class="is-numeric cell-money">{{ $rental->space->default_rate ? format_money($rental->space->default_rate) : '-' }}</td>
+                                <td class="is-numeric cell-money">{{ format_money($rental->spaceSubtotal()) }}</td>
+                            </tr>
+                            @foreach ($rental->lineItems as $item)
+                                <tr>
+                                    <td>{{ $item->label() }}</td>
+                                    <td class="is-numeric">{{ rtrim(rtrim(number_format($item->quantity, 2), '0'), '.') }}</td>
+                                    <td class="is-numeric cell-money">{{ $item->hourly_rate ? format_money($item->hourly_rate) : '-' }}</td>
+                                    <td class="is-numeric cell-money">{{ format_money($item->total()) }}</td>
+                                </tr>
+                            @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            @endif
+
+            @if ($rental->catering)
+                <div class="card-surface mb-3">
+                    <h3 class="form-section-title" style="padding: 0;">Coffee break</h3>
+                    <dl class="detail-grid">
+                        <div class="detail-item"><dt>Personas</dt><dd>{{ $rental->catering->people_count ?? '-' }}</dd></div>
+                        <div class="detail-item"><dt>Bebida</dt><dd>{{ $rental->catering->drink_option ?? '-' }}</dd></div>
+                        <div class="detail-item"><dt>Sándwich</dt><dd>{{ $rental->catering->sandwich_option ?? '-' }}</dd></div>
+                        <div class="detail-item"><dt>Complemento dulce</dt><dd>{{ $rental->catering->dessert_option ?? '-' }}</dd></div>
+                        <div class="detail-item"><dt>Costo por día</dt><dd>{{ $rental->catering->daily_cost ? format_money($rental->catering->daily_cost) : '-' }}</dd></div>
+                    </dl>
+                </div>
+            @endif
         </div>
 
         @can('rentals.manage')

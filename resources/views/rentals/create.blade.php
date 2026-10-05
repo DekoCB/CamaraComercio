@@ -11,7 +11,7 @@
         </x-slot:actions>
     </x-page-header>
 
-    <div class="card-surface" style="max-width: 720px">
+    <div class="card-surface" style="max-width: 960px">
         @include('rentals._form')
     </div>
 @endsection

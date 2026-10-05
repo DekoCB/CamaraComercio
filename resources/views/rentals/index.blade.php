@@ -61,7 +61,13 @@
                     @foreach ($rentals as $rental)
                         <tr class="{{ $rental->isCancelled() ? 'row-voided' : '' }}">
                             <td class="cell-primary">{{ $rental->space->name }}</td>
-                            <td><a href="{{ route('associates.show', $rental->associate) }}" class="link-plain">{{ $rental->associate->name }}</a></td>
+                            <td>
+                                @if ($rental->associate)
+                                    <a href="{{ route('associates.show', $rental->associate) }}" class="link-plain">{{ $rental->associate->name }}</a>
+                                @else
+                                    {{ $rental->client_name ?? '-' }}
+                                @endif
+                            </td>
                             <td class="cell-nowrap">
                                 {{ $rental->starts_at->format('d/m/Y H:i') }}
                                 <div class="cell-muted" style="font-size: var(--text-xs);">a {{ $rental->ends_at->format('d/m/Y H:i') }}</div>

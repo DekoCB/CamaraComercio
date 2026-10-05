@@ -25,6 +25,7 @@ use App\Http\Controllers\PaymentImportController;
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProtestController;
+use App\Http\Controllers\RentalCatalogItemController;
 use App\Http\Controllers\RentalController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SpaceController;
@@ -149,12 +150,19 @@ Route::middleware('auth')->group(function () {
         Route::get('rentals/spaces', [SpaceController::class, 'index'])->name('spaces.index');
         Route::get('rentals/spaces/create', [SpaceController::class, 'create'])->name('spaces.create');
         Route::post('rentals/spaces', [SpaceController::class, 'store'])->name('spaces.store');
-        // Tarifa del proyector (equipo, no un espacio en sí) — también 3
-        // segmentos como {space} arriba, así que va antes de ese PUT.
-        Route::put('rentals/spaces/equipment-rates', [SpaceController::class, 'updateEquipmentRates'])->name('spaces.equipmentRates.update');
-
         Route::get('rentals/spaces/{space}/edit', [SpaceController::class, 'edit'])->name('spaces.edit');
         Route::put('rentals/spaces/{space}', [SpaceController::class, 'update'])->name('spaces.update');
+
+        // Catálogo de equipos/servicios ("BIENES DE CCH") y la cuenta
+        // bancaria oficial que se muestra en cada cotización — misma
+        // pantalla anidada, mismo permiso. "create"/"bank-account" antes
+        // de {catalogItem} por la misma razón de siempre.
+        Route::get('rentals/equipment', [RentalCatalogItemController::class, 'index'])->name('rental-catalog-items.index');
+        Route::get('rentals/equipment/create', [RentalCatalogItemController::class, 'create'])->name('rental-catalog-items.create');
+        Route::post('rentals/equipment', [RentalCatalogItemController::class, 'store'])->name('rental-catalog-items.store');
+        Route::put('rentals/equipment/bank-account', [RentalCatalogItemController::class, 'updateBankAccount'])->name('rental-catalog-items.bankAccount.update');
+        Route::get('rentals/equipment/{catalogItem}/edit', [RentalCatalogItemController::class, 'edit'])->name('rental-catalog-items.edit');
+        Route::put('rentals/equipment/{catalogItem}', [RentalCatalogItemController::class, 'update'])->name('rental-catalog-items.update');
     });
     Route::middleware('can:rentals.view')->group(function () {
         Route::get('rentals/{rental}', [RentalController::class, 'show'])->name('rentals.show');

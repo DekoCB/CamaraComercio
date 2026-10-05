@@ -1038,38 +1038,64 @@
         var spaceSelect = form.querySelector('#space_id');
         var startsAt = form.querySelector('#starts_at');
         var endsAt = form.querySelector('#ends_at');
-        var projector = form.querySelector('#projector');
         var amount = form.querySelector('#amount');
         var hint = form.querySelector('#suggestedAmountHint');
         var hintValue = form.querySelector('#suggestedAmountValue');
         var useButton = form.querySelector('#useSuggestedAmount');
-        if (!spaceSelect || !startsAt || !endsAt || !projector || !amount || !hint) {
+        var cateringCost = form.querySelector('#catering_daily_cost');
+        var qtyInputs = form.querySelectorAll('.js-line-qty');
+        if (!spaceSelect || !startsAt || !endsAt || !amount || !hint) {
             return;
         }
 
         var suggested = 0;
 
+        function money(value) {
+            return 'S/ ' + value.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
         function refresh() {
             var option = spaceSelect.options[spaceSelect.selectedIndex];
-            var rate = option ? parseFloat(option.dataset.rate) : NaN;
+            var spaceRate = option ? parseFloat(option.dataset.rate) : NaN;
             var start = startsAt.value ? new Date(startsAt.value) : null;
             var end = endsAt.value ? new Date(endsAt.value) : null;
+            var hours = (start && end && end > start) ? (end - start) / 3600000 : 0;
 
-            if (!rate || isNaN(rate) || !start || !end || end <= start) {
+            var itemsTotal = 0;
+            qtyInputs.forEach(function (qtyInput) {
+                var row = qtyInput.closest('tr');
+                var rateInput = row ? row.querySelector('.js-line-rate') : null;
+                var totalCell = row ? row.querySelector('.js-line-total') : null;
+                var qty = parseFloat(qtyInput.value) || 0;
+                var rate = rateInput ? (parseFloat(rateInput.value) || 0) : 0;
+                var lineTotal = qty * rate;
+                if (totalCell) {
+                    totalCell.textContent = qty > 0 ? money(lineTotal) : '—';
+                }
+                itemsTotal += lineTotal;
+            });
+
+            var cateringTotal = cateringCost ? (parseFloat(cateringCost.value) || 0) : 0;
+            var spaceTotal = (spaceRate && hours) ? spaceRate * hours : 0;
+
+            if (!spaceTotal && !itemsTotal && !cateringTotal) {
                 hint.hidden = true;
                 return;
             }
 
-            var hours = (end - start) / 3600000;
-            var projectorRate = projector.checked ? (parseFloat(projector.dataset.rate) || 0) : 0;
-            suggested = Math.round((rate + projectorRate) * hours * 100) / 100;
-
-            hintValue.textContent = 'S/ ' + suggested.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' (' + hours.toFixed(1) + ' h)';
+            suggested = Math.round((spaceTotal + itemsTotal + cateringTotal) * 100) / 100;
+            hintValue.textContent = money(suggested) + (hours ? ' (' + hours.toFixed(1) + ' h)' : '');
             hint.hidden = false;
         }
 
-        [spaceSelect, startsAt, endsAt, projector].forEach(function (el) {
+        [spaceSelect, startsAt, endsAt].forEach(function (el) {
             el.addEventListener('change', refresh);
+        });
+        if (cateringCost) {
+            cateringCost.addEventListener('input', refresh);
+        }
+        form.querySelectorAll('.js-line-qty, .js-line-rate').forEach(function (el) {
+            el.addEventListener('input', refresh);
         });
         refresh();
 

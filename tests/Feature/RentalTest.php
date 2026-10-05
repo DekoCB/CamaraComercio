@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Associate;
 use App\Models\Rental;
+use App\Models\RentalCatalogItem;
 use App\Models\Space;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\CreatesUsers;
@@ -41,8 +42,10 @@ class RentalTest extends TestCase
         $this->assertSame((float) $payload['amount'], (float) $rental->amount);
     }
 
-    public function test_create_form_shows_each_spaces_hourly_rate_and_the_projector_rate(): void
+    public function test_create_form_shows_each_spaces_hourly_rate_and_the_catalog_items(): void
     {
+        Space::factory()->create(['name' => 'Auditorio Mayor', 'default_rate' => 250]);
+        RentalCatalogItem::factory()->create(['name' => 'Proyector multimedia - ecrán', 'default_hourly_rate' => 30]);
         $user = $this->userWithPermissions(['rentals.manage']);
 
         $response = $this->actingAs($user)->get('/rentals/create');
@@ -50,38 +53,149 @@ class RentalTest extends TestCase
         $response->assertOk()
             ->assertSee('data-rate="250.00"', false)
             ->assertSee('Auditorio Mayor')
-            ->assertSee('S/ 30.00 x hora');
+            ->assertSee('Proyector multimedia - ecrán');
     }
 
-    public function test_equipment_and_bank_account_fields_are_saved(): void
+    public function test_bank_account_and_client_name_without_an_associate_are_saved(): void
     {
         $user = $this->userWithPermissions(['rentals.manage']);
 
         $this->actingAs($user)->post('/rentals', $this->validPayload([
-            'chairs' => '40',
-            'tables' => '10',
-            'projector' => '1',
-            'bank_account' => 'BCP 193-1234567-0-12',
+            'associate_id' => null,
+            'client_name' => 'Branko Perú',
+            'bank_account' => "CUENTA BBVA: 0011-0235-02019704-13\nCCI: 011-235-000201970413-95",
         ]));
 
         $rental = Rental::first();
-        $this->assertSame(40, $rental->chairs);
-        $this->assertSame(10, $rental->tables);
-        $this->assertTrue($rental->projector);
-        $this->assertSame('BCP 193-1234567-0-12', $rental->bank_account);
+        $this->assertNull($rental->associate_id);
+        $this->assertSame('Branko Perú', $rental->client_name);
+        $this->assertSame('Branko Perú', $rental->clientLabel());
+        $this->assertStringContainsString('BBVA', $rental->bank_account);
         $this->assertSame(2.0, $rental->hours());
     }
 
-    public function test_unchecking_projector_on_update_clears_it(): void
+    public function test_either_an_associate_or_a_client_name_is_required(): void
     {
         $user = $this->userWithPermissions(['rentals.manage']);
-        $this->actingAs($user)->post('/rentals', $this->validPayload(['projector' => '1']));
+
+        $response = $this->actingAs($user)->post('/rentals', $this->validPayload(['associate_id' => null, 'client_name' => null]));
+
+        $response->assertSessionHasErrors(['associate_id', 'client_name']);
+    }
+
+    public function test_line_items_are_saved_and_rows_without_quantity_are_skipped(): void
+    {
+        $catalogItem = RentalCatalogItem::factory()->create(['name' => 'Proyector', 'default_hourly_rate' => 30]);
+        $user = $this->userWithPermissions(['rentals.manage']);
+
+        $this->actingAs($user)->post('/rentals', $this->validPayload([
+            'line_items' => [
+                ['catalog_item_id' => $catalogItem->id, 'quantity' => '2', 'hourly_rate' => '30'],
+                ['description' => 'Sin cantidad, no debe guardarse', 'quantity' => '', 'hourly_rate' => '10'],
+                ['description' => 'Pizarra extra', 'quantity' => '1', 'hourly_rate' => ''],
+            ],
+        ]));
+
         $rental = Rental::first();
-        $this->assertTrue($rental->fresh()->projector);
+        $this->assertSame(2, $rental->lineItems()->count());
+        $projectorLine = $rental->lineItems()->where('catalog_item_id', $catalogItem->id)->first();
+        $this->assertSame(60.0, $projectorLine->total());
+        $customLine = $rental->lineItems()->whereNull('catalog_item_id')->first();
+        $this->assertSame('Pizarra extra', $customLine->description);
+    }
 
-        $this->actingAs($user)->put("/rentals/{$rental->id}", $this->validPayload());
+    public function test_catering_is_saved_only_when_it_has_content(): void
+    {
+        $user = $this->userWithPermissions(['rentals.manage']);
 
-        $this->assertFalse($rental->fresh()->projector);
+        $this->actingAs($user)->post('/rentals', $this->validPayload([
+            'catering' => [
+                'people_count' => '90',
+                'drink_option' => 'Café',
+                'sandwich_option' => 'Sandwich de asado',
+                'dessert_option' => 'Pionono',
+                'daily_cost' => '1350.00',
+            ],
+        ]));
+
+        $rental = Rental::first();
+        $this->assertNotNull($rental->catering);
+        $this->assertSame(90, $rental->catering->people_count);
+        $this->assertSame(1350.0, (float) $rental->catering->daily_cost);
+        $this->assertSame(1350.0, $rental->cateringTotal());
+    }
+
+    public function test_catering_is_not_created_when_the_section_is_left_blank(): void
+    {
+        $user = $this->userWithPermissions(['rentals.manage']);
+
+        $this->actingAs($user)->post('/rentals', $this->validPayload());
+
+        $this->assertNull(Rental::first()->catering);
+    }
+
+    public function test_items_summary_lists_the_first_three_items_and_counts_the_rest(): void
+    {
+        $items = RentalCatalogItem::factory()->count(5)->sequence(
+            ['name' => 'Proyector'],
+            ['name' => 'Sillas sin fundas'],
+            ['name' => 'Mesas con mantel'],
+            ['name' => 'Micrófonos'],
+            ['name' => 'Pizarra'],
+        )->create();
+        $user = $this->userWithPermissions(['rentals.manage']);
+
+        $this->actingAs($user)->post('/rentals', $this->validPayload([
+            'line_items' => $items->map(fn ($item) => ['catalog_item_id' => $item->id, 'quantity' => '1', 'hourly_rate' => '0'])->all(),
+            'catering' => ['daily_cost' => '100'],
+        ]));
+
+        $rental = Rental::first()->fresh();
+        $this->assertSame('Proyector, Sillas sin fundas, Mesas con mantel +2 más · Coffee break', $rental->itemsSummary());
+    }
+
+    public function test_items_summary_is_null_without_items_or_catering(): void
+    {
+        $user = $this->userWithPermissions(['rentals.manage']);
+        $this->actingAs($user)->post('/rentals', $this->validPayload());
+
+        $this->assertNull(Rental::first()->fresh()->itemsSummary());
+    }
+
+    public function test_grand_total_combines_space_line_items_and_catering(): void
+    {
+        $space = Space::factory()->create(['default_rate' => 180]);
+        $catalogItem = RentalCatalogItem::factory()->create(['default_hourly_rate' => 30]);
+        $user = $this->userWithPermissions(['rentals.manage']);
+
+        $this->actingAs($user)->post('/rentals', $this->validPayload([
+            'space_id' => $space->id,
+            'line_items' => [['catalog_item_id' => $catalogItem->id, 'quantity' => '2', 'hourly_rate' => '30']],
+            'catering' => ['daily_cost' => '1350.00'],
+        ]));
+
+        $rental = Rental::first()->fresh();
+        // Espacio: 180 x 2h = 360; ítem: 2 x 30 = 60; equipo = 420; + catering 1350 = 1770.
+        $this->assertSame(420.0, $rental->equipmentTotal());
+        $this->assertSame(1770.0, $rental->grandTotal());
+    }
+
+    public function test_updating_replaces_the_previous_line_items(): void
+    {
+        $itemA = RentalCatalogItem::factory()->create(['default_hourly_rate' => 10]);
+        $itemB = RentalCatalogItem::factory()->create(['default_hourly_rate' => 20]);
+        $user = $this->userWithPermissions(['rentals.manage']);
+        $this->actingAs($user)->post('/rentals', $this->validPayload([
+            'line_items' => [['catalog_item_id' => $itemA->id, 'quantity' => '1', 'hourly_rate' => '10']],
+        ]));
+        $rental = Rental::first();
+
+        $this->actingAs($user)->put("/rentals/{$rental->id}", $this->validPayload([
+            'line_items' => [['catalog_item_id' => $itemB->id, 'quantity' => '3', 'hourly_rate' => '20']],
+        ]));
+
+        $this->assertSame(1, $rental->lineItems()->count());
+        $this->assertSame($itemB->id, $rental->lineItems()->first()->catalog_item_id);
     }
 
     public function test_ends_at_must_be_after_starts_at(): void
