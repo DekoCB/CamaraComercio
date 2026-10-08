@@ -141,6 +141,44 @@ class ReportController extends Controller
         return $this->export->toExcel("productividad-{$label}", 'Productividad por cobrador', $data['isRange'] ? "{$data['dateFrom']} a {$data['dateTo']}" : $period, $headers, $rows, $totals, $charts);
     }
 
+    public function plates(Request $request): View
+    {
+        $period = $request->query('period', now()->format('Y-m'));
+        [$dateFrom, $dateTo] = $this->dateRangeFrom($request);
+
+        return view('reports.plates', $this->reports->plates($period, $dateFrom, $dateTo));
+    }
+
+    public function exportPlates(Request $request, string $format): StreamedResponse|Response
+    {
+        $period = $request->query('period', now()->format('Y-m'));
+        [$dateFrom, $dateTo] = $this->dateRangeFrom($request);
+        $data = $this->reports->plates($period, $dateFrom, $dateTo);
+        $label = $data['isRange'] ? "{$data['dateFrom']}_{$data['dateTo']}" : $period;
+
+        $headers = ['Fecha', 'Tipo', 'Placa', 'Solicitante', 'Comprobante', 'Costo'];
+        $rows = $data['records']->map(fn ($r) => [
+            $r->issued_at->format('d/m/Y'),
+            $r->procedureLabel(),
+            $r->plate_number ?? '-',
+            $r->requesterLabel(),
+            $r->receiptLabel(),
+            number_format((float) $r->amount, 2),
+        ])->all();
+        $totals = ['', '', '', '', 'Total', number_format($data['totalAmount'], 2)];
+
+        if ($format === 'pdf') {
+            return $this->export->toPdf("placas-{$label}", 'reports.pdf.plates', $data);
+        }
+
+        $charts = [
+            ['type' => 'bar', 'title' => 'Monto por tipo de trámite', 'categories' => array_column($data['byProcedure'], 'label'), 'series' => ['Monto' => array_column($data['byProcedure'], 'total')]],
+            ['type' => 'bar', 'title' => 'Trámites por comprobante', 'categories' => array_column($data['byReceiptType'], 'label'), 'series' => ['Trámites' => array_column($data['byReceiptType'], 'count')]],
+        ];
+
+        return $this->export->toExcel("placas-{$label}", 'Placas', $data['isRange'] ? "{$data['dateFrom']} a {$data['dateTo']}" : $period, $headers, $rows, $totals, $charts);
+    }
+
     public function exportProtests(Request $request, string $format): StreamedResponse|Response
     {
         $period = $request->query('period', now()->format('Y-m'));

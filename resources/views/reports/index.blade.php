@@ -49,5 +49,18 @@
                 </div>
             </div>
         @endcan
+        @can('plates.manage')
+            <div class="col-md-6">
+                <div class="card-surface h-100">
+                    <div class="kpi-icon icon-navy" style="margin-bottom: var(--space-4);">{{ icon('car', 'icon', 18) }}</div>
+                    <h2 class="text-h3" style="margin-bottom: var(--space-2);">Placas</h2>
+                    <p class="text-secondary" style="font-size: 0.875rem; margin-bottom: var(--space-4);">Cuántos trámites de placas se registraron, por tipo y por comprobante, en un período o rango de fechas.</p>
+                    <form method="GET" action="{{ route('reports.plates') }}" class="d-flex gap-2">
+                        <input type="month" name="period" class="form-control" style="max-width: 160px" value="{{ $defaultPeriod }}">
+                        <button type="submit" class="btn btn-primary">Ver reporte</button>
+                    </form>
+                </div>
+            </div>
+        @endcan
     </div>
 @endsection

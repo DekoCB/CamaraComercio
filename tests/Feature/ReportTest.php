@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Associate;
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Models\PlateIssuance;
 use App\Models\Protest;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Concerns\CreatesUsers;
@@ -151,6 +152,43 @@ class ReportTest extends TestCase
 
         $excel = $this->actingAs($user)->get('/reports/protests/export/excel');
         $pdf = $this->actingAs($user)->get('/reports/protests/export/pdf');
+
+        $excel->assertOk()->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $pdf->assertOk()->assertHeader('Content-Type', 'application/pdf');
+    }
+
+    public function test_plates_report_groups_issuances_by_procedure_and_receipt_type(): void
+    {
+        PlateIssuance::factory()->create(['procedure_type' => PlateIssuance::PROCEDURE_NUEVA, 'receipt_type' => PlateIssuance::RECEIPT_FACTURA, 'amount' => 80, 'issued_at' => '2026-08-05']);
+        PlateIssuance::factory()->create(['procedure_type' => PlateIssuance::PROCEDURE_DUPLICADO, 'receipt_type' => PlateIssuance::RECEIPT_BOLETA, 'amount' => 60, 'issued_at' => '2026-08-10']);
+        PlateIssuance::factory()->create(['amount' => 999, 'issued_at' => '2026-07-01']); // outside the period
+
+        $user = $this->userWithPermissions(['reports.view', 'plates.manage']);
+
+        $response = $this->actingAs($user)->get('/reports/plates?period=2026-08');
+
+        $response->assertOk()
+            ->assertSeeInOrder(['Trámites', '2'])
+            ->assertSee('S/ 140.00') // 80 + 60, excludes the July record
+            ->assertDontSee('999.00');
+    }
+
+    public function test_plates_report_requires_both_reports_view_and_plates_manage(): void
+    {
+        $onlyReports = $this->userWithPermissions(['reports.view']);
+        $onlyPlates = $this->userWithPermissions(['plates.manage']);
+
+        $this->actingAs($onlyReports)->get('/reports/plates')->assertForbidden();
+        $this->actingAs($onlyPlates)->get('/reports/plates')->assertForbidden();
+    }
+
+    public function test_plates_excel_and_pdf_export_work(): void
+    {
+        PlateIssuance::factory()->create(['issued_at' => now()]);
+        $user = $this->userWithPermissions(['reports.view', 'reports.export', 'plates.manage']);
+
+        $excel = $this->actingAs($user)->get('/reports/plates/export/excel');
+        $pdf = $this->actingAs($user)->get('/reports/plates/export/pdf');
 
         $excel->assertOk()->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         $pdf->assertOk()->assertHeader('Content-Type', 'application/pdf');

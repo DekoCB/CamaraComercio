@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Models\PlateIssuance;
 use App\Models\Protest;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -220,6 +221,45 @@ class ReportService
             'regularizedCount' => $records->where('status', Protest::STATUS_REGULARIZADO)->count(),
             'byType' => $byType,
             'byChannel' => $byChannel,
+            'records' => $records,
+        ];
+    }
+
+    public function plates(string $period, ?string $dateFrom = null, ?string $dateTo = null): array
+    {
+        $isRange = $dateFrom !== null && $dateTo !== null;
+        [$rangeStart, $rangeEnd] = $this->resolveRange($period, $dateFrom, $dateTo);
+
+        $records = PlateIssuance::query()
+            ->with('associate')
+            ->whereBetween('issued_at', [$rangeStart->toDateString(), $rangeEnd->toDateString()])
+            ->orderByDesc('issued_at')
+            ->get();
+
+        $totalAmount = (float) $records->sum('amount');
+
+        $byProcedure = collect(PlateIssuance::PROCEDURE_TYPES)->map(fn ($label, $key) => [
+            'label' => $label,
+            'count' => $records->where('procedure_type', $key)->count(),
+            'total' => (float) $records->where('procedure_type', $key)->sum('amount'),
+        ])->all();
+
+        $byReceiptType = collect(PlateIssuance::RECEIPT_TYPES)->map(fn ($label, $key) => [
+            'label' => $label,
+            'count' => $records->where('receipt_type', $key)->count(),
+        ])->all();
+
+        return [
+            'period' => $period,
+            'dateFrom' => $isRange ? $rangeStart->toDateString() : null,
+            'dateTo' => $isRange ? $rangeEnd->toDateString() : null,
+            'isRange' => $isRange,
+            'monthStart' => $rangeStart,
+            'monthEnd' => $rangeEnd,
+            'totalCount' => $records->count(),
+            'totalAmount' => $totalAmount,
+            'byProcedure' => $byProcedure,
+            'byReceiptType' => $byReceiptType,
             'records' => $records,
         ];
     }

@@ -19,9 +19,9 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceImportController;
 use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\ParkingController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymentImportController;
+use App\Http\Controllers\PlateIssuanceController;
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProtestController;
@@ -259,6 +259,14 @@ Route::middleware('auth')->group(function () {
     Route::middleware(['can:reports.export', 'can:protests.view'])->group(function () {
         Route::get('reports/protests/export/{format}', [ReportController::class, 'exportProtests'])->name('reports.protests.export');
     });
+    // Mismo criterio de capas que Protestos: "Placas" en Reportes necesita
+    // plates.manage además de reports.view/reports.export.
+    Route::middleware(['can:reports.view', 'can:plates.manage'])->group(function () {
+        Route::get('reports/plates', [ReportController::class, 'plates'])->name('reports.plates');
+    });
+    Route::middleware(['can:reports.export', 'can:plates.manage'])->group(function () {
+        Route::get('reports/plates/export/{format}', [ReportController::class, 'exportPlates'])->name('reports.plates.export');
+    });
 
     // Registro de Protestos y Moras — alcance PROVISIONAL, ver Protest.
     // Uso interno solo para personal de la CCH (sin consulta pública),
@@ -279,18 +287,16 @@ Route::middleware('auth')->group(function () {
         Route::put('protests/{protest}/regularize', [ProtestController::class, 'regularize'])->name('protests.regularize');
     });
 
-    // Control de estacionamiento del propio local (oct-2026) — solo
-    // Administrador, así que un único permiso alcanza (sin separar
-    // ver/gestionar como en Protestos). "create" antes de {parkingSession}
-    // por la misma razón de siempre.
-    Route::middleware('can:parking.manage')->group(function () {
-        Route::get('parking', [ParkingController::class, 'index'])->name('parking.index');
-        Route::get('parking/create', [ParkingController::class, 'create'])->name('parking.create');
-        Route::post('parking', [ParkingController::class, 'store'])->name('parking.store');
-        Route::get('parking/{parkingSession}/edit', [ParkingController::class, 'edit'])->name('parking.edit');
-        Route::put('parking/{parkingSession}', [ParkingController::class, 'update'])->name('parking.update');
-        Route::get('parking/{parkingSession}/checkout', [ParkingController::class, 'checkoutForm'])->name('parking.checkout.form');
-        Route::put('parking/{parkingSession}/checkout', [ParkingController::class, 'checkout'])->name('parking.checkout');
+    // Emisión de placas vehiculares (oct-2026) — Administrador y Gestión
+    // de Asociados, un único permiso alcanza (sin separar ver/gestionar,
+    // igual que el malentendido de Estacionamiento que reemplaza). "create"
+    // y "rates" van antes de {plate} por la misma razón de siempre.
+    Route::middleware('can:plates.manage')->group(function () {
+        Route::get('plates', [PlateIssuanceController::class, 'index'])->name('plates.index');
+        Route::get('plates/create', [PlateIssuanceController::class, 'create'])->name('plates.create');
+        Route::post('plates', [PlateIssuanceController::class, 'store'])->name('plates.store');
+        Route::put('plates/rates', [PlateIssuanceController::class, 'updateRates'])->name('plates.rates.update');
+        Route::get('plates/{plate}', [PlateIssuanceController::class, 'show'])->name('plates.show');
     });
 
     // Administration (EP-02) — each sub-area gated by its own permission,

@@ -42,7 +42,7 @@ class RolesPermissionsModulesSeeder extends Seeder
             'admin.roles' => 'Gestionar roles, permisos y accesos a módulos',
             'admin.modules' => 'Gestionar módulos del sistema',
             'admin.sessions' => 'Ver sesiones activas y cerrarlas remotamente',
-            'parking.manage' => 'Registrar vehículos, marcar su salida y ver el estacionamiento del local',
+            'plates.manage' => 'Registrar trámites de emisión de placas vehiculares y ver sus tarifas',
         ])->map(fn (string $description, string $code) => Permission::updateOrCreate(['code' => $code], ['description' => $description]));
 
         $modules = collect([
@@ -53,8 +53,8 @@ class RolesPermissionsModulesSeeder extends Seeder
             'payments' => ['Pagos', 'bi-cash-coin', '/payments', 5],
             'portfolio' => ['Cartera', 'bi-graph-up', '/portfolio', 6],
             'protests' => ['Protestos y Moras', 'bi-shield-exclamation', '/protests', 7],
-            'reports' => ['Reportes', 'bi-bar-chart', '/reports', 8],
-            'parking' => ['Estacionamiento', 'car', '/parking', 9],
+            'plates' => ['Placas', 'car', '/plates', 8],
+            'reports' => ['Reportes', 'bi-bar-chart', '/reports', 9],
             'administration' => ['Administración', 'bi-gear', '/admin/users', 10],
         ])->map(fn (array $attrs, string $code) => Module::updateOrCreate(['code' => $code], [
             'name' => $attrs[0],
@@ -115,9 +115,9 @@ class RolesPermissionsModulesSeeder extends Seeder
             ['description' => 'Alta, edición e importación del padrón de asociados, y su situación en cartera.']
         );
         $associateManagementRole->permissions()->sync($permissions->only([
-            'associates.manage', 'portfolio.view', 'rentals.view', 'rentals.manage',
+            'associates.manage', 'portfolio.view', 'rentals.view', 'rentals.manage', 'plates.manage',
         ])->pluck('id'));
-        $associateManagementRole->modules()->sync($modules->only(['dashboard', 'associates', 'rentals', 'portfolio'])->pluck('id'));
+        $associateManagementRole->modules()->sync($modules->only(['dashboard', 'associates', 'rentals', 'portfolio', 'plates'])->pluck('id'));
 
         $marketingRole = Role::updateOrCreate(
             ['name' => 'Marketing'],

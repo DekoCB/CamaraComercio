@@ -1110,6 +1110,60 @@
     initRentalForm(document);
 
     /* ---------------------------------------------------------------
+     * Placas: tarifa sugerida según el tipo de trámite elegido — igual
+     * patrón "nunca sobrescribe el monto solo" que initRentalForm, solo
+     * que aquí es un valor único por tipo (data-rate en cada <option>)
+     * en vez de una suma.
+     * --------------------------------------------------------------- */
+    function initPlateForm(root) {
+        var form = root.querySelector('.js-plate-form');
+        if (!form) {
+            return;
+        }
+
+        var procedureSelect = form.querySelector('#procedure_type');
+        var amount = form.querySelector('#amount');
+        var hint = form.querySelector('#suggestedRateHint');
+        var hintValue = form.querySelector('#suggestedRateValue');
+        var useButton = form.querySelector('#useSuggestedRate');
+        if (!procedureSelect || !amount || !hint) {
+            return;
+        }
+
+        var suggested = 0;
+
+        function money(value) {
+            return 'S/ ' + value.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function refresh() {
+            var option = procedureSelect.options[procedureSelect.selectedIndex];
+            var rate = option ? parseFloat(option.dataset.rate) : NaN;
+
+            if (!rate) {
+                hint.hidden = true;
+                return;
+            }
+
+            suggested = rate;
+            hintValue.textContent = money(suggested);
+            hint.hidden = false;
+        }
+
+        procedureSelect.addEventListener('change', refresh);
+        refresh();
+
+        if (useButton) {
+            useButton.addEventListener('click', function () {
+                amount.value = suggested.toFixed(2);
+                amount.focus();
+            });
+        }
+    }
+
+    initPlateForm(document);
+
+    /* ---------------------------------------------------------------
      * Form modal — overlays small create/edit forms on top of the list
      * page that opened them instead of navigating to a dedicated
      * screen. The fetched form is the exact same partial the full-page
@@ -1281,6 +1335,7 @@
             initInvoiceWizard(formModalBody);
             initPaymentQuickForm(formModalBody);
             initRentalForm(formModalBody);
+            initPlateForm(formModalBody);
             wireModalForm(formModalBody.querySelector('form'));
             var firstField = formModalBody.querySelector('input:not([type="hidden"]), .select-trigger, .datepicker-trigger, textarea');
             if (firstField) {

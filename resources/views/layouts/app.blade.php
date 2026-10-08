@@ -91,10 +91,10 @@
                     </a>
                 @endcan
             @endmodule
-            @module('parking')
-                @can('parking.manage')
-                    <a href="{{ route('parking.index') }}" class="nav-link {{ request()->routeIs('parking.*') ? 'active' : '' }}" title="Estacionamiento">
-                        {{ icon('car') }}<span>Estacionamiento</span>
+            @module('plates')
+                @can('plates.manage')
+                    <a href="{{ route('plates.index') }}" class="nav-link {{ request()->routeIs('plates.*') ? 'active' : '' }}" title="Placas">
+                        {{ icon('car') }}<span>Placas</span>
                     </a>
                 @endcan
             @endmodule
