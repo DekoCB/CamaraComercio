@@ -21,6 +21,7 @@ use App\Http\Controllers\InvoiceImportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\PaymentImportController;
+use App\Http\Controllers\PaymentRequisitionController;
 use App\Http\Controllers\PlateIssuanceController;
 use App\Http\Controllers\PortfolioController;
 use App\Http\Controllers\ProfileController;
@@ -163,6 +164,17 @@ Route::middleware('auth')->group(function () {
         Route::put('rentals/equipment/bank-account', [RentalCatalogItemController::class, 'updateBankAccount'])->name('rental-catalog-items.bankAccount.update');
         Route::get('rentals/equipment/{catalogItem}/edit', [RentalCatalogItemController::class, 'edit'])->name('rental-catalog-items.edit');
         Route::put('rentals/equipment/{catalogItem}', [RentalCatalogItemController::class, 'update'])->name('rental-catalog-items.update');
+    });
+    // Requerimientos de pago y reembolsos de Logística (oct-2026) — nueva
+    // pestaña dentro de Alquileres, permiso propio porque Logística lo
+    // usa sin tener rentals.manage. "requisitions" va antes de {rental}
+    // por la misma razón que "create"/"spaces"/"equipment" arriba.
+    Route::middleware('can:rentals.requisitions.manage')->group(function () {
+        Route::get('rentals/requisitions', [PaymentRequisitionController::class, 'index'])->name('rentals.requisitions.index');
+        Route::get('rentals/requisitions/create', [PaymentRequisitionController::class, 'create'])->name('rentals.requisitions.create');
+        Route::post('rentals/requisitions', [PaymentRequisitionController::class, 'store'])->name('rentals.requisitions.store');
+        Route::get('rentals/requisitions/{requisition}', [PaymentRequisitionController::class, 'show'])->name('rentals.requisitions.show');
+        Route::get('rentals/requisitions/{requisition}/pdf', [PaymentRequisitionController::class, 'pdf'])->name('rentals.requisitions.pdf');
     });
     Route::middleware('can:rentals.view')->group(function () {
         Route::get('rentals/{rental}', [RentalController::class, 'show'])->name('rentals.show');

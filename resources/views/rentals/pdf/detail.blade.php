@@ -39,7 +39,7 @@
         .payment h3 { font-size: 10.5px; margin: 0 0 4px; }
         .payment pre { font-family: DejaVu Sans, sans-serif; font-size: 10px; white-space: pre-line; margin: 0; }
 
-        .signature-box { border-top: 1px solid #333; margin-top: 40px; padding-top: 3px; font-size: 9px; text-align: center; width: 240px; }
+        .signature-box { border-top: 1px solid #333; margin: 90px auto 0; padding-top: 3px; font-size: 9px; text-align: center; width: 280px; }
         .footer-note { margin-top: 20px; padding-top: 6px; border-top: 1px solid #ccc; color: #555; font-size: 8.5px; text-align: center; }
     </style>
 </head>

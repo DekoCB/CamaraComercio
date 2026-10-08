@@ -36,10 +36,20 @@ class Protest extends Model
 
     public const CHANNEL_BANCARIO = 'BANCARIO';
 
+    /** Sumadas a pedido explícito (oct-2026), junto a las 3 vías legales de arriba. */
+    public const CHANNEL_REGULARIZACION = 'REGULARIZACION';
+
+    public const CHANNEL_MORA_DIRECTA = 'MORA_DIRECTA';
+
+    public const CHANNEL_TITULOS_VALORES = 'TITULOS_VALORES';
+
     public const CHANNELS = [
         self::CHANNEL_NOTARIAL => 'Notarial',
         self::CHANNEL_JUDICIAL => 'Judicial',
         self::CHANNEL_BANCARIO => 'Bancario',
+        self::CHANNEL_REGULARIZACION => 'Regularización de protestos',
+        self::CHANNEL_MORA_DIRECTA => 'Moras directas',
+        self::CHANNEL_TITULOS_VALORES => 'Títulos y valores protestados',
     ];
 
     public const INSTRUMENT_LETRA_CAMBIO = 'LETRA_DE_CAMBIO';

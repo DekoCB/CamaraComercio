@@ -36,6 +36,7 @@ class RolesPermissionsModulesSeeder extends Seeder
             'reports.export' => 'Exportar reportes a Excel/PDF',
             'rentals.view' => 'Ver alquileres de espacios y el calendario de reservas',
             'rentals.manage' => 'Crear, confirmar, facturar y cancelar alquileres de espacios',
+            'rentals.requisitions.manage' => 'Registrar y ver requerimientos de pago y reembolsos de Logística',
             'protests.view' => 'Ver el registro de protestos y moras',
             'protests.manage' => 'Registrar y regularizar protestos y moras',
             'admin.users' => 'Gestionar usuarios',
@@ -103,19 +104,28 @@ class RolesPermissionsModulesSeeder extends Seeder
             'dashboard', 'associates', 'rentals', 'billing', 'payments', 'portfolio', 'reports',
         ])->pluck('id'));
 
+        // A pedido explícito (oct-2026): Logística gana su primer permiso
+        // de escritura real, acotado solo a Requerimientos de pago/
+        // reembolsos — los documentos que de verdad emite ese
+        // departamento. rentals.view se suma porque la pantalla vive
+        // dentro de Alquileres y necesita poder entrar al módulo, pero
+        // rentals.manage (crear/editar/confirmar/facturar/cancelar
+        // alquileres reales) sigue sin otorgárseles.
         $logisticsRole = Role::updateOrCreate(
             ['name' => 'Logística'],
-            ['description' => 'Acceso de referencia al padrón de asociados — sin facturación, pagos ni administración.']
+            ['description' => 'Acceso de referencia al padrón de asociados, y registro de requerimientos de pago y reembolsos — sin facturación, pagos ni administración.']
         );
-        $logisticsRole->permissions()->sync([]);
-        $logisticsRole->modules()->sync($modules->only(['dashboard', 'associates'])->pluck('id'));
+        $logisticsRole->permissions()->sync($permissions->only([
+            'rentals.view', 'rentals.requisitions.manage',
+        ])->pluck('id'));
+        $logisticsRole->modules()->sync($modules->only(['dashboard', 'associates', 'rentals'])->pluck('id'));
 
         $associateManagementRole = Role::updateOrCreate(
             ['name' => 'Gestión de Asociados'],
             ['description' => 'Alta, edición e importación del padrón de asociados, y su situación en cartera.']
         );
         $associateManagementRole->permissions()->sync($permissions->only([
-            'associates.manage', 'portfolio.view', 'rentals.view', 'rentals.manage', 'plates.manage',
+            'associates.manage', 'portfolio.view', 'rentals.view', 'rentals.manage', 'rentals.requisitions.manage', 'plates.manage',
         ])->pluck('id'));
         $associateManagementRole->modules()->sync($modules->only(['dashboard', 'associates', 'rentals', 'portfolio', 'plates'])->pluck('id'));
 

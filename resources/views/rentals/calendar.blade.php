@@ -25,12 +25,13 @@
 @section('content')
     <x-page-header title="Calendario de alquileres" subtitle="Reservas de espacios por día. Solo se muestran las que siguen activas.">
         <x-slot:actions>
-            <a href="{{ route('rentals.index') }}" class="btn btn-secondary btn-sm">{{ icon('list-filter', 'icon', 16) }} Ver como lista</a>
             @can('rentals.manage')
                 <a href="{{ route('rentals.create') }}" class="btn btn-primary btn-sm js-modal-link" data-modal-title="Nueva cotización de alquiler">{{ icon('plus', 'icon', 16) }} Nueva cotización</a>
             @endcan
         </x-slot:actions>
     </x-page-header>
+
+    @include('rentals._tabs', ['active' => 'calendario'])
 
     <div class="row g-3">
         <div class="col-lg-8">

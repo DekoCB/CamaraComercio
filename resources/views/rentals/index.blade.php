@@ -5,9 +5,6 @@
 @section('content')
     <x-page-header title="Alquileres" subtitle="Reservas de espacios de la Cámara — cotizaciones, confirmaciones y facturación.">
         <x-slot:actions>
-            <a href="{{ route('rentals.calendar') }}" class="btn btn-secondary btn-sm">
-                {{ icon('calendar', 'icon', 16) }} Calendario
-            </a>
             @can('rentals.manage')
                 <a href="{{ route('spaces.index') }}" class="btn btn-secondary btn-sm">
                     {{ icon('building-2', 'icon', 16) }} Gestionar espacios
@@ -18,6 +15,8 @@
             @endcan
         </x-slot:actions>
     </x-page-header>
+
+    @include('rentals._tabs', ['active' => 'listado'])
 
     <div class="table-card">
         <div class="table-toolbar">
