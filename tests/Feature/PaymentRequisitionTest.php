@@ -126,13 +126,13 @@ class PaymentRequisitionTest extends TestCase
         $this->actingAs($user)->post('/rentals/requisitions', $this->validPayload())->assertForbidden();
     }
 
-    public function test_seeded_logistica_role_can_manage_requisitions_but_not_full_rentals(): void
+    public function test_seeded_logistica_role_can_manage_requisitions_and_full_rentals(): void
     {
         $this->seed(RolesPermissionsModulesSeeder::class);
         $user = Role::where('name', 'Logística')->first()->users()->first();
 
         $this->actingAs($user)->get('/rentals/requisitions')->assertOk();
         $this->actingAs($user)->post('/rentals/requisitions', $this->validPayload())->assertRedirect();
-        $this->actingAs($user)->get('/rentals/create')->assertForbidden();
+        $this->actingAs($user)->get('/rentals/create')->assertOk();
     }
 }

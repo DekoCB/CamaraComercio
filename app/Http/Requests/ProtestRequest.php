@@ -33,7 +33,7 @@ class ProtestRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'type.required' => 'Selecciona si es un protesto o una mora.',
+            'type.required' => 'Selecciona el tipo de registro.',
             'channel.required' => 'Selecciona la vía.',
             'debtor_name.required' => 'Ingresa el nombre del deudor.',
             'creditor_name.required' => 'Ingresa el nombre del acreedor.',

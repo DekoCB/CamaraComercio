@@ -104,19 +104,16 @@ class RolesPermissionsModulesSeeder extends Seeder
             'dashboard', 'associates', 'rentals', 'billing', 'payments', 'portfolio', 'reports',
         ])->pluck('id'));
 
-        // A pedido explícito (oct-2026): Logística gana su primer permiso
-        // de escritura real, acotado solo a Requerimientos de pago/
-        // reembolsos — los documentos que de verdad emite ese
-        // departamento. rentals.view se suma porque la pantalla vive
-        // dentro de Alquileres y necesita poder entrar al módulo, pero
-        // rentals.manage (crear/editar/confirmar/facturar/cancelar
-        // alquileres reales) sigue sin otorgárseles.
+        // A pedido explícito (oct-2026): Logística gana acceso completo a
+        // Alquileres — cotizar, confirmar, facturar y cancelar reservas
+        // (rentals.manage), además de Requerimientos de pago/reembolsos
+        // (rentals.requisitions.manage), que ya tenía.
         $logisticsRole = Role::updateOrCreate(
             ['name' => 'Logística'],
-            ['description' => 'Acceso de referencia al padrón de asociados, y registro de requerimientos de pago y reembolsos — sin facturación, pagos ni administración.']
+            ['description' => 'Gestiona Alquileres (cotizaciones, reservas y requerimientos de pago) y ve el padrón de asociados — sin facturación, pagos ni administración.']
         );
         $logisticsRole->permissions()->sync($permissions->only([
-            'rentals.view', 'rentals.requisitions.manage',
+            'rentals.view', 'rentals.manage', 'rentals.requisitions.manage',
         ])->pluck('id'));
         $logisticsRole->modules()->sync($modules->only(['dashboard', 'associates', 'rentals'])->pluck('id'));
 

@@ -24,9 +24,13 @@ class Protest extends Model
 
     public const TYPE_MORA = 'MORA';
 
+    /** Reporte de central de riesgo (Equifax, antes Infocorp) — a pedido explícito (oct-2026). */
+    public const TYPE_EQUIFAX = 'EQUIFAX';
+
     public const TYPES = [
         self::TYPE_PROTESTO => 'Protesto',
         self::TYPE_MORA => 'Mora',
+        self::TYPE_EQUIFAX => 'Reportes Equifax',
     ];
 
     /** Las 3 vías para formalizar un protesto — no son 3 servicios distintos. */
